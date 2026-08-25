@@ -1,73 +1,81 @@
-# Publication checklist
+# Release 0.3.9 publication checklist
 
-## Shared project metadata
+## Shared metadata
 
 | Field | Value |
 |---|---|
-| Name | QCloudy_Addition |
-| Suggested slug | `qcloudy-addition` |
-| Version | `0.2.9 Alpha 30` |
-| Release channel | Alpha; SOS/Flare replacement-timer hotfix |
-| Environment | Client only |
+| Version | `0.3.9` |
+| Channel | Release / stable |
 | Loader | Fabric |
-| Minecraft | 26.1.2 |
+| Minecraft | 26.1.2 and 26.2 |
 | Java | 25 |
+| Environment | Client only |
 | License | LGPL-3.0-or-later |
-| Required dependency | Fabric API 0.155.2+26.1.2 |
-| Optional dependency | Mod Menu 18.0.0 |
-| Standalone from | Firmament, SkyHanni, Skyblocker, BabyZombieAddons, Feesh; optional capability-detected integrations only |
+| Required | Matching Fabric API |
+| Optional | Mod Menu; SkyHanni, Skyblocker, Firmament, BabyZombieAddons, Feesh |
 
-Suggested Modrinth summary:
+Suggested title: `QCloudy_Addition 0.3.9 Release`
 
-> Client-only Hypixel SkyBlock maps, trackers, pet HUD, offline Shard Fusion recipes, and configurable visual alerts for Fabric 26.1.2.
+Suggested summary: `Client-only Hypixel SkyBlock maps, content-aware HUDs, pets, alerts, Century Cake timers, and an offline 320-Shard Fusion Lab for Fabric.`
 
-Suggested Modrinth categories: Utility, Optimization, Game Mechanics.
+## Mandatory experimental warning
 
-Suggested GitHub topics: `minecraft`, `fabric`, `hypixel-skyblock`, `skyblock`, `client-side`, `hud`, `minecraft-mod`, `java`.
+Place this near the top of GitHub, Modrinth, Wiki, and website release copy:
+
+> Unified Settings Editor and Unified HUD Editor are experimental concept tests. They are disabled by default and are not yet stable. Back up provider configuration and verify changes in each provider's native editor.
+
+## Fresh verification
+
+- Run `bash tools/build_all_versions.sh` with Java 25 after every release-affecting change.
+- Require all tests and both target builds to pass.
+- Validate all four archives with `jar --validate` and `unzip -t`.
+- Inspect `fabric.mod.json` in both playable JARs for `0.3.9`, the correct Minecraft range, and the expected Fabric API dependency.
+- Verify exact catalog/model/texture sets for all 320 Shards and confirm Rainbug is absent.
+- Recalculate SHA-256 from the final copied files and record it in both validation reports and the website manifest.
+- Perform standalone smoke testing and, before calling the experimental editors stable, repeat authenticated five-provider and multi-GUI-scale testing. Do not imply that local automated tests prove live compatibility.
+
+## Files to publish
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release.jar`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release-sources.jar`
+- `release/QCloudy_Addition-0.3.9+26.2-Release.jar`
+- `release/QCloudy_Addition-0.3.9+26.2-Release-sources.jar`
+
+Only playable JARs belong in users' `mods` folders. Sources JARs are optional developer attachments.
+
+## GitHub Release
+
+- Tag: `v0.3.9`
+- Title: `QCloudy_Addition 0.3.9 Release`
+- Body: `docs/GITHUB_RELEASE_0.3.9.md` (optionally append/link the Chinese companion).
+- Attach all four files above.
+- Do **not** mark the release as a pre-release.
+- After publishing, download both playable assets once and compare their hashes with `docs/VALIDATION.md`.
 
 ## Modrinth
 
-- Use `docs/MODRINTH_DESCRIPTION.md` as the English project description.
-- Keep English as the primary description; place `docs/MODRINTH_DESCRIPTION_zh_CN.md` in a linked Chinese page or below the English copy if desired.
-- Upload `release/QCloudy_Addition-0.2.9+26.1.2-Alpha-30.jar` for Minecraft 26.1.2.
-- Use `docs/MODRINTH_RELEASE_0.2.9_ALPHA_30.md` as the concise version changelog; the Chinese companion is `docs/MODRINTH_RELEASE_0.2.9_ALPHA_30_zh_CN.md`.
-- Mark Fabric API as required and Mod Menu as optional.
-- Mark client environment as required and server environment as unsupported.
-- Do not mark Firmament, SkyHanni, Skyblocker, BabyzombieAddons, or Feesh as required.
-- Add at least: one settings overview, one HUD editor, Dwarven map, Glacite map, Mining HUD, combined Torrhus HUD, Safari HUD, and Pet HUD screenshot.
-- Avoid screenshots that expose player UUIDs, private chat, server IPs, session data, or other players' private information.
+- Project description: `docs/MODRINTH_DESCRIPTION.md`.
+- Version changelog: `docs/MODRINTH_RELEASE_0.3.9.md`.
+- Version type: **Release**.
+- Upload the two playable JARs as two Minecraft-version files under the same version.
+- Mark matching Fabric API as required and Mod Menu as optional; all provider mods remain optional.
+- Set client environment required and server environment unsupported.
 
-## GitHub repository
+## Website
 
-- Keep `README.md` as the default English landing page and `README_zh_CN.md` as the Chinese version.
-- Keep `LICENSE`, `THIRD_PARTY_NOTICES.md`, `CHANGELOG.md`, and the complete `docs/` directory in the repository.
-- Add the real repository URL, issue tracker URL, and Modrinth project URL after they exist; do not publish placeholder links.
-- Replace the generic `QCloudy_Addition contributors` metadata author with the final public author/team name, and add public contact/support links only after the user chooses them.
-- Enable Issues and provide a bug template requesting Minecraft/Fabric/QCA versions, mod list, logs, reproduction steps, and screenshots.
-- Do not commit `run/`, `run-standalone/`, `.gradle/`, `.gradle-user-home/`, local configs, logs, crash ZIPs, or the supplied reference JARs.
-- Confirm `.gitignore` covers local build/runtime files before the first commit.
+- Deployment package: `release/QCloudy_Addition_Website-0.3.9-20260825.zip` (website only; do not attach it as a mod file).
+- Upload the contents of the final `website/` package to the current site root; do not upload the ZIP as a public page.
+- Confirm `/`, `/download/`, `/features/`, `/compliance/`, and `/changelog/` load directly and after refresh.
+- Confirm the download page shows only Release 0.3.9 and uses the exact GitHub release-asset URLs, sizes, and SHA-256 values.
+- Confirm English/Chinese switching, mobile layout, repeatable reveal animations, FAQ animations, icon aspect ratio, and navigation highlighting.
 
-## GitHub 0.2.9 Alpha 30
+## GitHub Wiki
 
-- Title: `QCloudy_Addition 0.2.9 Alpha 30 for Minecraft 26.1.2`
-- Use `docs/GITHUB_RELEASE_0.2.9_ALPHA_30.md` as the English release body and optionally append/link `docs/GITHUB_RELEASE_0.2.9_ALPHA_30_zh_CN.md`.
-- Attach the playable JAR and, optionally, its Sources JAR. Keep the Minecraft version in every filename.
-- Verify uploaded hashes against `docs/VALIDATION.md` after downloading the release once.
-- Mark it as **Pre-release** on GitHub because this is an Alpha, not a stable Release.
-- On Modrinth, choose **Alpha** as the version type and create the Minecraft 26.1.2 file entry.
+- Publish `wiki/Home.md`, `wiki/Home-zh-CN.md`, and `wiki/_Sidebar.md` to the separate `QCloudy-Addition.wiki.git` repository.
+- Confirm both language pages show Release 0.3.9, both Minecraft targets, the cumulative changes since 2.5.3, and the experimental-editor warning.
 
-## Final safety and quality gate
+## Source repository
 
-- Re-run `clean test build prepareRelease` with Java 25 after any code, resource, metadata, or version change.
-- Re-run `jar --validate`, `unzip -t`, metadata inspection, class-major inspection, and release/build hash comparison.
-- Derive the final passing-test count from the fresh XML results; do not reuse the 2.5.4 count.
-- Confirm exactly 320 bundled Shard textures, item-model definitions, and item definitions are present; confirm the catalog-to-icon ID sets match and Rainbug is absent.
-- Confirm search focus exits through outside click, `Esc`, and `Tab`, can be restored by clicking search, and does not block recipe navigation shortcuts.
-- Confirm compact input/output bounds and their click targets remain aligned at the supported GUI scales.
-- Confirm Epic uses `§5`, Details wraps every effect/acquisition line, hover styling applies only to visible clickable text, and natural-plus-Fusion Shards expose both source types.
-- Test at least one standalone launch and one launch with all five optional providers, including Feesh.
-- In the five-provider launch, verify that both integration masters default off, cancelling their first confirmation keeps them off, confirmation starts exactly one scoped scan, every Refresh confirms again, restart never silently scans, and both editors independently gate provider settings/HUD discovery while leaving QCA-owned controls available. Then verify provider selection, exact-equivalent exclusivity, native persistence, version-mismatch capability discovery, per-branch omission, every recognised external HUD position/scale/alignment at multiple GUI scales, and the read-only Compatibility Gaps report.
-- Recheck every command/chat payload in `docs/COMPLIANCE.md`.
-- Confirm the uploaded icon has transparent corners and remains recognizable at 32×32.
-- Confirm the README never claims official Hypixel approval, guaranteed safety, or complete authenticated-server validation.
-- Confirm the public author name, source URL, issue URL, and Modrinth URL are final; these are the only publication fields intentionally not invented by this repository.
+- Review `git status --short` and stage only intended project files; do not include local maps, PSDs, extracted packs, caches, runtime folders, or reference JARs.
+- Commit the Release change separately from any unrelated work.
+- Push source with a normal branch push. Tagging and release-asset publication are separate actions.

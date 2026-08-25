@@ -8,6 +8,7 @@
 ### English
 
 - [Installation](Home#installation)
+- [Changes since Release 2.5.3](Home#what-changed-since-release-253)
 - [Settings & HUDs](Home#settings-language-and-hud-editing)
 - [Feature guide](Home#feature-guide)
 - [Shard Guide & Planner](Home#attribute-shard-guide-and-planner)
@@ -19,6 +20,7 @@
 ### 简体中文
 
 - [安装](Home-zh-CN#安装)
+- [自 Release 2.5.3 以来的变化](Home-zh-CN#自-release-253-以来的变化)
 - [设置与 HUD](Home-zh-CN#设置语言与-hud-编辑)
 - [功能指南](Home-zh-CN#功能指南)
 - [Shard 指南与规划器](Home-zh-CN#attribute-shard-指南与规划器)

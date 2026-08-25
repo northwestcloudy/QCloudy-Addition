@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="QCloudy_Addition 0.3.9 Release changelog, covering every major addition, change, fix and removal since Release 2.5.3.">
+  <meta name="theme-color" content="#071216">
+  <link rel="canonical" href="https://qcloudy.net/changelog/">
+  <title>QCloudy_Addition 0.3.9 Changelog</title>
+  <link rel="icon" href="../assets/images/qcloudy-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260825-1">
+</head>
+<body class="content-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header content-header" data-header>
+    <a class="brand" href="../#top" aria-label="QCloudy_Addition home"><img src="../assets/images/qcloudy-icon.png" alt="" width="38" height="38"><span>QCloudy</span></a>
+    <button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false" data-menu-button><span></span><span></span></button>
+    <nav class="site-nav" aria-label="Main navigation" data-nav>
+      <a href="../features/" data-en="Features" data-zh="功能">Features</a>
+      <a href="../#shards" data-en="Shard Lab" data-zh="Shard 工具">Shard Lab</a>
+      <a href="../#maps" data-en="Maps" data-zh="地图">Maps</a>
+      <a href="../compliance/" data-en="Client-only" data-zh="纯客户端">Client-only</a>
+      <a class="active" href="./" aria-current="page" data-en="Changelog" data-zh="更新日志">Changelog</a>
+    </nav>
+    <div class="header-actions">
+      <button class="language-toggle" type="button" data-language-toggle aria-label="Switch language"><span data-language-label>中文</span></button>
+      <a class="button button-small button-outline" href="../download/"><span data-en="Download" data-zh="下载">Download</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="content-hero">
+      <div class="content-grid" aria-hidden="true"></div>
+      <div class="content-hero-copy reveal">
+        <p class="eyebrow"><span class="status-dot"></span><span data-en="RELEASE 0.3.9 · 25 AUG 2026" data-zh="RELEASE 0.3.9 · 2026 年 8 月 25 日">RELEASE 0.3.9 · 25 AUG 2026</span></p>
+        <h1 data-en="Everything since 2.5.3." data-zh="自 2.5.3 以来的全部变化。">Everything since 2.5.3.</h1>
+        <p data-en="This stable Release rolls the Shard Lab, new alerts, Century Cake tracking, map and UI corrections, compatibility experiments and accumulated fixes into matching Minecraft 26.1.2 and 26.2 builds." data-zh="本次稳定 Release 汇总了 Shard 工具、新提醒、Century Cake 追踪、地图与界面修正、兼容性实验，以及累计 Bug 修复，并同时提供 Minecraft 26.1.2 与 26.2 构建。">This stable Release rolls the Shard Lab, new alerts, Century Cake tracking, map and UI corrections, compatibility experiments and accumulated fixes into matching Minecraft 26.1.2 and 26.2 builds.</p>
+      </div>
+      <aside class="content-hero-aside reveal" data-delay="1">
+        <span data-en="RELEASE PROFILE" data-zh="版本概览">RELEASE PROFILE</span>
+        <strong>0.3.9</strong><p data-en="stable Release" data-zh="稳定 Release">stable Release</p>
+        <strong>2</strong><p data-en="Minecraft targets" data-zh="个 Minecraft 目标版本">Minecraft targets</p>
+        <strong>Java 25</strong><p data-en="runtime" data-zh="运行环境">runtime</p>
+      </aside>
+    </section>
+
+    <nav class="content-toc section-light reveal" aria-label="Changelog categories">
+      <a href="#added"><span>01</span><b data-en="Added" data-zh="新增">Added</b></a>
+      <a href="#changed"><span>02</span><b data-en="Changed" data-zh="调整">Changed</b></a>
+      <a href="#fixed"><span>03</span><b data-en="Fixed" data-zh="修复">Fixed</b></a>
+      <a href="#removed"><span>04</span><b data-en="Removed" data-zh="删除">Removed</b></a>
+      <a href="#compatibility"><span>05</span><b data-en="Compatibility" data-zh="兼容与产物">Compatibility</b></a>
+    </nav>
+
+    <section class="content-section section-light" id="added">
+      <div class="content-section-heading reveal"><p class="section-index">01 / 05</p><p class="kicker" data-en="NEW CAPABILITIES" data-zh="新增能力">NEW CAPABILITIES</p><h2 data-en="More information, still local." data-zh="信息更完整，仍保持本地。">More information, still local.</h2></div>
+      <div class="guide-grid guide-grid-2">
+        <article class="guide-card guide-card-accent reveal"><span>SHARD LAB</span><h3 data-en="A complete offline Shard workspace" data-zh="完整的离线 Shard 工作区">A complete offline Shard workspace</h3><p data-en="All 320 Bazaar-listed Attribute Shards now have Shard-specific icons, details, effects, family, Skill and acquisition information, direct Recipes and Uses, Fusion Trees, alternative routes, Materials Only and Ironman planning, Fusion Lines and Hunting Box warehouse counts." data-zh="320 种 Bazaar Attribute Shard 现在都拥有对应图标、详情、效果、家族、Skill 与获取方式，并支持直接配方与用途、Fusion Tree、候选路线、Materials Only、Ironman 规划、Fusion Lines，以及从 Hunting Box 读取的仓库数量。">All 320 Bazaar-listed Attribute Shards now have Shard-specific icons, details, effects, family, Skill and acquisition information, direct Recipes and Uses, Fusion Trees, alternative routes, Materials Only and Ironman planning, Fusion Lines and Hunting Box warehouse counts.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>ALERTS</span><h3 data-en="Deployables and Century Cakes" data-zh="Deployable 与 Century Cake">Deployables and Century Cakes</h3><p data-en="Power Orb and Flare despawns can show one center-screen alert with owned audio controls. Century Cake activation and refresh messages start real 48-hour timers, with a cake-icon effects screen, merged expiry notices and a click-only visit link." data-zh="Power Orb 与 Flare 彻底消失时可显示一次中央提醒，并拥有独立音效设置。Century Cake 的激活与刷新消息会启动真实 48 小时计时，并提供蛋糕图标效果页、合并到期消息及仅点击才执行的访问链接。">Power Orb and Flare despawns can show one center-screen alert with owned audio controls. Century Cake activation and refresh messages start real 48-hour timers, with a cake-icon effects screen, merged expiry notices and a click-only visit link.</p></article>
+        <article class="guide-card reveal"><span>FISHING & HUNTING</span><h3 data-en="Timely, bounded cues" data-zh="及时且有边界的提示">Timely, bounded cues</h3><p data-en="The optional Ciallo bite sound handles local water and Hypixel lava hooks once per cast. Hunting additions include Lasso REEL, Beeheemoth, Critterdex, Wumpa, Cold, capture-readiness and ownership-bounded Tree Gift cues." data-zh="可选 Ciallo 上钩提示音支持本人的水钓与 Hypixel 岩浆钓鱼，每次抛竿只播放一次。狩猎新增 Lasso REEL、Beeheemoth、Critterdex、Wumpa、寒冷、捕捉准备状态与经过归属验证的 Tree Gift 提示。">The optional Ciallo bite sound handles local water and Hypixel lava hooks once per cast. Hunting additions include Lasso REEL, Beeheemoth, Critterdex, Wumpa, Cold, capture-readiness and ownership-bounded Tree Gift cues.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>PROVIDERS</span><h3 data-en="Unified settings and HUD concept tests" data-zh="统一设置与 HUD 概念测试">Unified settings and HUD concept tests</h3><p data-en="Separate, opt-in local scanners can surface recognized settings and HUD controls from installed SkyHanni, Skyblocker, Firmament, BabyZombieAddons and Feesh builds. Refresh is manual and double-confirmed; unreadable controls appear as compatibility gaps." data-zh="两个独立、可选的本地扫描器可以显示已安装 SkyHanni、Skyblocker、Firmament、BabyZombieAddons 与 Feesh 中可识别的设置和 HUD 控件。刷新由玩家手动触发并需二次确认；无法读取的控件会列为兼容性缺口。">Separate, opt-in local scanners can surface recognized settings and HUD controls from installed SkyHanni, Skyblocker, Firmament, BabyZombieAddons and Feesh builds. Refresh is manual and double-confirmed; unreadable controls appear as compatibility gaps.</p></article>
+      </div>
+      <div class="feature-warning reveal"><b data-en="Concept test — unstable, default-off, use cautiously." data-zh="概念测试——尚不稳定、默认关闭，请谨慎使用。">Concept test — unstable, default-off, use cautiously.</b><p data-en="Unified Settings and Unified HUD Editing are not production-stable. Provider updates can invalidate mappings. Back up provider configurations and verify important changes in each provider's native editor." data-zh="统一设置与统一 HUD 编辑尚未达到稳定可用状态。兼容模组更新可能使映射失效。请备份原模组配置，并在各原生设置或 HUD 编辑器中核对重要更改。">Unified Settings and Unified HUD Editing are not production-stable. Provider updates can invalidate mappings.</p></div>
+    </section>
+
+    <section class="content-section" id="changed">
+      <div class="content-section-heading reveal"><p class="section-index">02 / 05</p><p class="kicker" data-en="REFINED EXPERIENCE" data-zh="体验调整">REFINED EXPERIENCE</p><h2 data-en="Clearer structure and presentation." data-zh="结构与呈现更清晰。">Clearer structure and presentation.</h2></div>
+      <div class="guide-grid guide-grid-3">
+        <article class="guide-card reveal"><span>VERSIONING</span><h3 data-en="New public version format" data-zh="新的公开版本格式">New public version format</h3><p data-en="The stable line is now 0.3.9 Release. Playable files use QCloudy_Addition-0.3.9+Minecraft-Release.jar, with one matching sources JAR per target." data-zh="稳定版现为 0.3.9 Release。可玩文件采用 QCloudy_Addition-0.3.9+Minecraft-Release.jar，每个目标版本都有对应 sources JAR。">The stable line is now 0.3.9 Release. Playable files use QCloudy_Addition-0.3.9+Minecraft-Release.jar, with one matching sources JAR per target.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>UI</span><h3 data-en="Function-first menus" data-zh="按功能组织菜单">Function-first menus</h3><p data-en="Fishing, Farming, Dungeons, Slayer and other major areas are first-class categories. Empty provider categories hide, secondary cards no longer duplicate their parent, and clickable recipe text gains deliberate hover and underline feedback." data-zh="钓鱼、耕种、地牢、Slayer 等大项成为独立分类。空的兼容模组分类会隐藏，二级菜单不再重复父分类，可跳转的配方文字拥有明确的悬停与下划线反馈。">Fishing, Farming, Dungeons, Slayer and other major areas are first-class categories. Empty provider categories hide, secondary cards no longer duplicate their parent, and clickable recipe text gains deliberate hover and underline feedback.</p></article>
+        <article class="guide-card reveal" data-delay="2"><span>MAPS & HUDS</span><h3 data-en="Approximate when precision would mislead" data-zh="避免虚假的精确感">Approximate when precision would mislead</h3><p data-en="The Dwarven Mines map uses a continuous real-time X/Z projection and ignores Y. HUDs render only real content, while pet and Shard displays use corrected colours, icons and spacing." data-zh="Dwarven Mines 地图改用连续实时 X/Z 投影并忽略 Y 轴。HUD 只在有真实内容时显示；宠物与 Shard 界面也修正了颜色、图标与间距。">The Dwarven Mines map uses a continuous real-time X/Z projection and ignores Y. HUDs render only real content, while pet and Shard displays use corrected colours, icons and spacing.</p></article>
+      </div>
+    </section>
+
+    <section class="content-section section-light" id="fixed">
+      <div class="content-section-heading reveal"><p class="section-index">03 / 05</p><p class="kicker" data-en="ACCUMULATED CORRECTIONS" data-zh="累计修复">ACCUMULATED CORRECTIONS</p><h2 data-en="The bugs users could actually see." data-zh="修复玩家真正会遇到的问题。">The bugs users could actually see.</h2></div>
+      <div class="guide-grid guide-grid-2">
+        <article class="guide-card reveal"><span>LIFECYCLES</span><h3 data-en="SOS replacement now resets expiry" data-zh="重新放置 SOS 会重置到期时间">SOS replacement now resets expiry</h3><p data-en="Placing a new recognized Flare replaces the old lifecycle immediately. The previous three-minute deadline cannot survive and trigger a stale alert. World changes clear pending state silently." data-zh="重新放置已识别 Flare 会立刻替换旧生命周期，旧的三分钟期限不会残留并触发错误提醒；切换世界会静默清理待处理状态。">Placing a new recognized Flare replaces the old lifecycle immediately. The previous three-minute deadline cannot survive and trigger a stale alert. World changes clear pending state silently.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>DETECTION</span><h3 data-en="Fishing, cakes and personal rewards" data-zh="钓鱼、蛋糕与个人奖励检测">Fishing, cakes and personal rewards</h3><p data-en="Lava fishing receives the same one-shot bite path as water fishing without replaying on reel-in. Tree Gifts require bounded ownership evidence. Starborn Century Cake recognizes the real Hunting Fortune wording and private stat glyph." data-zh="岩浆钓鱼使用与水钓一致的单次上钩路径，收杆不会再次播放。Tree Gift 需要有边界的归属证据。Starborn Century Cake 现在识别真实 Hunting Fortune 文案与私用区属性图标。">Lava fishing receives the same one-shot bite path as water fishing without replaying on reel-in. Tree Gifts require bounded ownership evidence. Starborn Century Cake recognizes the real Hunting Fortune wording and private stat glyph.</p></article>
+        <article class="guide-card reveal"><span>MENUS</span><h3 data-en="No more blank or duplicated categories" data-zh="不再出现空分类或重复分类">No more blank or duplicated categories</h3><p data-en="Empty Dungeons and other provider-only categories disappear. Fishing no longer opens into another redundant Fishing layer, and both unified-control master switches remain independently visible under Supported Mods." data-zh="空的地牢及其他兼容模组专属分类会直接隐藏。钓鱼不再打开另一个重复的钓鱼层级；兼容模组中的两个统一管理总开关也会独立显示。">Empty Dungeons and other provider-only categories disappear. Fishing no longer opens into another redundant Fishing layer, and both unified-control master switches remain independently visible under Supported Mods.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>RENDERING</span><h3 data-en="Maps, pets and Shards stay aligned" data-zh="地图、宠物与 Shard 保持对齐">Maps, pets and Shards stay aligned</h3><p data-en="The Park no longer exposes the Mining HUD, Golden Dragon no longer shows a false maximum level, Shard search and recipe layouts keep real hitboxes aligned with text, and navigation highlights the correct section." data-zh="The Park 不再显示挖矿 HUD，Golden Dragon 不再错误显示满级；Shard 搜索与配方布局的真实点击区会与文字对齐，网站导航也会高亮正确章节。">The Park no longer exposes the Mining HUD, Golden Dragon no longer shows a false maximum level, Shard search and recipe layouts keep real hitboxes aligned with text, and navigation highlights the correct section.</p></article>
+      </div>
+    </section>
+
+    <section class="content-section" id="removed">
+      <div class="content-section-heading reveal"><p class="section-index">04 / 05</p><p class="kicker" data-en="REMOVED, NOT HIDDEN" data-zh="真正删除，不是隐藏">REMOVED, NOT HIDDEN</p><h2 data-en="Less legacy surface to maintain." data-zh="减少遗留功能与误解。">Less legacy surface to maintain.</h2></div>
+      <div class="guide-grid guide-grid-3">
+        <article class="guide-card reveal"><span>ITEMS & MENUS</span><h3 data-en="Legacy menu automation" data-zh="旧菜单自动化">Legacy menu automation</h3><p data-en="Slot locking, Storage Overlay and menu middle-click conversion were removed from QCA rather than left as hidden switches." data-zh="Slot Locking、Storage Overlay 与菜单中键转换已从 QCA 删除，而不是作为隐藏开关残留。">Slot locking, Storage Overlay and menu middle-click conversion were removed from QCA rather than left as hidden switches.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>COMMANDS</span><h3 data-en="Two ambiguous aliases" data-zh="两个易混淆别名">Two ambiguous aliases</h3><p data-en="The /aca and /ca settings aliases were removed. Local /qca and /qc remain the supported settings commands." data-zh="设置别名 /aca 与 /ca 已删除；本地命令 /qca 与 /qc 仍是受支持的设置入口。">The /aca and /ca settings aliases were removed. Local /qca and /qc remain the supported settings commands.</p></article>
+        <article class="guide-card reveal" data-delay="2"><span>DEPLOYABLES</span><h3 data-en="Distance-based warnings" data-zh="距离型提醒">Distance-based warnings</h3><p data-en="Old range-leave and entity-unload interpretations were discarded. Power Orb and Flare alerts now mean one thing only: the tracked deployable fully ended." data-zh="旧的离开范围与实体卸载推断已删除。Power Orb 与 Flare 提醒现在只表示一件事：追踪的 Deployable 已彻底结束。">Old range-leave and entity-unload interpretations were discarded. Power Orb and Flare alerts now mean one thing only: the tracked deployable fully ended.</p></article>
+      </div>
+    </section>
+
+    <section class="content-section section-light" id="compatibility">
+      <div class="content-section-heading reveal"><p class="section-index">05 / 05</p><p class="kicker" data-en="COMPATIBILITY & ARTIFACTS" data-zh="兼容与构建产物">COMPATIBILITY & ARTIFACTS</p><h2 data-en="One Release, two exact targets." data-zh="一个 Release，两个精确目标。">One Release, two exact targets.</h2><p data-en="Release 0.3.9 is built separately for Minecraft 26.1.2 and 26.2 with Java 25. Install only the playable JAR that exactly matches the game version; sources JARs are for source browsing." data-zh="Release 0.3.9 使用 Java 25，分别为 Minecraft 26.1.2 与 26.2 构建。只安装与你游戏版本完全一致的可玩 JAR；sources JAR 仅用于浏览源码。">Release 0.3.9 is built separately for Minecraft 26.1.2 and 26.2 with Java 25.</p></div>
+      <div class="guide-grid guide-grid-2">
+        <article class="guide-card reveal"><span>MINECRAFT 26.1.2</span><h3>QCloudy_Addition-0.3.9+26.1.2-Release.jar</h3><p data-en="Playable build plus a matching -sources.jar artifact." data-zh="可玩构建及对应的 -sources.jar 产物。">Playable build plus a matching -sources.jar artifact.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>MINECRAFT 26.2</span><h3>QCloudy_Addition-0.3.9+26.2-Release.jar</h3><p data-en="Playable build plus a matching -sources.jar artifact." data-zh="可玩构建及对应的 -sources.jar 产物。">Playable build plus a matching -sources.jar artifact.</p></article>
+      </div>
+      <div class="install-actions reveal"><a class="button button-primary" href="../download/"><span data-en="Download latest Release" data-zh="下载最新 Release">Download latest Release</span><span>→</span></a><a class="text-link" href="../features/"><span data-en="Read the feature guide" data-zh="阅读功能说明">Read the feature guide</span><span>→</span></a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-brand"><img src="../assets/images/qcloudy-icon.png" alt="" width="24" height="24"><span>QCloudy_Addition</span></div>
+    <p data-en="An independent community project. Not affiliated with Hypixel or Mojang." data-zh="独立社区项目，与 Hypixel 或 Mojang 无附属关系。">An independent community project. Not affiliated with Hypixel or Mojang.</p>
+    <div class="footer-links"><a href="./" data-en="Changelog" data-zh="更新日志">Changelog</a><a href="https://github.com/gprztb6nw4-dotcom/QCloudy-Addition" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/wiki" target="_blank" rel="noreferrer">Wiki</a><a href="../download/" data-en="Download" data-zh="下载">Download</a></div>
+    <small>© 2026 NorthWestCloudy</small>
+  </footer>
+  <script src="../assets/js/main.js?v=20260825-1"></script>
+</body>
+</html>

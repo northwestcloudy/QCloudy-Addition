@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A bilingual explanation of QCloudy_Addition's client-only boundary, local data flow, explicit commands and optional provider integrations.">
+  <meta name="theme-color" content="#071216">
+  <link rel="canonical" href="https://qcloudy.net/compliance/">
+  <title>QCloudy_Addition Client-only Boundary</title>
+  <link rel="icon" href="../assets/images/qcloudy-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260825-1">
+</head>
+<body class="content-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header content-header" data-header>
+    <a class="brand" href="../#top" aria-label="QCloudy_Addition home">
+      <img src="../assets/images/qcloudy-icon.png" alt="" width="38" height="38"><span>QCloudy</span>
+    </a>
+    <button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false" data-menu-button><span></span><span></span></button>
+    <nav class="site-nav" aria-label="Main navigation" data-nav>
+      <a href="../features/" data-en="Features" data-zh="功能">Features</a>
+      <a href="../#shards" data-en="Shard Lab" data-zh="Shard 工具">Shard Lab</a>
+      <a href="../#maps" data-en="Maps" data-zh="地图">Maps</a>
+      <a class="active" href="./" aria-current="page" data-en="Client-only" data-zh="纯客户端">Client-only</a>
+      <a href="../#faq" data-en="FAQ" data-zh="常见问题">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="language-toggle" type="button" data-language-toggle aria-label="Switch language"><span data-language-label>中文</span></button>
+      <a class="button button-small button-outline" href="../download/"><span data-en="Download" data-zh="下载">Download</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="content-hero compliance-hero">
+      <div class="content-grid" aria-hidden="true"></div>
+      <div class="content-hero-copy reveal">
+        <p class="eyebrow"><span class="status-dot"></span><span data-en="CLIENT-ONLY BOUNDARY" data-zh="纯客户端边界">CLIENT-ONLY BOUNDARY</span></p>
+        <h1 data-en="Helpful, not automatic." data-zh="有帮助，但不代替你操作。">Helpful, not automatic.</h1>
+        <p data-en="QCloudy_Addition reads information already delivered to your Minecraft client and turns it into local UI, maps, HUDs and alerts. It does not play the game for you." data-zh="QCloudy_Addition 读取已经送达 Minecraft 客户端的信息，并在本地生成界面、地图、HUD 与提醒。它不会代替你进行游戏操作。">QCloudy_Addition reads information already delivered to your Minecraft client and turns it into local UI, maps, HUDs and alerts. It does not play the game for you.</p>
+      </div>
+      <aside class="content-hero-aside boundary-summary reveal" data-delay="1">
+        <span data-en="RUNTIME DEFAULT" data-zh="运行时默认行为">RUNTIME DEFAULT</span>
+        <strong>0</strong><p data-en="HTTP, WebSocket or telemetry clients" data-zh="个 HTTP、WebSocket 或遥测客户端">HTTP, WebSocket or telemetry clients</p>
+        <strong>0</strong><p data-en="automatic clicks, movement or gameplay actions" data-zh="次自动点击、移动或游戏操作">automatic clicks, movement or gameplay actions</p>
+        <strong>1×</strong><p data-en="direct player action before every outbound action" data-zh="每次外发操作都必须由玩家直接触发">direct player action before every outbound action</p>
+      </aside>
+    </section>
+
+    <nav class="content-toc section-light reveal" aria-label="Compliance topics">
+      <a href="#boundary"><span>01</span><b data-en="Core boundary" data-zh="核心边界">Core boundary</b></a>
+      <a href="#data"><span>02</span><b data-en="Local data flow" data-zh="本地数据流">Local data flow</b></a>
+      <a href="#actions"><span>03</span><b data-en="Explicit actions" data-zh="明确操作">Explicit actions</b></a>
+      <a href="#providers"><span>04</span><b data-en="Other mods" data-zh="其他模组">Other mods</b></a>
+      <a href="#policy"><span>05</span><b data-en="Player responsibility" data-zh="玩家责任">Player responsibility</b></a>
+    </nav>
+
+    <section class="content-section section-light" id="boundary">
+      <div class="content-section-heading reveal">
+        <p class="section-index">01 / 05</p><p class="kicker" data-en="THE LINE QCA WILL NOT CROSS" data-zh="QCA 不会越过的边界">THE LINE QCA WILL NOT CROSS</p>
+        <h2 data-en="Information in. Local presentation out." data-zh="读取信息，本地呈现。">Information in. Local presentation out.</h2>
+        <p data-en="The mod observes client-visible text, menus, entities and item data. Its own features stop at presentation and player-requested convenience actions." data-zh="模组观察客户端可见的文字、菜单、实体与物品数据。QCA 自身功能止于信息呈现，以及由玩家主动请求的便捷操作。">The mod observes client-visible text, menus, entities and item data. Its own features stop at presentation and player-requested convenience actions.</p>
+      </div>
+      <div class="audit-grid">
+        <article class="audit-card audit-yes reveal"><span>✓</span><h3 data-en="What QCA does" data-zh="QCA 会做什么">What QCA does</h3><ul><li data-en="Render local HUDs, maps, outlines and menus" data-zh="渲染本地 HUD、地图、轮廓与菜单">Render local HUDs, maps, outlines and menus</li><li data-en="Play feature-owned local alert sounds" data-zh="播放功能自己的本地提示音">Play feature-owned local alert sounds</li><li data-en="Store local configuration and observed client data" data-zh="保存本地设置和已观察到的客户端数据">Store local configuration and observed client data</li><li data-en="Open documented actions after a direct click or command" data-zh="在直接点击或输入命令后执行已写明的操作">Open documented actions after a direct click or command</li></ul></article>
+        <article class="audit-card audit-no reveal" data-delay="1"><span>×</span><h3 data-en="What QCA does not do" data-zh="QCA 不会做什么">What QCA does not do</h3><ul><li data-en="Move, aim, click, cast, reel, fight or fuse automatically" data-zh="自动移动、瞄准、点击、抛竿、收杆、战斗或 Fusion">Move, aim, click, cast, reel, fight or fuse automatically</li><li data-en="Retry connections or send commands in the background" data-zh="后台自动重连或发送命令">Retry connections or send commands in the background</li><li data-en="Run its own Bazaar, Wiki, telemetry or update network client" data-zh="自行访问 Bazaar、Wiki、遥测或更新服务">Run its own Bazaar, Wiki, telemetry or update network client</li><li data-en="Guess unsupported provider settings and write them anyway" data-zh="猜测不受支持的其他模组设置并强行写入">Guess unsupported provider settings and write them anyway</li></ul></article>
+      </div>
+    </section>
+
+    <section class="content-section" id="data">
+      <div class="content-section-heading reveal">
+        <p class="section-index">02 / 05</p><p class="kicker" data-en="LOCAL DATA FLOW" data-zh="本地数据流">LOCAL DATA FLOW</p>
+        <h2 data-en="No hidden cloud service." data-zh="没有隐藏的云端服务。">No hidden cloud service.</h2>
+      </div>
+      <div class="guide-grid guide-grid-3">
+        <article class="guide-card reveal"><span>01</span><h3 data-en="Received by Minecraft" data-zh="Minecraft 已接收">Received by Minecraft</h3><p data-en="QCA works from text, entities, item stacks and menus that the connected server has already delivered to the client." data-zh="QCA 使用连接中的服务器已经发送给客户端的文字、实体、物品堆与菜单。">QCA works from text, entities, item stacks and menus that the connected server has already delivered to the client.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>02</span><h3 data-en="Processed locally" data-zh="本地处理">Processed locally</h3><p data-en="Matching, timers, layout, route planning and compatibility scans run inside the game process. No cloud AI is required." data-zh="匹配、计时、布局、路线规划与兼容性扫描都在游戏进程内完成，不需要云端 AI。">Matching, timers, layout, route planning and compatibility scans run inside the game process. No cloud AI is required.</p></article>
+        <article class="guide-card reveal" data-delay="2"><span>03</span><h3 data-en="Rendered for the player" data-zh="呈现给玩家">Rendered for the player</h3><p data-en="The result becomes local text, sound, a menu, a marker or a vanilla outline. It does not alter server gameplay state." data-zh="结果会变成本地文字、声音、菜单、标记或原版轮廓，不会修改服务器游戏状态。">The result becomes local text, sound, a menu, a marker or a vanilla outline. It does not alter server gameplay state.</p></article>
+      </div>
+      <div class="feature-warning reveal"><b data-en="Concept test — not a compatibility guarantee." data-zh="概念测试——不代表永久兼容。">Concept test — not a compatibility guarantee.</b><p data-en="Unified Settings and Unified HUD Editing are default-off experimental tools. A provider update can invalidate a recognized mapping. QCA fails closed when uncertain, but users should still back up provider configs and confirm important edits in the provider's own interface." data-zh="统一设置与统一 HUD 编辑是默认关闭的实验工具。兼容模组更新可能使既有映射失效；QCA 会在不确定时停止写入，但用户仍应备份原模组配置，并在原模组界面核对重要编辑。">Unified Settings and Unified HUD Editing are default-off experimental tools.</p></div>
+      <div class="content-note reveal"><b data-en="The website and the mod have different boundaries." data-zh="官网与模组的网络边界不同。">The website and the mod have different boundaries.</b><p data-en="qcloudy.net may read the public GitHub Release metadata needed for the download page. The installed Minecraft mod does not include that website code or perform that request." data-zh="qcloudy.net 的下载页可能读取公开的 GitHub Release 元数据。安装到 Minecraft 的模组不包含这些网页代码，也不会发起这项请求。">qcloudy.net may read the public GitHub Release metadata needed for the download page. The installed Minecraft mod does not include that website code or perform that request.</p></div>
+    </section>
+
+    <section class="content-section section-light" id="actions">
+      <div class="content-section-heading reveal">
+        <p class="section-index">03 / 05</p><p class="kicker" data-en="VISIBLE, PLAYER-REQUESTED ACTIONS" data-zh="可见、由玩家请求的操作">VISIBLE, PLAYER-REQUESTED ACTIONS</p>
+        <h2 data-en="Nothing is sent silently." data-zh="不会静默发送任何操作。">Nothing is sent silently.</h2>
+        <p data-en="The following actions exist for convenience, but each one requires a direct player click or command. None runs on a timer or in the background." data-zh="以下操作用于便利，但每一项都需要玩家直接点击或输入命令。它们不会按计时器或在后台自动执行。">The following actions exist for convenience, but each one requires a direct player click or command. None runs on a timer or in the background.</p>
+      </div>
+      <div class="command-grid">
+        <article class="command-card reveal"><code>/th</code><div><h3 data-en="Warp to Torrhus" data-zh="前往 Torrhus">Warp to Torrhus</h3><p><span data-en="Sends exactly" data-zh="准确发送">Sends exactly</span> <code>warp torrhus</code>.</p></div></article>
+        <article class="command-card reveal" data-delay="1"><code>/helia</code><div><h3 data-en="Open Torrhus Chapter" data-zh="打开 Torrhus Chapter">Open Torrhus Chapter</h3><p><span data-en="Sends exactly" data-zh="准确发送">Sends exactly</span> <code>chapter torrhus</code>.</p></div></article>
+        <article class="command-card reveal"><span class="command-click" data-en="Cake link" data-zh="蛋糕链接">Cake link</span><div><h3 data-en="Visit for Century Cakes" data-zh="前往补充 Century Cake">Visit for Century Cakes</h3><p><span data-en="The underlined chat link sends" data-zh="带下划线的聊天链接会发送">The underlined chat link sends</span> <code>/visit northwestcloudy</code> <span data-en="only after it is clicked" data-zh="且只会在点击后发送">only after it is clicked</span>.</p></div></article>
+        <article class="command-card reveal" data-delay="1"><span class="command-click" data-en="Reconnect" data-zh="重新连接">Reconnect</span><div><h3 data-en="One manual connection" data-zh="一次手动连接">One manual connection</h3><p data-en="The Reconnect button starts one normal connection after a click. There is no automatic retry loop." data-zh="点击 Reconnect 后只发起一次普通连接，不存在自动重试循环。">The Reconnect button starts one normal connection after a click. There is no automatic retry loop.</p></div></article>
+      </div>
+      <div class="content-note reveal"><b data-en="Local-only commands" data-zh="纯本地命令">Local-only commands</b><p data-en="/qca, /qc, /qshard, /cake and /centurycakeeffect open local QCA interfaces and are not sent to the server." data-zh="/qca、/qc、/qshard、/cake 与 /centurycakeeffect 只打开 QCA 本地界面，不会发送到服务器。">/qca, /qc, /qshard, /cake and /centurycakeeffect open local QCA interfaces and are not sent to the server.</p></div>
+    </section>
+
+    <section class="content-section" id="providers">
+      <div class="content-section-heading reveal">
+        <p class="section-index">04 / 05</p><p class="kicker" data-en="OPTIONAL PROVIDERS" data-zh="可选兼容模组">OPTIONAL PROVIDERS</p>
+        <h2 data-en="Integrates without taking ownership." data-zh="统一管理，但不夺走原模组的控制权。">Integrates without taking ownership.</h2>
+        <p data-en="SkyHanni, Skyblocker, Firmament, BabyZombieAddons and Feesh are optional. QCA starts without them and exposes only recognized controls from installed builds." data-zh="SkyHanni、Skyblocker、Firmament、BabyZombieAddons 与 Feesh 都是可选项。没有它们 QCA 仍可启动，并且只显示已安装版本中能够识别的控件。">SkyHanni, Skyblocker, Firmament, BabyZombieAddons and Feesh are optional. QCA starts without them and exposes only recognized controls from installed builds.</p>
+      </div>
+      <div class="guide-grid guide-grid-3">
+        <article class="guide-card reveal"><span>OPT-IN</span><h3 data-en="Separate master switches" data-zh="独立总开关">Separate master switches</h3><p data-en="Unified Settings and Unified HUD Editing are separate, default-off features with independent scans and results." data-zh="统一设置与统一 HUD 编辑是两个独立、默认关闭的功能，各自扫描并显示结果。">Unified Settings and Unified HUD Editing are separate, default-off features with independent scans and results.</p></article>
+        <article class="guide-card reveal" data-delay="1"><span>LOCAL</span><h3 data-en="Deterministic discovery" data-zh="确定性的本地发现">Deterministic discovery</h3><p data-en="Known paths and bounded local classification identify compatible controls. Refresh is manual and scanning requires confirmation." data-zh="通过已知路径与有边界的本地分类识别兼容控件。刷新由玩家手动触发，扫描前需要确认。">Known paths and bounded local classification identify compatible controls. Refresh is manual and scanning requires confirmation.</p></article>
+        <article class="guide-card reveal" data-delay="2"><span>FAIL CLOSED</span><h3 data-en="Unknown stays untouched" data-zh="未知项目保持不动">Unknown stays untouched</h3><p data-en="If QCA cannot safely read or save a control, it is reported as unavailable instead of being guessed or modified." data-zh="如果 QCA 无法安全读取或保存某个控件，它会被报告为不可用，而不是被猜测或修改。">If QCA cannot safely read or save a control, it is reported as unavailable instead of being guessed or modified.</p></article>
+      </div>
+    </section>
+
+    <section class="content-section section-light" id="policy">
+      <div class="content-section-heading reveal">
+        <p class="section-index">05 / 05</p><p class="kicker" data-en="BEFORE YOU INSTALL" data-zh="安装之前">BEFORE YOU INSTALL</p>
+        <h2 data-en="Transparent design is not permission." data-zh="透明设计不等于官方许可。">Transparent design is not permission.</h2>
+        <p data-en="Hypixel decides its rules and enforcement. QCloudy_Addition is an independent community project, not affiliated with Hypixel or Mojang, and every modification remains the player's responsibility." data-zh="Hypixel 决定其规则与执行方式。QCloudy_Addition 是独立社区项目，与 Hypixel 或 Mojang 无附属关系；使用任何模组仍由玩家自行负责。">Hypixel decides its rules and enforcement. QCloudy_Addition is an independent community project, not affiliated with Hypixel or Mojang, and every modification remains the player's responsibility.</p>
+      </div>
+      <div class="policy-banner reveal">
+        <div><span data-en="READ THE CURRENT RULES" data-zh="阅读当前规则">READ THE CURRENT RULES</span><h3 data-en="Check official guidance before playing." data-zh="游玩前请检查官方指引。">Check official guidance before playing.</h3></div>
+        <div class="policy-links"><a class="button button-primary" href="https://support.hypixel.net/hc/en-us/articles/6472550754962" target="_blank" rel="noreferrer"><span data-en="Allowed modifications" data-zh="允许的模组">Allowed modifications</span><span>↗</span></a><a class="text-link" href="https://support.hypixel.net/hc/en-us/articles/6472558434962" target="_blank" rel="noreferrer"><span data-en="SkyBlock rules" data-zh="SkyBlock 规则">SkyBlock rules</span><span>↗</span></a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-brand"><img src="../assets/images/qcloudy-icon.png" alt="" width="24" height="24"><span>QCloudy_Addition</span></div>
+    <p data-en="An independent community project. Not affiliated with Hypixel or Mojang." data-zh="独立社区项目，与 Hypixel 或 Mojang 无附属关系。">An independent community project. Not affiliated with Hypixel or Mojang.</p>
+    <div class="footer-links"><a href="../changelog/" data-en="Changelog" data-zh="更新日志">Changelog</a><a href="https://github.com/gprztb6nw4-dotcom/QCloudy-Addition" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/wiki" target="_blank" rel="noreferrer">Wiki</a><a href="../download/" data-en="Download" data-zh="下载">Download</a></div>
+    <small>© 2026 NorthWestCloudy</small>
+  </footer>
+  <script src="../assets/js/main.js?v=20260825-1"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文对应 Minecraft 26.1.2 的 `0.2.9-alpha.30`，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。
+本文对应 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。
 
 ## 1. 总体架构
 
@@ -25,6 +25,8 @@ Tab / 计分板 / 聊天 / 已打开菜单 / 标题 / 已加载实体 / 本地�
 ```
 
 ### 1.1 可选统一提供方适配器
+
+> **实验性概念测试：**“统一设置编辑”和“统一 HUD 编辑”均默认关闭，目前尚不稳定。第三方模组更新可能让已识别结构失效。请先备份配置，并在对应模组原生编辑器中核对重要改动，谨慎使用。
 
 `UnifiedModIntegration` 识别 SkyHanni、Skyblocker、Firmament 与 BabyZombieAddons 的提供方 ID，但不会因为安装版本更高或版本号不在白名单中就拒绝整个模组。QCA 不对它们产生编译依赖。`ModConfig.Integrations` 中有两个相互独立且默认值为 false 的门控。未启用“统一设置编辑”时，普通设置目录只从 QCA 自身功能构建，不探测第三方配置；未启用“统一 HUD 编辑”时，`externalHuds()` 在探测提供方前直接返回空列表。只启用 HUD 总开关同样有效，此时仅进行识别第三方 HUD 所需的探测，不开放第三方设置卡片。QCA 自身设置与 HUD 不经过这两个门控。
 
@@ -54,7 +56,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 - Minecraft 本地键盘/鼠标输入事件与有限输入 Mixin。
 - `HudElementRegistry` 提交屏幕 HUD。
-- Minecraft 26.1.2 的 `GuiGraphicsExtractor` 绘制文字、物品、面板和贴图。
+- Minecraft 26.1.2 与 26.2 的 `GuiGraphicsExtractor` 绘制文字、物品、面板和贴图；版本差异隔离在 `MinecraftClientCompat` 中。
 - 本地 `qcloudy_addition.json` 保存配置。
 - 内置 `en_us.json`、`zh_cn.json` 翻译 QCA 自有文字。
 
@@ -399,4 +401,4 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 
 ## 15. 应如何验收
 
-自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与四个指定参考模组联合初始化。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境或规则解释。因此从 Alpha 升级 Beta 或 Release 前，应按本文“应呈现效果”逐项在登录 Hypixel 的环境进行回归，并以 `VALIDATION_zh_CN.md` 中列出的剩余边界为准。
+自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与已审核参考模组组合。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境、提供方更新或规则解释。因此 Release `0.3.9` 仍明确把统一设置和统一 HUD 编辑器标为实验性；登录 Hypixel 与真实整合包回归仍是独立的验证边界。

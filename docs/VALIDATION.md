@@ -1,3 +1,37 @@
+# QCloudy_Addition 0.3.9 Release dual-target validation
+
+Date: 2026-08-25<br>
+Minecraft: 26.1.2 and 26.2<br>
+Java: 25
+
+Validated artifacts and SHA-256:
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release.jar` — 3,509,330 bytes — `bd6c986fbed65d2fe0368e275efd72996b48ad420550ead82c67c19b79b608cb`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release-sources.jar` — 3,058,260 bytes — `e72e00f402fb7a8e60e2830cf556172f508c25f7e9a99c2461706de4a080beb5`
+- `release/QCloudy_Addition-0.3.9+26.2-Release.jar` — 3,509,334 bytes — `bb3273bb3eb4135ff60c7c647e75f2ade86ca5c967e99b39311e179cc0368e97`
+- `release/QCloudy_Addition-0.3.9+26.2-Release-sources.jar` — 3,058,249 bytes — `e6d8ee0d00498102826816e8f688bdc730bbfb1133dc4e66ed120de82f6d5891`
+- `release/QCloudy_Addition_Website-0.3.9-20260825.zip` — 1,525,939 bytes — `0b6a640a770a7f02a141d13dc1c37ee288e0f37ee472adb1e6c6c19957f194a3`
+
+Verified in this workspace:
+
+- `tools/build_all_versions.sh` completed `clean test build prepareRelease` successfully for both Minecraft targets.
+- Each target ran 197 tests with 0 failures and 0 errors.
+- Expanded metadata declares `0.3.9+26.1.2` or `0.3.9+26.2`, the exact Minecraft target, its matching Fabric API dependency, Java 25, and `environment: client`.
+- All inspected class files use Java major version 69 (Java 25).
+- English and Simplified Chinese each contain 534 language keys, and both key sets are identical.
+- Both playable JARs contain exactly 320 per-ID Shard item definitions, 320 models, and 320 textures.
+- All four artifacts pass JDK 25 `jar --validate` and `unzip -t`. Every file is byte-identical to its corresponding copy under the target-specific `build/*/libs/` directory.
+- Release 0.3.9 preserves the client-only behavior boundary and adds no autonomous movement, menu clicking, combat, fishing, fusion, or server-command loop.
+- Unified settings management and unified HUD management remain separate, default-off experimental concept tests. Passing local contract tests does not establish compatibility with future provider updates.
+- The website deployment archive passes `unzip -t`, contains no outer wrapper directory, excludes the preserved historical website ZIP, and has valid local links across all six HTML pages. Its bundled JavaScript passes Node syntax checks.
+
+Outstanding live regression boundary:
+
+- Automated tests and archive checks do not replace an authenticated Hypixel session or a full current provider-mod pack. Natural Power Orb/Flare expiry, SOS replacement timing, Century Cake activation/expiry, Tree Gift ownership signals, and provider-backed setting/HUD writes still require live regression before compatibility can be treated as confirmed.
+- The website package, GitHub Release, Modrinth entry, and GitHub Wiki were prepared locally but were not deployed or published by this validation run.
+
+---
+
 # QCloudy_Addition 0.2.9 Alpha 30 single-target validation
 
 Date: 2026-08-21<br>

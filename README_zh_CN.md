@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是适用于 Minecraft 26.1.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前 Alpha 只构建 Minecraft 26.1.2。
+QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前稳定版为 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [当前 0.2.9 Alpha 30 更新日志](CHANGELOG_zh_CN.md)
+- [当前 0.3.9 Release 更新日志](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -16,15 +16,17 @@ QCloudy_Addition 是适用于 Minecraft 26.1.2 的纯客户端 Fabric 模组。�
 
 语言选项只翻译 QCA 自己的界面标签。Hypixel 地点、任务、宠物、皮肤、配件、物品以及玩家重命名的 HOTM 配置均保留客户端收到的原始名称；例如 `Terminator` 不会被改写成中文名称。
 
-## 统一 SkyBlock 模组控制——Alpha
+## 统一 SkyBlock 模组控制——概念测试
 
-QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功能，以及已安装的 **SkyHanni**、**Skyblocker**、**Firmament**、**BabyZombieAddons**、**Feesh** 中能够安全识别的内容。“统一设置编辑”和“统一 HUD 编辑”是两个相互独立且默认关闭的总开关。每一次提供方扫描都必须经过第二次确认：首次开启没有有效会话快照的编辑器，以及每一次点击 **Refresh**，都会先显示与设置或 HUD 范围对应的确认窗口。取消首次确认会保持总开关关闭；取消 Refresh 会保留上一份有效快照。重启后即使总开关仍为开启，也不会静默扫描。确认后才会打开可视化进度页面。设置页只报告可管理设置，HUD 页只报告可管理 HUD。普通打开设置菜单不会扫描，未安装的模组不会显示，两个开关都关闭时会取消待处理工作并释放会话快照。适配不使用精确版本白名单，因此提供方更新后，仍兼容的已识别分支可以继续工作，未知或变化分支则逐项跳过。当前 Alpha 只发布 Minecraft 26.1.2 构建。
+> **谨慎使用：**“统一设置编辑”和“统一 HUD 编辑”目前都是概念测试，默认关闭且尚不稳定。第三方模组更新后，个别字段可能无法识别。请谨慎开启、提前备份配置，并在对应模组自己的设置/HUD 编辑器中核对每次写入；第三方模组原生编辑器始终具有最终权威。
+
+QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功能，以及已安装的 **SkyHanni**、**Skyblocker**、**Firmament**、**BabyZombieAddons**、**Feesh** 中能够安全识别的内容。“统一设置编辑”和“统一 HUD 编辑”是两个相互独立且默认关闭的总开关。每一次提供方扫描都必须经过第二次确认：首次开启没有有效会话快照的编辑器，以及每一次点击 **Refresh**，都会先显示与设置或 HUD 范围对应的确认窗口。取消首次确认会保持总开关关闭；取消 Refresh 会保留上一份有效快照。重启后即使总开关仍为开启，也不会静默扫描。确认后才会打开可视化进度页面。设置页只报告可管理设置，HUD 页只报告可管理 HUD。普通打开设置菜单不会扫描，未安装的模组不会显示，两个开关都关闭时会取消待处理工作并释放会话快照。适配不使用精确版本白名单，因此提供方更新后，仍兼容的已识别分支可以继续工作，未知或变化分支则逐项跳过。Release 0.3.9 分别发布 Minecraft 26.1.2 与 26.2 构建。
 
 分类首先采用提供方原生路径和已经验证的规则；只有仍未分类的功能才会交给小型、确定性的本地元数据分类器。它使用固定权重和置信度门槛，不下载模型、不联网，也无权判断两个功能是否等价或写入提供方数值。
 
 多个兼容模组存在完全相同的功能时，QCA 只显示一张统一卡片。右键卡片后，第一项用于选择提供方，下面直接显示所选模组中能够安全编辑的原生设置。开启卡片会启用所选实现，并只关闭其他模组中完全等价的实现；用途不同的价格、利润、Tooltip 或追踪功能不会被错误合并。所有数值都写入对应模组的实时配置，并通过该模组自己的保存路径落盘；QCA 不会在模组未加载时直接改写它的配置文件。
 
-原有 **编辑 HUD** 界面也会显示所选兼容提供方中已经启用的 HUD，并标注模组名称。拖动或缩放第三方 HUD 时只更新预览，松开鼠标才写回其原生位置/缩放。本 Alpha 安全支持已校验的布尔、枚举、有边界数值、位置和缩放；自定义颜色对象、复合快捷键对象等提供方专属复杂编辑器暂时保留在对应模组自己的界面中。
+原有 **编辑 HUD** 界面也会显示所选兼容提供方中已经启用的 HUD，并标注模组名称。拖动或缩放第三方 HUD 时只更新预览，松开鼠标才写回其原生位置/缩放。当前概念测试仅安全支持已校验的布尔、枚举、有边界数值、位置和缩放；自定义颜色对象、复合快捷键对象等提供方专属复杂编辑器暂时保留在对应模组自己的界面中。
 
 一级分类顺序为：**通用、地图、物品与菜单、战斗、地牢、Slayer、挖矿、种地、砍树、钓鱼、狩猎、Rift、活动**，但没有任何 QCA 或已发现提供方功能的分类会直接隐藏。Safari 是狩猎下级组，Garden 是种地下级组，Crimson Isle/Kuudra 是战斗下级组；钓鱼上钩功能使用“咬钩提示”下级组，不再重复显示“钓鱼 → 钓鱼”。每个功能只有一个归属，只出现一次。
 
@@ -111,13 +113,13 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 
 ## 安装
 
-1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2；当前 Alpha 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
+1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2，或 Minecraft 26.2 与 Fabric API 0.154.2+26.2；Release 0.3.9 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
 2. 将文件名末尾与当前 Minecraft 版本完全一致的 `QCloudy_Addition-*.jar` 放入实例 `mods` 文件夹；Mod Menu 为可选依赖。
 3. 启动游戏后按 `O` 或输入任一本地设置命令进行配置。
 
 ## 从源码构建
 
-安装 JDK 25 后运行 `./gradlew clean test build prepareRelease`。当前 Alpha 会测试并在 `release/` 生成 Minecraft 26.1.2 的可运行 JAR 和 Sources JAR。项目已包含固定为 Gradle 9.6.1 的 Wrapper与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据由本地 NEU item-repo 快照离线生成并直接打包进 QCA；发布版运行时不会联网，也不需要 Firmament。
+安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。Release 0.3.9 会测试并在 `release/` 分别生成 Minecraft 26.1.2 与 26.2 的可运行 JAR 和 Sources JAR。项目已包含固定为 Gradle 9.6.1 的 Wrapper与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据由本地 NEU item-repo 快照离线生成并直接打包进 QCA；发布版运行时不会联网，也不需要 Firmament。
 
 ## 安全边界
 
@@ -131,7 +133,7 @@ Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确
 
 Modrinth 中文发布描述：[docs/MODRINTH_DESCRIPTION_zh_CN.md](docs/MODRINTH_DESCRIPTION_zh_CN.md)
 
-当前 0.2.9 Alpha 30 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
+当前 0.3.9 Release 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
 
 发布检查清单：[docs/PUBLISHING_CHECKLIST_zh_CN.md](docs/PUBLISHING_CHECKLIST_zh_CN.md)
 

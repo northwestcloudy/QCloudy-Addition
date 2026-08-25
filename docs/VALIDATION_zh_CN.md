@@ -1,3 +1,37 @@
+# QCloudy_Addition 0.3.9 Release 双目标验证
+
+日期：2026-08-25<br>
+Minecraft：26.1.2 与 26.2<br>
+Java：25
+
+已验证产物与 SHA-256：
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release.jar` — 3,509,330 字节 — `bd6c986fbed65d2fe0368e275efd72996b48ad420550ead82c67c19b79b608cb`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Release-sources.jar` — 3,058,260 字节 — `e72e00f402fb7a8e60e2830cf556172f508c25f7e9a99c2461706de4a080beb5`
+- `release/QCloudy_Addition-0.3.9+26.2-Release.jar` — 3,509,334 字节 — `bb3273bb3eb4135ff60c7c647e75f2ade86ca5c967e99b39311e179cc0368e97`
+- `release/QCloudy_Addition-0.3.9+26.2-Release-sources.jar` — 3,058,249 字节 — `e6d8ee0d00498102826816e8f688bdc730bbfb1133dc4e66ed120de82f6d5891`
+- `release/QCloudy_Addition_Website-0.3.9-20260825.zip` — 1,525,939 字节 — `0b6a640a770a7f02a141d13dc1c37ee288e0f37ee472adb1e6c6c19957f194a3`
+
+本工作区已验证：
+
+- `tools/build_all_versions.sh` 已对两个 Minecraft 目标成功完成 `clean test build prepareRelease`。
+- 每个目标均运行 197 项测试，0 failure、0 error。
+- 展开元数据分别声明 `0.3.9+26.1.2` 或 `0.3.9+26.2`、精确 Minecraft 目标、匹配的 Fabric API 依赖、Java 25 及 `environment: client`。
+- 已检查的 class 文件均使用 Java major version 69（Java 25）。
+- 英文与简体中文各有 534 个语言键，两套键集完全一致。
+- 两个可运行 JAR 均精确包含 320 个按 ID 分配的 Shard item 定义、320 个模型和 320 张材质。
+- 四个产物全部通过 JDK 25 `jar --validate` 与 `unzip -t`；每个文件都与目标专属 `build/*/libs/` 中的对应副本逐字节一致。
+- Release 0.3.9 保持纯客户端边界，没有加入自动移动、菜单点击、战斗、钓鱼、Fusion 或服务器指令循环。
+- 统一设置管理和统一 HUD 管理仍是相互独立、默认关闭的实验性概念测试。通过本地契约测试不等于能兼容提供方未来的更新。
+- 官网部署包已通过 `unzip -t`，没有外层包装目录，不含保留的历史官网 ZIP；六个 HTML 页面中的本地链接均有效，内置 JavaScript 也已通过 Node 语法检查。
+
+尚未覆盖的实服回归边界：
+
+- 自动测试和归档检查不能代替已登录 Hypixel 的实测或完整的当前提供方模组。Power Orb/Flare 自然到期、SOS 替换计时、Century Cake 生效/过期、Tree Gift 所有权信号以及提供方设置/HUD 写入仍需要实服回归，才能视为已确认兼容。
+- 官网包、GitHub Release、Modrinth 项目页和 GitHub Wiki 已在本地准备，但本次验证没有执行部署或发布。
+
+---
+
 # QCloudy_Addition 0.2.9 Alpha 30 单目标验证
 
 日期：2026-08-21<br>

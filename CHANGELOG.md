@@ -2,6 +2,61 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.9] - 2026-08-25
+
+Stable Release for Minecraft 26.1.2 and 26.2. This entry consolidates every public change completed after the previous stable Release 2.5.3; the individual Alpha and Beta entries remain below as the detailed development history.
+
+### Added since Release 2.5.3
+
+- Added a completely offline Attribute Shard guide for the exact 320 Bazaar-listed Shards, with Shard-specific icons, semantic rarity/category/family/Skill colours, Details, Recipes, Uses, ordered inputs, quantities, alternate outputs, acquisition methods, natural-plus-Fusion sources, and clear clickable navigation.
+- Added the local Shard Planner: target quantities, complete multi-step Fusion Trees, alternate routes, Materials Only, Fastest/Cheapest and Ironman modes, Kraken/Kuudra parameters, editable Shards-per-hour rates, direct input/output recipe relations, draggable Fusion Lines, and a Hunting Box warehouse populated only after the player opens `/hb`.
+- Added optional price-aware routes through safely recognised cached data exposed by compatible installed providers. QCA never performs its own Bazaar HTTP request; price modes stay unavailable when no safe provider is present.
+- Added the configurable Fishing Bite Sound with the bundled Ciallo cue, water and lava detection, one playback per hook, a dedicated Fishing category, default-off enable state, and an independent volume control.
+- Added function-first unified settings and HUD management for recognised capabilities from installed SkyHanni, Skyblocker, Firmament, BabyZombieAddons, and Feesh builds. Settings and HUDs have separate default-off master switches, confirmation dialogs, progress views, Refresh actions, capability-based version-drift handling, and a read-only Compatibility Gaps report.
+- **Experimental warning:** the Unified Settings Editor and Unified HUD Editor are concept tests, remain disabled by default, and are not yet stable. Provider updates may invalidate recognised mappings; use them cautiously, keep backups, and verify writes in the provider-native editor.
+- Added Power Orb and Flare despawn alerts. Four player-owned Power Orbs use exact received despawn messages; Warning, Alert, and SOS Flares use a confirmed three-minute local lifecycle with replacement timing, center text, optional sound, and a 64% default volume.
+- Added unified Century Cake tracking for all 20 cakes, real-world 48-hour timers, `/cake` and `/centurycakeeffect`, cake-head tooltips, one master alert switch, merged expiry notices, and an underlined renewal action that sends `/visit northwestcloudy` only after a direct click.
+- Added separate Minecraft 26.1.2 and 26.2 builds, bilingual Wiki material, release validation, and a version-aware official website/download page.
+
+### Changed and improved
+
+- Replaced and recalibrated the Dwarven Mines map. Its marker now uses one continuous approximate X/Z projection, updates live, ignores Y and scoreboard sub-location snapping, and remains visible on bridges and above The Mist.
+- Reworked the Shard guide and planner layouts for wide, narrow, and resized screens. Recipe inputs/outputs now form compact content-width groups, click targets follow visible content, and search focus can be released without closing the screen.
+- Corrected Epic to Minecraft dark purple (`§5`) and aligned Shard rarity, effect, family, mob-type, Skill, acquisition, and navigation colours with their corresponding game/Wiki semantics.
+- Made empty HUD panels and empty settings categories disappear instead of leaving blank frames. Fishing now uses the specific **Bite Alerts** subgroup instead of a redundant Fishing → Fishing hierarchy.
+- Made optional provider discovery on-demand, immutable-snapshot based, and capability driven instead of blocking every unlisted provider version. Changed or unknown branches fail closed while safely recognised branches remain usable.
+- Corrected unmaxed Golden/Jade Dragon level and XP presentation in the Equipped Pet HUD.
+
+### Fixed
+
+- Fixed replacing an active SOS/Flare without resetting the old three-minute timer. A recognised replacement now restarts the complete lifecycle even when a confirmation callback is missed; unrelated held items cannot reset it.
+- Fixed water/lava fishing inconsistencies and the duplicate Ciallo playback caused by reeling the same hook.
+- Fixed personal Tree Gift creature alerts failing to trigger while still preventing another player's public event from arming the local alert.
+- Fixed The Park's `Jungle Island` being mistaken for Crystal Hollows `Jungle`, which displayed the mining HUD on the wrong island.
+- Fixed first-use and refresh parsing for Century Cakes, including Starborn Century Cake's private-use stat glyph and canonical `Hunting Fortune` label.
+- Fixed Dwarven marker jumps, disappearance and desynchronisation, Golden Dragon falsely showing level 200, and multiple settings/Shard UI overlap, clipping, focus and narrow-window issues.
+
+### Removed or replaced
+
+- Removed slot locking, Storage Overlay, and menu middle-click conversion from implementation, configuration, tests, and current documentation.
+- Removed the local `/aca` and `/ca` settings aliases. `/qca` and `/qc` remain available.
+- Removed the old Dwarven per-region clamp, Y-layer selection, and scoreboard sub-location snapping; the continuous X/Z-only projection replaces them.
+- Removed the incomplete Flare chat assumption and all distance/range/entity-unload expiry guesses; confirmed local lifecycle expiry replaces them.
+- Removed exact provider-version whitelisting as the primary compatibility gate; per-capability validation now determines what can be exposed.
+
+### Compatibility and safety
+
+- Release 0.3.9 remains a standalone, client-only Fabric mod. Optional provider mods are not startup dependencies, and unsupported capabilities are omitted.
+- Requires Java 25 and Fabric Loader 0.19.3 or newer. Minecraft 26.1.2 uses Fabric API 0.155.2+26.1.2; Minecraft 26.2 uses Fabric API 0.154.2+26.2.
+- QCA does not automate movement, clicks, fishing, Fusion, cake use, deployables, reconnection, or gameplay. Local screen commands send nothing. The documented `/th`, `/helia`, and clickable Century Cake renewal actions require direct player input.
+
+### Release artifacts
+
+- `QCloudy_Addition-0.3.9+26.1.2-Release.jar`
+- `QCloudy_Addition-0.3.9+26.1.2-Release-sources.jar`
+- `QCloudy_Addition-0.3.9+26.2-Release.jar`
+- `QCloudy_Addition-0.3.9+26.2-Release-sources.jar`
+
 ## [0.2.9-alpha.30] - 2026-08-21
 
 ### Fixed

@@ -6,15 +6,18 @@
 
 QCloudy_Addition（QCA）是一个以英文为默认语言、提供中英文界面、仅在客户端运行的 Hypixel SkyBlock Fabric 模组。它用一个按“功能”分类的界面统一管理地图、HUD、被动视觉辅助、宠物信息、Attribute Shard 工具和部分客户端体验优化。
 
-> **当前版本：** Alpha 2.8.27<br>
-> **Minecraft：** 26.1.2<br>
+> **当前稳定版：** Release 0.3.9<br>
+> **Minecraft：** 26.1.2 与 26.2<br>
 > **必需：** Java 25、Fabric Loader 0.19.3 或更高版本，以及与 Minecraft 对应的 Fabric API<br>
 > **可选：** Mod Menu，以及经过适配审核的其他 SkyBlock 模组版本<br>
 > **说明：** QCA 是独立的社区项目，与 Hypixel、Mojang、Microsoft、SkyHanni、Skyblocker、Firmament、BabyZombieAddons 和 Feesh 均无隶属或官方认可关系。
 
+> **实验性集成警告：**“统一设置编辑”和“统一 HUD 编辑”仍是概念测试，均默认关闭，目前并不稳定。第三方模组更新可能让已识别字段或 HUD 契约失效。请备份对应模组配置，并在原生编辑器中核对重要修改。
+
 ## 目录
 
 - [安装](#安装)
+- [自 Release 2.5.3 以来的变化](#自-release-253-以来的变化)
 - [打开模组](#打开模组)
 - [设置、语言与 HUD 编辑](#设置语言与-hud-编辑)
 - [功能指南](#功能指南)
@@ -29,16 +32,17 @@ QCloudy_Addition（QCA）是一个以英文为默认语言、提供中英文界�
 
 ## 安装
 
-本次 Alpha 只提供一个 Minecraft 目标。
+Release 0.3.9 提供两个 Minecraft 目标。请安装与游戏版本完全对应的 JAR。
 
 | Minecraft | 所需 Fabric API | 可运行文件 |
 |---|---|---|
-| 26.1.2 | 0.155.2+26.1.2 或更高的兼容版本 | `QCloudy_Addition-Alpha-2.8.27+26.1.2.jar` |
+| 26.1.2 | 0.155.2+26.1.2 或更高的兼容版本 | `QCloudy_Addition-0.3.9+26.1.2-Release.jar` |
+| 26.2 | 0.154.2+26.2 或更高的兼容版本 | `QCloudy_Addition-0.3.9+26.2-Release.jar` |
 
 该目标要求 Fabric Loader 0.19.3 或更高版本以及 Java 25。
 
 1. 安装对应版本的 Minecraft、Fabric Loader、Fabric API 和 Java。
-2. 从 [GitHub Releases 页面](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/releases)下载可运行的 QCA JAR。
+2. 从 [QCloudy 官方下载页](https://qcloudy.net/download/)下载可运行的 QCA JAR；实际文件仍由官方 GitHub Release 资产提供。
 3. 将可运行 JAR 放入该实例的 `mods` 文件夹。
 4. 删除同一文件夹中的旧版 QCA，确保只加载一个 QCA 版本。
 5. 启动 Minecraft，按 `O` 或输入本地设置命令打开 QCA。
@@ -46,6 +50,18 @@ QCloudy_Addition（QCA）是一个以英文为默认语言、提供中英文界�
 不要把以 `-sources.jar` 结尾的文件当作模组安装。它是供开发者和 IDE 使用的源代码包。
 
 QCA 独立运行不需要 SkyHanni、Skyblocker、Firmament、BabyZombieAddons、Feesh 或 Mod Menu。Mod Menu 只会额外提供一个进入 QCA 设置的入口。
+
+## 自 Release 2.5.3 以来的变化
+
+Release 0.3.9 汇总了 2.5.3 之后 Alpha 与 Beta 阶段的工作。
+
+- 新增完整离线 320 Shard 指南与规划器：配方、反向用途、获取方式/效果、多步 Fusion Tree、候选路线、Materials Only、Ironman/速度规划、Fusion Lines，以及从玩家实际打开的 Hunting Box 记录仓库。
+- 新增 Century Cake 效果计时与到期提醒、Power Orb/Flare 消失提醒、Ciallo 钓鱼上钩提示、Hunting/Safari 辅助、改进的宠物/Dragon 等级显示、地图、HUD 与外观控制。
+- 新增可选且默认关闭的统一设置/HUD 集成，可识别 SkyHanni、Skyblocker、Firmament、BabyZombieAddons 与 Feesh 的实时能力。此功能仍是不稳定的概念测试，请谨慎使用。
+- 修复钓鱼重复播放和岩浆钓鱼识别、个人 Tree Gift 生物提醒、Power Orb/Flare 重复或旧计时、Century Cake Hunting Fortune 识别、空分类/空 HUD、钓鱼分组、Golden/Jade Dragon 等级、Shard 界面对齐/焦点/图标/颜色，以及 Dwarven X/Z 指针连续性。
+- 删除 `/aca`、`/ca`、Slot Locking、Storage Overlay、菜单中键转换，以及对未知第三方结构的不安全猜测。
+
+详细历史见[中文更新日志](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/CHANGELOG_zh_CN.md)。
 
 ## 打开模组
 
@@ -244,7 +260,7 @@ QCA 不包含 Bazaar 下载器。只有当已安装的兼容 Skyblocker 通过�
 
 ## 兼容 SkyBlock 模组的统一控制
 
-本 Alpha 为以下已安装模组提供可选的能力探测适配：
+Release 0.3.9 为以下已安装模组提供可选的能力探测适配：
 
 - SkyHanni
 - Skyblocker
@@ -253,6 +269,8 @@ QCA 不包含 Bazaar 下载器。只有当已安装的兼容 Skyblocker 通过�
 - Feesh
 
 这些模组都是可选项，不是 QCA 的编译或运行依赖。
+
+> **请谨慎使用：**两个统一编辑器都是实验性概念测试，并非稳定兼容承诺，且默认关闭。请保留配置备份，并在提供方原生编辑器中核对任何重要设置或 HUD 改动。
 
 Feesh 适配会配对其实时公开委托属性 getter/setter，并通过 Feesh 自己的路径保存。只有已启用、条件成立且存在内容的 Overlay 才会进入“编辑 HUD”，QCA 会正确换算 LEFT/CENTER/RIGHT 锚点，并编辑缩放/对齐及调用 Feesh 原生持久化。含义不明确的设置或变化的 HUD 契约会被省略，只显示在“兼容性缺失报告”中。
 
@@ -307,7 +325,7 @@ QCA 不会保存密码、Access Token、Hypixel API Key、聊天记录、远程�
 
 ### 游戏无法启动
 
-- 确认可运行 JAR 是 Minecraft 26.1.2 构建。
+- 确认可运行 JAR 与 Minecraft 26.1.2 或 26.2 完全对应。
 - 确认 Java 25、Fabric Loader 0.19.3+ 和对应 Fabric API。
 - 删除重复或旧版 QCA JAR。
 - 不要把 `-sources.jar` 当作可运行模组放入 `mods`。
@@ -322,7 +340,7 @@ Dwarven 地图是单层、近似的 X/Z 概览图，明确忽略 Y 和楼层/子
 
 ### Shard 的 Cheapest 规划不可用
 
-QCA 不会下载 Bazaar 价格。可以使用离线/Ironman/获取速度模式，或者安装能公开现有客户端价格缓存的兼容 Skyblocker。提供者价格和统一外部设置目前只审核了上文列出的 Minecraft 26.1.2 版本。
+QCA 不会下载 Bazaar 价格。可以使用离线/Ironman/获取速度模式，或者安装仍通过已识别公开方法提供现有客户端价格缓存的兼容 Skyblocker。提供方更新可能让价格桥不可用，其他 Shard 工具仍可继续使用。
 
 ### 外部模组提供者没有出现
 
@@ -350,7 +368,7 @@ QCA 不会只因版本号变化就拒绝整个提供者。重新打开设置后�
 
 ## 验证、许可证与致谢
 
-Alpha 2.8.27 使用 Java 25 为 Minecraft 26.1.2 构建。当前验证报告会记录本版本准确的自动测试、压缩包、语言与兼容契约检查结果。
+Release 0.3.9 使用 Java 25 为 Minecraft 26.1.2 与 26.2 构建。当前验证报告会记录两个构建准确的自动测试、压缩包、语言与兼容契约检查结果。
 
 自动测试与压缩包检查不能代替真实 Hypixel 回归、所有 GUI Scale、所有材质包和未来每一种模组组合。准确测试边界请查看[当前验证报告](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/docs/VALIDATION.md)。
 

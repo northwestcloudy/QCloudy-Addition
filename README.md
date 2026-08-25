@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod for Minecraft 26.1.2. It focuses on readable SkyBlock maps, compact objective HUDs, passive visual helpers, pet information, and inventory quality-of-life tools. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current Alpha is built only for Minecraft 26.1.2.
+QCloudy_Addition is a client-only Fabric mod for Minecraft 26.1.2 and 26.2. It focuses on readable SkyBlock maps, compact objective HUDs, passive visual helpers, pet information, and inventory quality-of-life tools. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current stable release is 0.3.9.
 
 ## Quick links
 
 - [Feature list](docs/FEATURES.md)
 - [Implementation notes](docs/IMPLEMENTATION.md)
 - [Modrinth description](docs/MODRINTH_DESCRIPTION.md)
-- [Current 0.2.9 Alpha 30 changelog](CHANGELOG.md)
+- [Current 0.3.9 Release changelog](CHANGELOG.md)
 - [Version and artifact naming](docs/VERSIONING.md)
 - [Validation](docs/VALIDATION.md)
 - [Compliance](docs/COMPLIANCE.md)
@@ -16,7 +16,9 @@ Default language: English. Press `O` (rebindable under Controls → Key Binds �
 
 The language option translates QCA interface labels only. Hypixel location names, task names, pets, skins, accessories, items, and player-renamed HOTM slots remain in their original client-received form.
 
-## Unified SkyBlock mod controls — Alpha
+## Unified SkyBlock mod controls — experimental concept test
+
+> **Caution:** The Unified Settings Editor and Unified HUD Editor are concept tests. They are disabled by default, are not yet stable, and can stop recognising individual fields after a provider mod updates. Enable them cautiously, keep configuration backups, and verify every write in the provider mod's own settings or HUD editor. The provider-native editor remains authoritative.
 
 QCA can act as one function-first settings and HUD editor for its own features and installed builds of **SkyHanni**, **Skyblocker**, **Firmament**, **BabyZombieAddons**, and **Feesh**. The separate **Unified Settings Editor** and **Unified HUD Editor** master switches are both disabled by default and can be enabled independently. Every provider scan requires a second confirmation: the first enable without a valid session snapshot and every **Refresh** action open a scope-specific dialog before any work starts. Cancelling the first dialog leaves that master off; cancelling Refresh preserves the last validated snapshot. Restoring an enabled master after restart never starts a silent scan. Confirmed scans open a live progress page. The settings page reports only manageable settings, while the HUD page reports only manageable HUDs. Opening the normal settings menu does not rescan, uninstalled providers are not listed, and disabling both switches cancels pending work and releases the session snapshot. QCA probes live provider capabilities rather than enforcing an exact-version whitelist, so recognised compatible branches can remain available after a provider update while unknown or changed branches are omitted.
 
@@ -24,7 +26,7 @@ Native paths and verified classification rules run first. Only provider function
 
 When several supported mods implement the same exact function, QCA shows one card. Right-clicking that card puts the provider selector first and then shows the safely editable native settings of the selected provider. Enabling the card enables the selected implementation and disables only its exact equivalents; nearby price, profit, tooltip, or tracker features with different purposes are not merged. Values are written to the provider's live configuration and saved through that mod's own save path. QCA never edits an unloaded mod's configuration file.
 
-The existing **Edit HUD** screen also includes enabled HUDs owned by the selected compatible provider. External panels are labelled with the provider name; dragging or resizing writes the native position/scale only when the mouse is released. This Alpha exposes validated Boolean, enum, bounded numeric, position, and scale values. Provider-specific compound color/keybind objects remain in their native editors until a safe adapter is implemented.
+The existing **Edit HUD** screen also includes enabled HUDs owned by the selected compatible provider. External panels are labelled with the provider name; dragging or resizing writes the native position/scale only when the mouse is released. This experimental editor exposes validated Boolean, enum, bounded numeric, position, and scale values. Provider-specific compound color/keybind objects remain in their native editors until a safe adapter is implemented.
 
 The top-level order is **General, Maps, Items & Menus, Combat, Dungeons, Slayer, Mining, Farming, Foraging, Fishing, Hunting, Rift, Events**, but a category is hidden when no QCA or discovered provider feature belongs to it. Safari is a Hunting subgroup, Garden is a Farming subgroup, Crimson Isle/Kuudra are Combat subgroups, and Fishing's bite cue is grouped under **Bite Alerts** rather than a duplicate Fishing heading. Every feature has one owner and appears once.
 
@@ -111,13 +113,13 @@ Inventory and menu tools include the Attribute Shard Fusion Guide, item timestam
 
 ## Installation
 
-1. Install Minecraft 26.1.2 with Fabric API 0.155.2+26.1.2. The Alpha requires Fabric Loader 0.19.3 or newer and Java 25.
+1. Install Minecraft 26.1.2 with Fabric API 0.155.2+26.1.2, or Minecraft 26.2 with Fabric API 0.154.2+26.2. Release 0.3.9 requires Fabric Loader 0.19.3 or newer and Java 25.
 2. Put the `QCloudy_Addition-*.jar` whose filename ends in your exact Minecraft version in the instance's `mods` folder. Mod Menu is optional.
 3. Start the game and press `O` or type one of the local settings commands to configure the mod.
 
 ## Building from source
 
-Install JDK 25 and run `./gradlew clean test build prepareRelease`. The current Alpha tests and produces the Minecraft 26.1.2 playable and Sources JARs in `release/`. The repository includes its own pinned Gradle 9.6.1 Wrapper and Fabric Loom 1.17.17 configuration; the inspected reference mods are not build or runtime dependencies. Pet profile metadata is generated offline from a local NEU repository snapshot and committed into QCA resources. The shipped mod performs no runtime network request and runs without Firmament.
+Install JDK 25 and run `bash tools/build_all_versions.sh`. Release 0.3.9 tests and produces playable and Sources JARs for Minecraft 26.1.2 and 26.2 in `release/`. The repository includes its own pinned Gradle 9.6.1 Wrapper and Fabric Loom 1.17.17 configuration; the inspected reference mods are not build or runtime dependencies. Pet profile metadata is generated offline from a local NEU repository snapshot and committed into QCA resources. The shipped mod performs no runtime network request and runs without Firmament.
 
 ## Safety boundary
 
@@ -133,7 +135,7 @@ Implementation and data flow: [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
 
 Modrinth-ready description: [docs/MODRINTH_DESCRIPTION.md](docs/MODRINTH_DESCRIPTION.md)
 
-Current 0.2.9 Alpha 30 changes: [CHANGELOG.md](CHANGELOG.md)
+Current 0.3.9 Release changes: [CHANGELOG.md](CHANGELOG.md)
 
 Publication checklist: [docs/PUBLISHING_CHECKLIST.md](docs/PUBLISHING_CHECKLIST.md)
 

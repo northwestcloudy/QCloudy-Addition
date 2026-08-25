@@ -1,6 +1,6 @@
 # QCloudy_Addition implementation and data-flow reference
 
-This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It describes version `0.2.9-alpha.30` for Minecraft 26.1.2.
+This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It describes Release `0.3.9` for Minecraft 26.1.2 and 26.2.
 
 ## 1. Runtime architecture
 
@@ -25,6 +25,8 @@ received Tab / scoreboard / chat / menu / title / entity / inventory / loaded bl
 ```
 
 ### 1.1 Optional unified-provider adapters
+
+> **Experimental concept test:** Unified Settings Editor and Unified HUD Editor are both disabled by default and are not yet stable. Provider updates can invalidate previously recognised structures. Back up configuration files, verify important changes in the provider's native editor, and use these integrations cautiously.
 
 `UnifiedModIntegration` recognises the provider IDs for SkyHanni, Skyblocker, Firmament, BabyZombieAddons, and Feesh, but does not reject an installed build because its version string is newer or differs from a whitelist. It has no compile-time dependency on them. Two independent `ModConfig.Integrations` gates default to false. Unless **Unified Settings Editor** is enabled, the normal settings catalog is built from QCA features only and no provider configuration is probed. Unless **Unified HUD Editor** is enabled, `externalHuds()` returns an empty list before provider discovery. Enabling only the HUD gate is valid and performs the minimum provider discovery needed for HUD ownership without exposing provider-setting cards. QCA-owned settings and HUDs bypass both gates.
 
@@ -54,7 +56,7 @@ Give every feature a clear single category and let players customize visual outp
 
 - Local mouse/keyboard input through Minecraft input events and targeted input Mixins.
 - `HudElementRegistry` for screen HUD submission.
-- `GuiGraphicsExtractor` for Minecraft 26.1.2 text, item, panel, and texture rendering, with version-specific access isolated in `MinecraftClientCompat`.
+- `GuiGraphicsExtractor` for Minecraft 26.1.2 and 26.2 text, item, panel, and texture rendering, with version-specific access isolated in `MinecraftClientCompat`.
 - Local `qcloudy_addition.json` for settings and HUD layout.
 - Bundled `en_us.json` and `zh_cn.json` for QCA-owned labels.
 
@@ -414,4 +416,4 @@ QCA stores no password, access token, Hypixel API key, chat history, remote acco
 
 ## 15. Expected validation boundary
 
-Automated tests validate parsers, defaults, routing, persistence normalization, boundary calculations, and archive structure. Local launches validate initialization with Fabric alone and with the four supplied reference mods. They do not prove every future Hypixel wording, live entity layout, user resource pack, GUI scale, latency condition, or policy interpretation. Live regressions should therefore compare the expected presentation in this document with actual Hypixel behavior before promoting an Alpha build to Beta or Release.
+Automated tests validate parsers, defaults, routing, persistence normalization, boundary calculations, and archive structure. Local launches validate initialization with Fabric alone and with reviewed reference-mod combinations. They do not prove every future Hypixel wording, live entity layout, user resource pack, GUI scale, latency condition, provider update, or policy interpretation. Release `0.3.9` therefore keeps the unified settings and HUD editors explicitly experimental; authenticated Hypixel and real-modpack regression remains a separate validation boundary.

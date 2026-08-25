@@ -16,8 +16,8 @@ QCloudy_Addition 将模组核心版本、Minecraft 目标版本、发布通道�
 `gradle.properties` 是唯一版本来源：
 
 ```properties
-release_channel=Alpha
-mod_version=0.2.9
+release_channel=Release
+mod_version=0.3.9
 alpha_iteration=30
 ```
 

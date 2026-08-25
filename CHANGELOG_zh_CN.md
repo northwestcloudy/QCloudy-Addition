@@ -1,5 +1,60 @@
 # 更新日志
 
+## [0.3.9] - 2026-08-25
+
+适用于 Minecraft 26.1.2 与 26.2 的稳定 Release。本条目汇总上一个稳定版 2.5.3 之后完成的全部公开变化；下方各 Alpha/Beta 条目继续保留为详细开发历史。
+
+### 自 Release 2.5.3 以来的新增内容
+
+- 加入完全离线的 Attribute Shard 指南，精确覆盖 Bazaar 列出的 320 种 Shard，包含独立图标、符合品质/分类/家族/Skill 的语义颜色、详情、配方、用途、有序输入、数量、候选输出、获取方式、自然与 Fusion 双来源，以及清晰的可点击导航。
+- 加入本地 Shard 规划器：目标数量、完整多步 Fusion Tree、候选路线、Materials Only、最快/最便宜、Ironman、Kraken/Kuudra 参数、可编辑每小时获取速度、直接输入输出关系、可拖动 Fusion Lines，以及仅在玩家实际打开 `/hb` 后记录的 Hunting Box 仓库。
+- 加入可选价格路线，只读取兼容模组安全暴露的本地缓存价格。QCA 本身不会发送 Bazaar HTTP 请求；没有安全价格提供方时，价格模式保持不可用。
+- 加入可配置钓鱼上钩提示音，使用内置 Ciallo 音频，支持水钓与岩浆钓鱼、每根鱼钩只播放一次、独立钓鱼分类、默认关闭与独立音量。
+- 加入面向已安装 SkyHanni、Skyblocker、Firmament、BabyZombieAddons 与 Feesh 的功能化统一设置/HUD 管理。设置与 HUD 各有默认关闭的独立总开关、确认窗口、进度页、Refresh、按能力适配版本变化，以及只读“兼容性缺失”报告。
+- **实验性警告：**统一设置编辑与统一 HUD 编辑仍是概念测试，默认关闭且尚不稳定。第三方模组更新可能使已识别映射失效；请谨慎使用、备份配置，并在对应模组原生编辑器中核对写入结果。
+- 加入 Power Orb 与 Flare 消失提醒。四种本人 Power Orb 使用精确消失聊天；Warning、Alert、SOS Flare 使用确认后的三分钟本地生命周期，支持重新放置重置计时、中央大字、可选音效与默认 64% 音量。
+- 加入全部 20 种 Century Cake 的统一追踪、真实世界 48 小时计时、`/cake`、`/centurycakeeffect`、蛋糕头像与悬停信息、单一总开关、合并过期提醒，以及只在玩家点击后发送 `/visit northwestcloudy` 的带下划线续效果操作。
+- 加入 Minecraft 26.1.2 与 26.2 独立构建、双语 Wiki/发布校验，以及能够按版本下载的官网页面。
+
+### 修改与优化
+
+- 替换并重新校准 Dwarven Mines 地图。指针改为单一、连续、近似的 X/Z 投影并实时更新，忽略 Y 和记分板小区域跳转，在 The Mist 上方及桥梁位置也会保持显示。
+- 重做 Shard 指南与规划器在宽屏、窄屏和窗口缩放时的布局。输入输出按实际内容紧凑排列，点击范围跟随可见内容，搜索框也可在不关闭页面时退出焦点。
+- 将 Epic 修正为 Minecraft 深紫色（`§5`），并让 Shard 品质、效果、家族、生物类型、Skill、获取方式与导航颜色对应游戏/Wiki 语义。
+- 空 HUD 和空设置分类不再留下空框；钓鱼改用明确的“咬钩提示”子分组，不再出现“钓鱼 → 钓鱼”。
+- 可选模组探测改为按需、不可变快照与按能力判断，不再因为版本号未列入白名单而整体失效；未知分支失败关闭，仍可安全识别的分支继续可用。
+- 修正未满级 Golden/Jade Dragon 在宠物 HUD 中的等级与经验显示。
+
+### 修复
+
+- 修复重新放置 SOS/Flare 后旧三分钟计时没有重置的问题。现在即使遗漏确认回调，已识别的重新放置也会重启完整生命周期；手持无关物品不会误重置。
+- 修复水钓/岩浆钓鱼触发不一致，以及收杆导致同一根鱼钩重复播放 Ciallo 的问题。
+- 修复本人 Tree Gift 生物出现时不提醒，同时继续避免其他玩家的公共事件误触发本地提醒。
+- 修复 The Park 的 `Jungle Island` 被误认为 Crystal Hollows `Jungle`，导致挖矿 HUD 出现在错误岛屿。
+- 修复 Century Cake 首次生效与刷新解析，包括 Starborn Century Cake 的私用区属性图标和正确的 `Hunting Fortune` 名称。
+- 修复 Dwarven 指针跳动、消失和不同步、Golden Dragon 错误显示 200 级，以及多处设置/Shard UI 重叠、裁剪、焦点和窄窗口问题。
+
+### 删除或替换
+
+- 从实现、配置、测试和当前文档中删除槽位锁定、Storage Overlay 与菜单中键转换。
+- 删除本地设置命令别名 `/aca` 与 `/ca`；保留 `/qca` 与 `/qc`。
+- 删除旧 Dwarven 分区限制、Y 层选择和记分板小区域跳转，改用连续 X/Z 投影。
+- 删除不完整的 Flare 聊天假设，以及所有距离、增益范围、实体卸载式到期猜测，改用已确认的本地生命周期结束。
+- 删除以精确提供方版本白名单作为主要兼容门槛的逻辑，改为逐项能力校验。
+
+### 兼容与安全
+
+- Release 0.3.9 仍是可独立运行的纯客户端 Fabric 模组。可选提供方不是启动依赖，不支持的能力会被省略。
+- 需要 Java 25 和 Fabric Loader 0.19.3 或更高版本。Minecraft 26.1.2 使用 Fabric API 0.155.2+26.1.2；Minecraft 26.2 使用 Fabric API 0.154.2+26.2。
+- QCA 不会自动移动、点击、钓鱼、Fusion、吃蛋糕、放置 Deployable、重连或代替玩家游玩。本地页面命令不会发送内容；文档中的 `/th`、`/helia` 与 Century Cake 点击续效果都必须由玩家直接操作。
+
+### Release 文件
+
+- `QCloudy_Addition-0.3.9+26.1.2-Release.jar`
+- `QCloudy_Addition-0.3.9+26.1.2-Release-sources.jar`
+- `QCloudy_Addition-0.3.9+26.2-Release.jar`
+- `QCloudy_Addition-0.3.9+26.2-Release-sources.jar`
+
 ## [0.2.9-alpha.30] - 2026-08-21
 
 ### 修复

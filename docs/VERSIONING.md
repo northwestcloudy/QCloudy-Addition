@@ -16,8 +16,8 @@ QCloudy_Addition separates the core mod version, Minecraft target, release chann
 `gradle.properties` is the single source of truth:
 
 ```properties
-release_channel=Alpha
-mod_version=0.2.9
+release_channel=Release
+mod_version=0.3.9
 alpha_iteration=30
 ```
 

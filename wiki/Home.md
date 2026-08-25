@@ -6,15 +6,18 @@
 
 QCloudy_Addition (QCA) is an English-first, bilingual, client-only Fabric mod for Hypixel SkyBlock. It organizes maps, HUDs, passive visual helpers, pet information, Attribute Shard tools, and selected quality-of-life controls in one function-first interface.
 
-> **Current version:** Alpha 2.8.27<br>
-> **Minecraft:** 26.1.2<br>
+> **Current stable version:** Release 0.3.9<br>
+> **Minecraft:** 26.1.2 and 26.2<br>
 > **Required:** Java 25, Fabric Loader 0.19.3 or newer, and the matching Fabric API<br>
 > **Optional:** Mod Menu and reviewed builds of supported SkyBlock mods<br>
 > **Notice:** QCA is an independent community project. It is not affiliated with or endorsed by Hypixel, Mojang, Microsoft, SkyHanni, Skyblocker, Firmament, BabyZombieAddons, or Feesh.
 
+> **Experimental integration warning:** Unified Settings Editor and Unified HUD Editor are concept tests. They are disabled by default and are not yet stable. Provider updates can invalidate recognised fields or HUD contracts. Back up provider configuration and verify important changes in the provider's own editor.
+
 ## Contents
 
 - [Installation](#installation)
+- [What changed since Release 2.5.3](#what-changed-since-release-253)
 - [Opening the mod](#opening-the-mod)
 - [Settings, language, and HUD editing](#settings-language-and-hud-editing)
 - [Feature guide](#feature-guide)
@@ -29,16 +32,17 @@ QCloudy_Addition (QCA) is an English-first, bilingual, client-only Fabric mod fo
 
 ## Installation
 
-This Alpha release has one Minecraft target.
+Release 0.3.9 has two Minecraft targets. Install the JAR that exactly matches the game version.
 
 | Minecraft | Required Fabric API | Playable file |
 |---|---|---|
-| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-Alpha-2.8.27+26.1.2.jar` |
+| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-0.3.9+26.1.2-Release.jar` |
+| 26.2 | 0.154.2+26.2 or newer compatible build | `QCloudy_Addition-0.3.9+26.2-Release.jar` |
 
 This target requires Fabric Loader 0.19.3 or newer and Java 25.
 
 1. Install the matching Minecraft, Fabric Loader, Fabric API, and Java versions.
-2. Download the playable QCA JAR from the [GitHub Releases page](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/releases).
+2. Download the playable QCA JAR from the [official QCloudy download page](https://qcloudy.net/download/). The file itself is served from the official GitHub Release asset.
 3. Put the playable JAR in the instance's `mods` folder.
 4. Remove older QCA JARs from that folder so that only one QCA build is loaded.
 5. Start Minecraft and open QCA with `O` or one of its local settings commands.
@@ -46,6 +50,18 @@ This target requires Fabric Loader 0.19.3 or newer and Java 25.
 Do not install the file ending in `-sources.jar` as the playable mod. It contains source code for developers and IDEs.
 
 QCA does not require SkyHanni, Skyblocker, Firmament, BabyZombieAddons, Feesh, or Mod Menu to load. Mod Menu only adds another way to open QCA settings.
+
+## What changed since Release 2.5.3
+
+Release 0.3.9 rolls the post-2.5.3 Alpha and Beta work into the next stable line.
+
+- Added the complete offline 320-Shard Guide and Planner: recipes, reverse uses, acquisition/effect details, multi-step Fusion trees, alternative routes, Materials Only, Ironman/rate planning, Fusion Lines, and a player-observed Hunting Box warehouse.
+- Added Century Cake effect tracking and expiry reminders, Power Orb/Flare despawn alerts, the Ciallo fishing-bite cue, Hunting/Safari helpers, improved pet/Dragon level handling, maps, HUDs, and presentation controls.
+- Added optional, default-off unified settings and HUD integration for recognised live capabilities from SkyHanni, Skyblocker, Firmament, BabyZombieAddons, and Feesh. This remains an unstable concept test and must be used cautiously.
+- Fixed repeated bite sounds, lava-fishing detection, personal Tree Gift creature alerts, Power Orb/Flare duplicate or stale timers, Century Cake Hunting Fortune recognition, empty category/HUD rendering, Fishing grouping, Golden/Jade Dragon level display, Shard UI alignment/focus/icons/colors, and Dwarven X/Z marker continuity.
+- Removed `/aca` and `/ca`, Slot Locking, Storage Overlay, menu middle-click conversion, and unsafe assumptions about unknown provider structures.
+
+See the full [English changelog](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/CHANGELOG.md) for the detailed history.
 
 ## Opening the mod
 
@@ -244,7 +260,7 @@ The warehouse reads only visible Shard IDs and exact `Owned: N Shards` lore on t
 
 ## Unified controls for compatible SkyBlock mods
 
-This Alpha includes optional capability-detected adapters for installed builds of:
+Release 0.3.9 includes optional capability-detected adapters for installed builds of:
 
 - SkyHanni
 - Skyblocker
@@ -253,6 +269,8 @@ This Alpha includes optional capability-detected adapters for installed builds o
 - Feesh
 
 These mods are optional and are not QCA build or runtime dependencies.
+
+> **Use cautiously:** both unified editors are experimental concept tests, not stable compatibility promises. They are disabled by default. Always keep a backup and use the provider's native editor to verify any important setting or HUD change.
 
 Feesh support pairs its live public delegated-property getters/setters and saves through Feesh's own path. Its enabled, condition-valid, non-empty Overlays can enter Edit HUD with correct LEFT/CENTER/RIGHT anchor conversion, scale/alignment editing, and Feesh-native persistence. Ambiguous settings or changed HUD contracts are omitted and shown only in Compatibility Gaps.
 
@@ -307,7 +325,7 @@ QCA does not store passwords, access tokens, Hypixel API keys, chat history, rem
 
 ### The game does not start
 
-- Confirm that the playable JAR is the Minecraft 26.1.2 build.
+- Confirm that the playable JAR exactly matches Minecraft 26.1.2 or 26.2.
 - Confirm Java 25, Fabric Loader 0.19.3+, and the matching Fabric API.
 - Remove duplicate/older QCA JARs.
 - Do not put the `-sources.jar` in the mods folder as the playable file.
@@ -322,7 +340,7 @@ The Dwarven map is an approximate single-layer X/Z overview. It intentionally ig
 
 ### Cheapest Shard planning is unavailable
 
-QCA does not fetch Bazaar prices. Use the offline/Ironman/rate modes, or install a compatible reviewed Skyblocker build that exposes its existing client price cache. Provider-based prices and unified third-party controls are currently reviewed only for the listed Minecraft 26.1.2 provider builds.
+QCA does not fetch Bazaar prices. Use the offline/Ironman/rate modes, or install a compatible Skyblocker build that still exposes its existing client price cache through the recognised public method. A provider update can make the bridge unavailable; other Shard tools continue to work.
 
 ### A third-party provider does not appear
 
@@ -350,7 +368,7 @@ Do not include access tokens, session identifiers, private chat, or other secret
 
 ## Validation, license, and credits
 
-Alpha 2.8.27 is built for Minecraft 26.1.2 with Java 25. The maintained validation report records the exact automated-test, archive, language, and compatibility-contract checks for this build.
+Release 0.3.9 is built for Minecraft 26.1.2 and 26.2 with Java 25. The maintained validation report records the exact automated-test, archive, language, and compatibility-contract checks for both builds.
 
 Automated tests and archive checks do not replace an authenticated Hypixel regression, every GUI Scale, every resource pack, or every future modpack combination. See the current [validation report](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/docs/VALIDATION.md) for the exact tested boundary.
 

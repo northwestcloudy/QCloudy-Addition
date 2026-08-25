@@ -1,0 +1,25 @@
+{
+  "channel": "Release",
+  "version": "0.3.9",
+  "tag": "v0.3.9",
+  "publishedAt": "2026-08-25T00:00:00+08:00",
+  "releaseUrl": "https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/releases/tag/v0.3.9",
+  "assets": [
+    {
+      "minecraft": "26.1.2",
+      "name": "QCloudy_Addition-0.3.9+26.1.2-Release.jar",
+      "size": 3509330,
+      "digest": "sha256:bd6c986fbed65d2fe0368e275efd72996b48ad420550ead82c67c19b79b608cb",
+      "downloadCount": 0,
+      "url": "https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/releases/download/v0.3.9/QCloudy_Addition-0.3.9%2B26.1.2-Release.jar"
+    },
+    {
+      "minecraft": "26.2",
+      "name": "QCloudy_Addition-0.3.9+26.2-Release.jar",
+      "size": 3509334,
+      "digest": "sha256:bb3273bb3eb4135ff60c7c647e75f2ade86ca5c967e99b39311e179cc0368e97",
+      "downloadCount": 0,
+      "url": "https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/releases/download/v0.3.9/QCloudy_Addition-0.3.9%2B26.2-Release.jar"
+    }
+  ]
+}
