@@ -63,10 +63,7 @@ public final class HudLayoutScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fill(0, 0, width, height, 0x6E05090B);
         drawGrid(graphics);
-        drawPreview(graphics, Panel.MAP, mouseX, mouseY);
-        drawPreview(graphics, Panel.MINING, mouseX, mouseY);
-        drawPreview(graphics, Panel.HUNTING, mouseX, mouseY);
-        drawPreview(graphics, Panel.PET, mouseX, mouseY);
+        for (Panel panel : Panel.values()) drawPreview(graphics, panel, mouseX, mouseY);
         for (UnifiedModIntegration.ExternalHud hud : externalHuds) drawExternalPreview(graphics, hud, mouseX, mouseY);
         drawToolbar(graphics, mouseX, mouseY);
         drawStatus(graphics);
@@ -131,7 +128,10 @@ public final class HudLayoutScreen extends Screen {
                     };
                     MinecraftClientCompat.setScreen(minecraft, new ConfigScreen(this, focus));
                 } else {
-                    MinecraftClientCompat.setScreen(minecraft, new FeatureSettingsScreen(this, settingsPanel.feature()));
+                    ConfigScreen.Feature feature = settingsPanel.feature();
+                    if (feature != null) {
+                        MinecraftClientCompat.setScreen(minecraft, new FeatureSettingsScreen(this, feature));
+                    }
                 }
                 return true;
             }
@@ -314,13 +314,15 @@ public final class HudLayoutScreen extends Screen {
         drawFitted(graphics, Component.literal(label), x + 6, labelY + 3,
                 Math.max(1, labelWidth - 12), AcaUiTheme.TEXT);
 
-        int gearX = x + panelWidth - 18;
-        int gearY = y + panelHeight - 18;
-        boolean gearHovered = AcaUiTheme.contains(mouseX, mouseY, gearX, gearY, 16, 16);
-        graphics.fill(gearX, gearY, gearX + 16, gearY + 16,
-                gearHovered ? AcaUiTheme.ACCENT_DARK : AcaUiTheme.HEADER);
-        graphics.outline(gearX, gearY, 16, 16, gearHovered ? AcaUiTheme.ACCENT : AcaUiTheme.BORDER);
-        graphics.centeredText(font, "⚙", gearX + 8, gearY + 3, AcaUiTheme.TEXT);
+        if (panel.hasSettings()) {
+            int gearX = x + panelWidth - 18;
+            int gearY = y + panelHeight - 18;
+            boolean gearHovered = AcaUiTheme.contains(mouseX, mouseY, gearX, gearY, 16, 16);
+            graphics.fill(gearX, gearY, gearX + 16, gearY + 16,
+                    gearHovered ? AcaUiTheme.ACCENT_DARK : AcaUiTheme.HEADER);
+            graphics.outline(gearX, gearY, 16, 16, gearHovered ? AcaUiTheme.ACCENT : AcaUiTheme.BORDER);
+            graphics.centeredText(font, "⚙", gearX + 8, gearY + 3, AcaUiTheme.TEXT);
+        }
     }
 
     private int loadedCount() {
@@ -443,8 +445,10 @@ public final class HudLayoutScreen extends Screen {
     }
 
     private Panel settingsAt(double x, double y) {
-        for (Panel panel : Panel.values()) {
-            if (!isLoaded(panel)) continue;
+        Panel[] values = Panel.values();
+        for (int index = values.length - 1; index >= 0; index--) {
+            Panel panel = values[index];
+            if (!isLoaded(panel) || !panel.hasSettings()) continue;
             int gearX = panelX(panel) + scaledWidth(panel) - 18;
             int gearY = panelY(panel) + scaledHeight(panel) - 18;
             if (AcaUiTheme.contains(x, y, gearX, gearY, 16, 16)) return panel;
@@ -516,11 +520,15 @@ public final class HudLayoutScreen extends Screen {
     }
 
     private static boolean isLoaded(Panel panel) {
+        ModConfig config = ConfigManager.get();
         return switch (panel) {
             case MAP -> HudRenderer.isMapLoaded();
             case MINING -> HudRenderer.isMiningLoaded();
             case HUNTING -> HudRenderer.isHuntingLoaded();
             case PET -> HudRenderer.isPetLoaded();
+            case SPIRIT_MASK_COOLDOWN -> config.combat.spiritMaskCooldownHud;
+            case BONZO_MASK_COOLDOWN -> config.combat.bonzoMaskCooldownHud;
+            case PHOENIX_COOLDOWN -> config.combat.phoenixCooldownHud;
         };
     }
 
@@ -531,6 +539,9 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> style.miningX;
             case HUNTING -> style.huntingX;
             case PET -> style.petX;
+            case SPIRIT_MASK_COOLDOWN -> style.spiritMaskCooldownX;
+            case BONZO_MASK_COOLDOWN -> style.bonzoMaskCooldownX;
+            case PHOENIX_COOLDOWN -> style.phoenixCooldownX;
         };
         return HudRenderer.resolveX(configured, baseWidth(panel), width, previewScale(panel));
     }
@@ -542,6 +553,9 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> style.miningY;
             case HUNTING -> style.huntingY;
             case PET -> style.petY;
+            case SPIRIT_MASK_COOLDOWN -> style.spiritMaskCooldownY;
+            case BONZO_MASK_COOLDOWN -> style.bonzoMaskCooldownY;
+            case PHOENIX_COOLDOWN -> style.phoenixCooldownY;
         };
         return Math.clamp(configured, 0, Math.max(0, height - scaledHeight(panel)));
     }
@@ -553,6 +567,18 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> { style.miningX = x; style.miningY = y; }
             case HUNTING -> { style.huntingX = x; style.huntingY = y; }
             case PET -> { style.petX = x; style.petY = y; }
+            case SPIRIT_MASK_COOLDOWN -> {
+                style.spiritMaskCooldownX = x;
+                style.spiritMaskCooldownY = y;
+            }
+            case BONZO_MASK_COOLDOWN -> {
+                style.bonzoMaskCooldownX = x;
+                style.bonzoMaskCooldownY = y;
+            }
+            case PHOENIX_COOLDOWN -> {
+                style.phoenixCooldownX = x;
+                style.phoenixCooldownY = y;
+            }
         }
     }
 
@@ -574,6 +600,8 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> HudRenderer.MINING_WIDTH;
             case HUNTING -> cloudy.autume.addition.hud.HuntingHudRenderer.WIDTH;
             case PET -> HudRenderer.currentPetWidth();
+            case SPIRIT_MASK_COOLDOWN, BONZO_MASK_COOLDOWN, PHOENIX_COOLDOWN ->
+                    HudRenderer.DEATH_SAVE_COOLDOWN_WIDTH;
         };
     }
 
@@ -583,6 +611,8 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> HudRenderer.currentMiningHeight();
             case HUNTING -> cloudy.autume.addition.hud.HuntingHudRenderer.currentHeight();
             case PET -> HudRenderer.currentPetHeight();
+            case SPIRIT_MASK_COOLDOWN, BONZO_MASK_COOLDOWN, PHOENIX_COOLDOWN ->
+                    HudRenderer.DEATH_SAVE_COOLDOWN_HEIGHT;
         };
     }
 
@@ -597,6 +627,18 @@ public final class HudLayoutScreen extends Screen {
             case MINING -> { style.miningX = -196; style.miningY = 8; }
             case HUNTING -> { style.huntingX = -304; style.huntingY = 8; }
             case PET -> { style.petX = 8; style.petY = 196; }
+            case SPIRIT_MASK_COOLDOWN -> {
+                style.spiritMaskCooldownX = -196;
+                style.spiritMaskCooldownY = 196;
+            }
+            case BONZO_MASK_COOLDOWN -> {
+                style.bonzoMaskCooldownX = -196;
+                style.bonzoMaskCooldownY = 236;
+            }
+            case PHOENIX_COOLDOWN -> {
+                style.phoenixCooldownX = -196;
+                style.phoenixCooldownY = 276;
+            }
         }
         panelStyle(panel).scale = 1.0f;
         ConfigManager.save();
@@ -610,7 +652,13 @@ public final class HudLayoutScreen extends Screen {
         MAP(ModConfig.HudType.MAP, HudRenderer.PreviewPanel.MAP, "hud.map"),
         MINING(ModConfig.HudType.MINING, HudRenderer.PreviewPanel.MINING, "hud.mining"),
         HUNTING(ModConfig.HudType.HUNTING, HudRenderer.PreviewPanel.HUNTING, "hud.hunting"),
-        PET(ModConfig.HudType.PET, HudRenderer.PreviewPanel.PET, "hud.pet");
+        PET(ModConfig.HudType.PET, HudRenderer.PreviewPanel.PET, "hud.pet"),
+        SPIRIT_MASK_COOLDOWN(ModConfig.HudType.SPIRIT_MASK_COOLDOWN,
+                HudRenderer.PreviewPanel.SPIRIT_MASK_COOLDOWN, "hud.death_save.spirit_mask"),
+        BONZO_MASK_COOLDOWN(ModConfig.HudType.BONZO_MASK_COOLDOWN,
+                HudRenderer.PreviewPanel.BONZO_MASK_COOLDOWN, "hud.death_save.bonzo_mask"),
+        PHOENIX_COOLDOWN(ModConfig.HudType.PHOENIX_COOLDOWN,
+                HudRenderer.PreviewPanel.PHOENIX_COOLDOWN, "hud.death_save.phoenix");
 
         private final ModConfig.HudType hudType;
         private final HudRenderer.PreviewPanel previewPanel;
@@ -629,7 +677,7 @@ public final class HudLayoutScreen extends Screen {
             return ModText.get(labelKey);
         }
 
-        ConfigScreen.Feature feature() {
+        ConfigScreen.@Nullable Feature feature() {
             return switch (this) {
                 case MAP -> LocationTracker.area() == IslandArea.GLACITE_TUNNELS
                         ? ConfigScreen.Feature.GLACITE_MAP : ConfigScreen.Feature.DWARVEN_MAP;
@@ -640,7 +688,14 @@ public final class HudLayoutScreen extends Screen {
                         : LocationTracker.area() == IslandArea.GALATEA
                         ? ConfigScreen.Feature.GALATEA_TRACKER : ConfigScreen.Feature.TORRHUS_TRACKER;
                 case PET -> ConfigScreen.Feature.PET_HUD;
+                case SPIRIT_MASK_COOLDOWN -> ConfigScreen.Feature.SPIRIT_MASK_COOLDOWN_HUD;
+                case BONZO_MASK_COOLDOWN -> ConfigScreen.Feature.BONZO_MASK_COOLDOWN_HUD;
+                case PHOENIX_COOLDOWN -> ConfigScreen.Feature.PHOENIX_COOLDOWN_HUD;
             };
+        }
+
+        boolean hasSettings() {
+            return true;
         }
     }
 

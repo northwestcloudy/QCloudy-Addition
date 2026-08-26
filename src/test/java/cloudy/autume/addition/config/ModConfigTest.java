@@ -47,7 +47,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(24, config.configVersion);
+        assertEquals(25, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -86,6 +86,13 @@ final class ModConfigTest {
         assertEquals(true, config.combat.deployableExpiryCenterText);
         assertEquals(true, config.combat.deployableExpiryAudio.sound);
         assertEquals(64, config.combat.deployableExpiryAudio.volume);
+        assertEquals(true, config.combat.deathSaveAlerts);
+        assertEquals(true, config.combat.spiritMaskCooldownHud);
+        assertEquals(true, config.combat.bonzoMaskCooldownHud);
+        assertEquals(true, config.combat.phoenixCooldownHud);
+        assertNotNull(config.hudStyle.spiritMaskCooldown);
+        assertNotNull(config.hudStyle.bonzoMaskCooldown);
+        assertNotNull(config.hudStyle.phoenixCooldown);
         assertEquals(true, config.centuryCakes.expiryAlerts);
         assertEquals(true, config.centuryCakes.expiryAudio.sound);
         assertEquals(64, config.centuryCakes.expiryAudio.volume);
@@ -150,7 +157,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(24, migrated.configVersion);
+        assertEquals(25, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -164,6 +171,10 @@ final class ModConfigTest {
         assertEquals(true, migrated.combat.deployableFlareAlerts);
         assertEquals(true, migrated.combat.deployableExpiryCenterText);
         assertEquals(64, migrated.combat.deployableExpiryAudio.volume);
+        assertEquals(true, migrated.combat.deathSaveAlerts);
+        assertEquals(true, migrated.combat.spiritMaskCooldownHud);
+        assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
+        assertEquals(true, migrated.combat.phoenixCooldownHud);
         assertEquals(true, migrated.centuryCakes.expiryAlerts);
         assertEquals(64, migrated.centuryCakes.expiryAudio.volume);
 
@@ -177,6 +188,30 @@ final class ModConfigTest {
         assertEquals("CHORUS", migrated.inventory.instantTransmissionCustomSound);
         assertEquals(0, migrated.inventory.instantTransmissionSoundVolume);
         assertEquals(100, migrated.inventory.etherwarpSoundVolume);
+    }
+
+    @Test
+    void migratesDeathSaveAlertsAndKeepsTheirHudStateIndependent() {
+        ModConfig migrated = new ModConfig();
+        migrated.configVersion = 24;
+        migrated.combat.deathSaveAlerts = false;
+        migrated.combat.spiritMaskCooldownHud = false;
+        migrated.combat.bonzoMaskCooldownHud = false;
+        migrated.combat.phoenixCooldownHud = false;
+
+        migrated.normalize();
+
+        assertEquals(25, migrated.configVersion);
+        assertEquals(true, migrated.combat.deathSaveAlerts);
+        assertEquals(true, migrated.combat.spiritMaskCooldownHud);
+        assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
+        assertEquals(true, migrated.combat.phoenixCooldownHud);
+        assertEquals(ModConfig.HudType.SPIRIT_MASK_COOLDOWN,
+                ModConfig.HudType.valueOf("SPIRIT_MASK_COOLDOWN"));
+        assertEquals(false, migrated.hudStyle.spiritMaskCooldownY
+                == migrated.hudStyle.bonzoMaskCooldownY);
+        assertEquals(false, migrated.hudStyle.bonzoMaskCooldownY
+                == migrated.hudStyle.phoenixCooldownY);
     }
 
     @Test

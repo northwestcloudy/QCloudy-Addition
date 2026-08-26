@@ -208,6 +208,10 @@ final class FeatureSettingsScreen extends Screen {
 
     private List<Setting> settings() {
         List<Setting> rows = new ArrayList<>();
+        // The death-save alert card is a plain master toggle, not a HUD. Keep a
+        // defensive empty settings page so it can never fall through to the
+        // generic appearance controls and mutate the map HUD style.
+        if (feature == ConfigScreen.Feature.DEATH_SAVE_ALERTS) return rows;
         if (feature == ConfigScreen.Feature.UNIFIED_SETTINGS_EDITOR
                 || feature == ConfigScreen.Feature.UNIFIED_HUD_EDITOR) {
             rows.add(new Setting(Kind.INTEGRATION_SCAN_PROGRESS, "config.integration.scan.progress"));

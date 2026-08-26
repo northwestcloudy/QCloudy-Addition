@@ -1,5 +1,6 @@
 package cloudy.autume.addition.hud;
 
+import cloudy.autume.addition.combat.DeathSaveAlertManager;
 import cloudy.autume.addition.compat.MinecraftClientCompat;
 import cloudy.autume.addition.config.ConfigManager;
 import cloudy.autume.addition.config.ModConfig;
@@ -28,6 +29,8 @@ public final class HudRenderer {
     public static final int MINING_WIDTH = 228;
     public static final int PET_WIDTH = 188;
     public static final int PET_PANEL_HEIGHT = 55;
+    public static final int DEATH_SAVE_COOLDOWN_WIDTH = 188;
+    public static final int DEATH_SAVE_COOLDOWN_HEIGHT = 32;
     private static final int MAP_MARGIN = 12;
     private static final Identifier DWARVEN_MAP = id("textures/gui/dwarven_mines.png");
     private static final Identifier GLACITE_LOW = id("textures/gui/glacite_tunnels_low.png");
@@ -40,8 +43,11 @@ public final class HudRenderer {
 
     public static void render(GuiGraphicsExtractor graphics) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || MinecraftClientCompat.isHudHidden(client) || !LocationTracker.isSkyBlock()) return;
+        if (client.player == null || MinecraftClientCompat.isHudHidden(client)) return;
         var config = ConfigManager.get();
+        renderDeathSaveCooldowns(graphics, config);
+
+        if (!LocationTracker.isSkyBlock()) return;
 
         if (isMapLoaded()) {
             float scale = style(ModConfig.HudType.MAP).scale;
@@ -98,7 +104,76 @@ public final class HudRenderer {
             case PET -> {
                 if (isPetLoaded()) renderPet(graphics);
             }
+            case SPIRIT_MASK_COOLDOWN -> renderDeathSaveCooldownPanel(graphics,
+                    DeathSaveAlertManager.Ability.SPIRIT_MASK, 30_000L, true,
+                    style(ModConfig.HudType.SPIRIT_MASK_COOLDOWN));
+            case BONZO_MASK_COOLDOWN -> renderDeathSaveCooldownPanel(graphics,
+                    DeathSaveAlertManager.Ability.BONZO_MASK, 360_000L, true,
+                    style(ModConfig.HudType.BONZO_MASK_COOLDOWN));
+            case PHOENIX_COOLDOWN -> renderDeathSaveCooldownPanel(graphics,
+                    DeathSaveAlertManager.Ability.PHOENIX, 60_000L, false,
+                    style(ModConfig.HudType.PHOENIX_COOLDOWN));
         }
+    }
+
+    private static void renderDeathSaveCooldowns(GuiGraphicsExtractor graphics, ModConfig config) {
+        if (config.combat.spiritMaskCooldownHud) {
+            renderDeathSaveCooldown(graphics, DeathSaveAlertManager.Ability.SPIRIT_MASK,
+                    ModConfig.HudType.SPIRIT_MASK_COOLDOWN,
+                    config.hudStyle.spiritMaskCooldownX, config.hudStyle.spiritMaskCooldownY, true);
+        }
+        if (config.combat.bonzoMaskCooldownHud) {
+            renderDeathSaveCooldown(graphics, DeathSaveAlertManager.Ability.BONZO_MASK,
+                    ModConfig.HudType.BONZO_MASK_COOLDOWN,
+                    config.hudStyle.bonzoMaskCooldownX, config.hudStyle.bonzoMaskCooldownY, true);
+        }
+        if (config.combat.phoenixCooldownHud) {
+            renderDeathSaveCooldown(graphics, DeathSaveAlertManager.Ability.PHOENIX,
+                    ModConfig.HudType.PHOENIX_COOLDOWN,
+                    config.hudStyle.phoenixCooldownX, config.hudStyle.phoenixCooldownY, false);
+        }
+    }
+
+    private static void renderDeathSaveCooldown(GuiGraphicsExtractor graphics,
+                                                DeathSaveAlertManager.Ability ability,
+                                                ModConfig.HudType hudType,
+                                                int configuredX, int configuredY,
+                                                boolean showMaximum) {
+        long remainingMillis = DeathSaveAlertManager.remainingMillis(ability);
+        if (remainingMillis <= 0L) return;
+        ModConfig.PanelStyle style = style(hudType);
+        int x = resolveX(configuredX, DEATH_SAVE_COOLDOWN_WIDTH, graphics.guiWidth(), style.scale);
+        int y = resolveY(configuredY, DEATH_SAVE_COOLDOWN_HEIGHT, graphics.guiHeight(), style.scale);
+        renderScaled(graphics, x, y, style.scale,
+                () -> renderDeathSaveCooldownPanel(graphics, ability, remainingMillis, showMaximum, style));
+    }
+
+    private static void renderDeathSaveCooldownPanel(GuiGraphicsExtractor graphics,
+                                                     DeathSaveAlertManager.Ability ability,
+                                                     long remainingMillis,
+                                                     boolean showMaximum,
+                                                     ModConfig.PanelStyle style) {
+        HudPanel.background(graphics, 0, 0, DEATH_SAVE_COOLDOWN_WIDTH, DEATH_SAVE_COOLDOWN_HEIGHT, style);
+        HudPanel.title(graphics, ModText.get(deathSaveTitleKey(ability)), 6, 5, style);
+        String detail = formatCooldown(remainingMillis);
+        if (showMaximum) {
+            detail += " · " + ModText.get("hud.death_save.maximum") + " "
+                    + formatCooldown(ability.baseCooldownSeconds() * 1_000L);
+        }
+        HudPanel.text(graphics, detail, 6, 18, 0xFFFFD45A, style);
+    }
+
+    private static String deathSaveTitleKey(DeathSaveAlertManager.Ability ability) {
+        return switch (ability) {
+            case SPIRIT_MASK -> "hud.death_save.spirit_mask";
+            case BONZO_MASK -> "hud.death_save.bonzo_mask";
+            case PHOENIX -> "hud.death_save.phoenix";
+        };
+    }
+
+    private static String formatCooldown(long millis) {
+        long totalSeconds = Math.max(0L, (millis + 999L) / 1_000L);
+        return String.format(Locale.ROOT, "%d:%02d", totalSeconds / 60L, totalSeconds % 60L);
     }
 
     private static void renderMap(GuiGraphicsExtractor graphics, Minecraft client) {
@@ -521,5 +596,13 @@ public final class HudRenderer {
         return ConfigManager.get().hudStyle.style(type);
     }
 
-    public enum PreviewPanel { MAP, MINING, HUNTING, PET }
+    public enum PreviewPanel {
+        MAP,
+        MINING,
+        HUNTING,
+        PET,
+        SPIRIT_MASK_COOLDOWN,
+        BONZO_MASK_COOLDOWN,
+        PHOENIX_COOLDOWN
+    }
 }

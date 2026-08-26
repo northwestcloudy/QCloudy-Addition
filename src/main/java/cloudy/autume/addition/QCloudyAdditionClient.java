@@ -3,6 +3,7 @@ package cloudy.autume.addition;
 import cloudy.autume.addition.config.ConfigManager;
 import cloudy.autume.addition.config.ConfigScreen;
 import cloudy.autume.addition.config.IntegrationScanService;
+import cloudy.autume.addition.combat.DeathSaveAlertManager;
 import cloudy.autume.addition.combat.DeployableExpiryAlert;
 import cloudy.autume.addition.compat.MinecraftClientCompat;
 import cloudy.autume.addition.fishing.FishingBiteAlert;
@@ -36,12 +37,14 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import com.mojang.blaze3d.platform.MacosUtil;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -106,6 +109,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            onDeathSaveMessage(message, overlay);
             PetTracker.onChat(message.getString(), overlay);
             HuntingTracker.onMessage(message, overlay);
             DeployableExpiryAlert.onMessage(message, overlay);
@@ -115,6 +119,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         // Compatibility path for chat compactors (for example SkyHanni): GAME
         // and GAME_CANCELED are mutually exclusive for one received message.
         ClientReceiveMessageEvents.GAME_CANCELED.register((message, overlay) -> {
+            onDeathSaveMessage(message, overlay);
             HuntingTracker.onMessage(message, overlay);
             DeployableExpiryAlert.onMessage(message, overlay);
             CenturyCakeManager.onMessage(message, overlay);
@@ -332,5 +337,23 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         HuntingTracker.reset();
         FishingBiteAlert.reset();
         DeployableExpiryAlert.reset();
+        DeathSaveAlertManager.resetRuntime();
+    }
+
+    private static void onDeathSaveMessage(Component message, boolean overlay) {
+        if (overlay || message == null) return;
+        DeathSaveAlertManager.Alert alert = DeathSaveAlertManager.handle(message.getString());
+        if (alert == null) return;
+
+        // The three cooldown HUD switches are independent from the center-title
+        // switch. Always accept the server-confirmed activation above so a HUD
+        // can keep counting even when the player has disabled the large title.
+        if (!ConfigManager.get().combat.deathSaveAlerts) return;
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) return;
+        MinecraftClientCompat.showTitle(client,
+                Component.literal(alert.centerTitle()).withStyle(ChatFormatting.BOLD, ChatFormatting.RED),
+                Component.empty(), 6, 42, 10);
     }
 }

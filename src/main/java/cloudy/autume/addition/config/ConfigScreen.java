@@ -615,6 +615,7 @@ public final class ConfigScreen extends Screen {
         HUNTING_CORE(Category.HUNTING, "config.group.hunting_core"),
         HUNTING_SAFARI(Category.HUNTING, "config.group.safari"),
         CRIMSON_OBJECTIVES(Category.COMBAT, "config.group.crimson_objectives"),
+        COMBAT_DEATH_SAVES(Category.COMBAT, "config.group.death_saves"),
         COMBAT_DEPLOYABLES(Category.COMBAT, "config.group.deployables"),
         COMBAT_VISIBILITY(Category.COMBAT, "config.group.combat_visibility"),
         PET_DISPLAY(Category.ITEMS_AND_MENUS, "config.group.pet_display"),
@@ -673,6 +674,14 @@ public final class ConfigScreen extends Screen {
         SNOOZLE_WALL_OVERLAY(FeatureGroup.HUNTING_SAFARI, "config.hunting.snoozle_wall", "config.desc.hunting.snoozle_wall"),
         SAFARI_BELT(FeatureGroup.HUNTING_SAFARI, "config.hunting.safari_belt", "config.desc.hunting.safari_belt"),
         CRIMSON_TASKS(FeatureGroup.CRIMSON_OBJECTIVES, "config.crimson_tasks", "config.desc.crimson_tasks"),
+        DEATH_SAVE_ALERTS(FeatureGroup.COMBAT_DEATH_SAVES, "config.combat.death_save_alerts",
+                "config.desc.combat.death_save_alerts"),
+        SPIRIT_MASK_COOLDOWN_HUD(FeatureGroup.COMBAT_DEATH_SAVES, "config.combat.spirit_mask_cooldown_hud",
+                "config.desc.combat.spirit_mask_cooldown_hud"),
+        BONZO_MASK_COOLDOWN_HUD(FeatureGroup.COMBAT_DEATH_SAVES, "config.combat.bonzo_mask_cooldown_hud",
+                "config.desc.combat.bonzo_mask_cooldown_hud"),
+        PHOENIX_COOLDOWN_HUD(FeatureGroup.COMBAT_DEATH_SAVES, "config.combat.phoenix_cooldown_hud",
+                "config.desc.combat.phoenix_cooldown_hud"),
         DEPLOYABLE_EXPIRY_ALERT(FeatureGroup.COMBAT_DEPLOYABLES, "config.combat.deployable_expiry",
                 "config.desc.combat.deployable_expiry"),
         DRAGON_HIGHLIGHT(FeatureGroup.COMBAT_VISIBILITY, "config.dragon_highlight", "config.desc.dragon_highlight"),
@@ -732,6 +741,10 @@ public final class ConfigScreen extends Screen {
                 case SNOOZLE_WALL_OVERLAY -> config.hunting.snoozleWallOverlay;
                 case SAFARI_BELT -> config.hunting.safariBeltTooltip;
                 case CRIMSON_TASKS -> config.crimsonIsle.taskTracker;
+                case DEATH_SAVE_ALERTS -> config.combat.deathSaveAlerts;
+                case SPIRIT_MASK_COOLDOWN_HUD -> config.combat.spiritMaskCooldownHud;
+                case BONZO_MASK_COOLDOWN_HUD -> config.combat.bonzoMaskCooldownHud;
+                case PHOENIX_COOLDOWN_HUD -> config.combat.phoenixCooldownHud;
                 case DEPLOYABLE_EXPIRY_ALERT -> config.combat.deployableExpiryAlert;
                 case DRAGON_HIGHLIGHT -> config.combat.enderDragonHighlight;
                 case PET_HUD -> config.pets.equippedPetHud;
@@ -785,6 +798,13 @@ public final class ConfigScreen extends Screen {
                 case SNOOZLE_WALL_OVERLAY -> config.hunting.snoozleWallOverlay = !config.hunting.snoozleWallOverlay;
                 case SAFARI_BELT -> config.hunting.safariBeltTooltip = !config.hunting.safariBeltTooltip;
                 case CRIMSON_TASKS -> config.crimsonIsle.taskTracker = !config.crimsonIsle.taskTracker;
+                case DEATH_SAVE_ALERTS -> config.combat.deathSaveAlerts = !config.combat.deathSaveAlerts;
+                case SPIRIT_MASK_COOLDOWN_HUD -> config.combat.spiritMaskCooldownHud =
+                        !config.combat.spiritMaskCooldownHud;
+                case BONZO_MASK_COOLDOWN_HUD -> config.combat.bonzoMaskCooldownHud =
+                        !config.combat.bonzoMaskCooldownHud;
+                case PHOENIX_COOLDOWN_HUD -> config.combat.phoenixCooldownHud =
+                        !config.combat.phoenixCooldownHud;
                 case DEPLOYABLE_EXPIRY_ALERT -> config.combat.deployableExpiryAlert =
                         !config.combat.deployableExpiryAlert;
                 case DRAGON_HIGHLIGHT -> config.combat.enderDragonHighlight = !config.combat.enderDragonHighlight;
@@ -808,13 +828,16 @@ public final class ConfigScreen extends Screen {
                         SAFARI_DASHBOARD, SAFARI_SHARD_STATS, SAFARI_CRITTERDEX,
                         FLOOR_QUEST_ASSISTANT, WUMPA_HUD -> ModConfig.HudType.HUNTING;
                 case PET_HUD -> ModConfig.HudType.PET;
+                case SPIRIT_MASK_COOLDOWN_HUD -> ModConfig.HudType.SPIRIT_MASK_COOLDOWN;
+                case BONZO_MASK_COOLDOWN_HUD -> ModConfig.HudType.BONZO_MASK_COOLDOWN;
+                case PHOENIX_COOLDOWN_HUD -> ModConfig.HudType.PHOENIX_COOLDOWN;
                 case HUD_ANIMATIONS, HUNTING_ALERT_SOUND, UNIFIED_SETTINGS_EDITOR, UNIFIED_HUD_EDITOR,
                         MANUAL_RECONNECT, FISHING_BITE_ALERT,
                         COLD_SAFETY, DOOMSPIRAL_READY, WARDEN_READY_ALERT,
                         FAIRY_SOUL_WAYPOINTS, SAFARI_CRITTER_HIGHLIGHT, BEEHEEMOTH_HELPER,
                         LASSO_REEL_SOUND, TREE_GIFT_ALERTS,
                         SPARKLING_ALERT, SNOOZLE_WALL_OVERLAY, SAFARI_BELT,
-                        DEPLOYABLE_EXPIRY_ALERT, DRAGON_HIGHLIGHT, CHAT_PEEK,
+                        DEATH_SAVE_ALERTS, DEPLOYABLE_EXPIRY_ALERT, DRAGON_HIGHLIGHT, CHAT_PEEK,
                         CENTURY_CAKE_EFFECTS -> null;
                 case SHARD_FUSION_HELPER, ITEM_TIMESTAMPS, CURSOR_MEMORY, TELEPORT_SOUNDS -> null;
             };
@@ -832,7 +855,7 @@ public final class ConfigScreen extends Screen {
 
         boolean hasSettings() {
             if (this == HUD_ANIMATIONS || this == HUNTING_ALERT_SOUND
-                    || this == MANUAL_RECONNECT) return false;
+                    || this == MANUAL_RECONNECT || this == DEATH_SAVE_ALERTS) return false;
             if (this == FAIRY_SOUL_WAYPOINTS) return false;
             if (huntingFeature()) return hudType() != null || !HuntingOption.forFeature(this).isEmpty();
             return true;

@@ -177,10 +177,23 @@ public final class ModConfig {
             combat.deployableExpiryCenterText = true;
             configVersion = 24;
         }
+        if (configVersion < 25) {
+            // Confirmed server messages now drive three independent
+            // death-prevention alerts and cooldown HUDs. Keep the central
+            // warning and every HUD visible by default for existing users.
+            combat.deathSaveAlerts = true;
+            combat.spiritMaskCooldownHud = true;
+            combat.bonzoMaskCooldownHud = true;
+            combat.phoenixCooldownHud = true;
+            configVersion = 25;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
         hudStyle.pet.normalize();
+        hudStyle.spiritMaskCooldown.normalize();
+        hudStyle.bonzoMaskCooldown.normalize();
+        hudStyle.phoenixCooldown.normalize();
         combat.normalize();
         centuryCakes.normalize();
         mining.normalize();
@@ -500,6 +513,10 @@ public final class ModConfig {
         public boolean deployableFlareAlerts = true;
         public boolean deployableExpiryCenterText = true;
         public AlertAudio deployableExpiryAudio = new AlertAudio();
+        public boolean deathSaveAlerts = true;
+        public boolean spiritMaskCooldownHud = true;
+        public boolean bonzoMaskCooldownHud = true;
+        public boolean phoenixCooldownHud = true;
 
         private void normalize() {
             enderDragonHighlightColor &= 0xFFFFFF;
@@ -711,7 +728,15 @@ public final class ModConfig {
         }
     }
 
-    public enum HudType { MAP, MINING, HUNTING, PET }
+    public enum HudType {
+        MAP,
+        MINING,
+        HUNTING,
+        PET,
+        SPIRIT_MASK_COOLDOWN,
+        BONZO_MASK_COOLDOWN,
+        PHOENIX_COOLDOWN
+    }
 
     public static final class HudStyle {
         public boolean animations = true;
@@ -719,6 +744,9 @@ public final class ModConfig {
         public PanelStyle mining = new PanelStyle();
         public PanelStyle hunting = new PanelStyle();
         public PanelStyle pet = new PanelStyle();
+        public PanelStyle spiritMaskCooldown = new PanelStyle();
+        public PanelStyle bonzoMaskCooldown = new PanelStyle();
+        public PanelStyle phoenixCooldown = new PanelStyle();
 
         public int mapX = 8;
         public int mapY = 8;
@@ -728,6 +756,12 @@ public final class ModConfig {
         public int huntingY = 8;
         public int petX = 8;
         public int petY = 196;
+        public int spiritMaskCooldownX = -196;
+        public int spiritMaskCooldownY = 196;
+        public int bonzoMaskCooldownX = -196;
+        public int bonzoMaskCooldownY = 236;
+        public int phoenixCooldownX = -196;
+        public int phoenixCooldownY = 276;
 
         // Version 1 fields are retained solely to migrate existing user configs.
         @Deprecated public int backgroundOpacity = 120;
@@ -744,6 +778,9 @@ public final class ModConfig {
                 case MINING -> mining;
                 case HUNTING -> hunting;
                 case PET -> pet;
+                case SPIRIT_MASK_COOLDOWN -> spiritMaskCooldown;
+                case BONZO_MASK_COOLDOWN -> bonzoMaskCooldown;
+                case PHOENIX_COOLDOWN -> phoenixCooldown;
             };
         }
 
@@ -752,11 +789,15 @@ public final class ModConfig {
             if (mining == null) mining = new PanelStyle();
             if (hunting == null) hunting = new PanelStyle();
             if (pet == null) pet = new PanelStyle();
+            if (spiritMaskCooldown == null) spiritMaskCooldown = new PanelStyle();
+            if (bonzoMaskCooldown == null) bonzoMaskCooldown = new PanelStyle();
+            if (phoenixCooldown == null) phoenixCooldown = new PanelStyle();
         }
 
         private void copyLegacyAppearanceToPanels() {
             ensurePanels();
-            for (PanelStyle panel : new PanelStyle[]{map, mining, hunting, pet}) {
+            for (PanelStyle panel : new PanelStyle[]{map, mining, hunting, pet,
+                    spiritMaskCooldown, bonzoMaskCooldown, phoenixCooldown}) {
                 panel.backgroundOpacity = backgroundOpacity;
                 panel.border = border;
                 panel.borderThickness = borderThickness;
