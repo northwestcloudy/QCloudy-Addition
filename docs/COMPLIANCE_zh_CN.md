@@ -30,6 +30,11 @@
 | Century Cake 到期追踪 | 精确收到的 48 小时首次生效/刷新聊天行与本地系统时间 | 本地计时、效果界面、中央/聊天提醒与本地音效 | 只有玩家直接点击带下划线的续效果文字后才执行精确 `/visit northwestcloudy`；绝不自动执行 |
 | 宠物 HUD | 已收到的聊天与 Tab 文本 | 文字 HUD | 无 |
 | 聊天偷窥 | 玩家真实按住按键及客户端已收到的聊天历史 | 临时改变本地聊天渲染与滚轮目标 | 无 |
+| 自动接受组队 | 已收到的组队邀请聊天，以及本地缓存的好友/白名单数据 | 可选的本地接受判定 | 开启后，发送者符合所选类别或白名单时发送 `party accept <发送者>` |
+| 私信组队申请 | 精确收到的英文私信关键词 `!p`、`!party` 或 `!invite` | 可选的本地请求匹配 | 开启后发送 `party invite <发送者>` |
+| 快速组队指令 | 精确收到、以已识别 `!` 别名开始的英文 Party Chat 行；本机玩家名、队伍成员名与需要时的本地坐标 | 可选别名解析、唯一前缀玩家名补全与本地冷却 | 总开关、子开关和触发人范围均允许时，发送下表对应的 Party/Stream/地牢/Kuudra 指令 |
+| 组队指令 | 本机输入的已识别 `//` 指令；本机玩家名、队伍成员名与需要时的本地坐标 | 可选别名解析与唯一前缀玩家名补全 | 总开关与子开关允许时发送下表对应指令；未知 `//` 输入原样放行 |
+| 快速私信 `!p` | 本机输入 `//invited <玩家>`、`//invited by <玩家>` 或 `//i <玩家>` | 本地玩家名校验 | 开启后发送 `msg <玩家> !p` |
 | AOTE/AOTV 声音自定义 | 手持物品 ID 与客户端收到的附近声音事件 | 保留原声，或按设置的音量/音调替换为本地原版声音 | 无 |
 | Attribute Shard Fusion Guide | 随模组打包的离线 320-Shard 效果/获取/Fusion JSON 与 320 张本地图标、已经在本地菜单/物品栏收到的可选原生 ItemStack、玩家真实搜索/点击/按键 | 本地详细信息/合成来源/可合成内容界面、Shard 专属离线图标、语义文字颜色与遵循材质包的已观察覆盖 | 无；`/qshard` 是纯客户端界面命令 |
 | Shard Planner | 打包配方/速率、本地 Planner 设置、兼容 Skyblocker 已缓存的可选价格、玩家亲自打开 Hunting Box 页面中可见的 Shard 数量/lore | 本地路线 Tree、候选、材料汇总、直接配方筛选、详情、Fusion Lines 与按 Profile 仓库 | 无；不发送 `/hb`、不请求价格、不点击、不 Fusion |
@@ -48,13 +53,36 @@
 - 本地 Century Cake 命令：`/cake`、`/centurycakeeffect`；只打开本地蛋糕效果菜单。过期提醒中的带下划线链接在玩家点击后发送精确 `/visit northwestcloudy`；未点击时不会发送，计时器也不会自动触发该指令。
 - 本地 Torrhus 快捷命令：`/th`；没有设置项且无法关闭。玩家明确输入时，QCA 发送精确内容 `warp torrhus`，等同手动输入 `/warp torrhus`；只有在其他客户端命令已经占用 `/th` 时才跳过注册。
 - 本地 Helia 快捷命令：`/helia`；没有设置项。玩家明确输入时，QCA 发送精确内容 `chapter torrhus`，等同手动输入 `/chapter torrhus`；只有在其他客户端命令已经占用 `/helia` 时才跳过注册。
-- 自动 `sendCommand` 调用：**没有**。`/visit northwestcloudy` 仅来自玩家对聊天 Component 的明确点击。
+- **自动接受组队**默认关闭。开启后，收到来自本地配置中符合条件的发送者的组队邀请，会发送精确 `party accept <发送者>`。好友类别与白名单均是本地配置；白名单条目优先于类别选择。
+- **私信组队申请**默认关闭。它只匹配精确英文私信关键词 `!p`、`!party`、`!invite`；匹配后发送精确 `party invite <发送者>`。同一发送者的重复匹配会在短暂本地冷却内去重。
+- **快速私信 `!p`**默认关闭。本机输入 `//invited <玩家>`、`//invited by <玩家>`、`//i <玩家>` 均发送精确 `msg <玩家> !p`。
+- **快速组队指令**默认关闭。它只处理 Party Chat 中收到的已识别 `!` 消息；公屏与公会聊天不满足条件。九个子开关默认开启，且每项可单独限制为“仅自己 / 仅其他玩家 / 所有人”。`!warp`/`!w` 共享五秒 `party warp` 冷却；`!allinvite`/`!all`/`!allinv` 共享两秒 `party settings allinvite` 冷却。
+- **组队指令**默认开启，九个子开关也默认开启。它通过本机 `//` 指令处理同一批已识别别名；未知 `//` 不拦截。玩家参数可为不区分大小写的精确名称，或唯一的队伍成员名称前缀；前缀有歧义时不会发送指令。
+
+| 别名组 | 精确服务器命令载荷 |
+|---|---|
+| `!warp`、`!w` / `//warp`、`//w` | `party warp` |
+| `!allinvite`、`!all`、`!allinv` / 对应本机 `//` | `party settings allinvite` |
+| `!pt`、`!ptme` / `//pt`、`//ptme` | `party transfer <消息发送者或本机玩家>` |
+| `!pt <玩家>` / `//pt <玩家>` | `party transfer <玩家>` |
+| `!k <玩家>` / `//k <玩家>` | `party kick <玩家>` |
+| `!sc`、`!sendcoords`、`!c` / 对应本机 `//` | `pc x: <x>, y: <y>, z: <z>` |
+| `!pp <玩家>` / `//pp <玩家>` | `party promote <玩家>` |
+| `!stream`、`!st`、`!s` / 对应本机 `//` | `stream` |
+| Stream 别名后接任意纯十进制数字 `<n>` | `stream open <n>` |
+| Stream 别名后接 `c`、`close` 或 `off` | `stream close` |
+| `!fe`、`!f0` / `//fe`、`//f0` | `joininstance CATACOMBS_ENTRANCE` |
+| `!me`、`!m0` / `//me`、`//m0` | `joininstance MASTER_CATACOMBS_ENTRANCE` |
+| `!f1` … `!f7` / 对应本机 `//` | `joininstance CATACOMBS_FLOOR_ONE` … `joininstance CATACOMBS_FLOOR_SEVEN` |
+| `!m1` … `!m7` / 对应本机 `//` | `joininstance MASTER_CATACOMBS_FLOOR_ONE` … `joininstance MASTER_CATACOMBS_FLOOR_SEVEN` |
+| `!t1` … `!t5` / 对应本机 `//` | `joininstance KUUDRA_NORMAL`、`KUUDRA_HOT`、`KUUDRA_BURNING`、`KUUDRA_FIERY`、`KUUDRA_INFERNAL` |
+
 - `sendChat` 调用：**没有**。
-- 自动生成的聊天内容：**没有**。
+- 自动生成的聊天内容：仅来自单独开启的“快速私信 `!p`”功能的精确 `msg <玩家> !p` 载荷；不会使用其他 `sendChat` 调用。
 
 ## 网络与自动化审计
 
-QCA 不包含 Hypixel Mod API、Hypixel 公共 API、WebSocket、HTTP 客户端、遥测、坐标共享、远程更新器、宏、模拟输入、自动点击/移动或方块交互。唯一的对外动作是上面明确记录、由玩家触发的 `/th` 传送命令、`/helia` Chapter 命令、点击蛋糕续效果文字后的 `/visit northwestcloudy`，以及玩家点击“重新连接”后的一次普通服务器连接；它们都不会自行运行。重连没有倒计时、重试循环、后台尝试或自动加入。
+QCA 不包含 Hypixel Mod API、Hypixel 公共 API、WebSocket、HTTP 客户端、遥测、坐标共享服务、远程更新器、宏、模拟输入、自动点击/移动或方块交互。对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
 
 钓鱼上钩提示音优先使用直接归属于本地玩家的已加载鱼钩。为了兼容 owner 关联可能缺失的 Hypixel 岩浆鱼钩，它只在玩家真实使用钓竿后开启有限 40 tick 窗口，排除抛竿前已经存在的全部鱼钩及明确属于其他玩家的鱼钩，然后才接受一根新加载、归属本地或 owner 为空的鱼钩。选中鱼钩仍存在时的第二次真实使用会被判定为收杆，不能重新打开播放门。此后只扫描该鱼钩周围四格并精确匹配收到的 `!!!` ArmorStand，每根鱼钩最多播放一次内置本地提示音。回调会原样放行真实使用动作，不会自动抛竿、收杆、点击、移动玩家，也不发送命令或额外数据包；空闲时不会运行较大范围扫描。
 

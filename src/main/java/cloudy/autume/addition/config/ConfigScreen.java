@@ -606,6 +606,8 @@ public final class ConfigScreen extends Screen {
         HUD(Category.GENERAL, "config.group.hud"),
         INTEGRATIONS(Category.GENERAL, "config.group.integrations"),
         CONNECTION(Category.GENERAL, "config.group.connection"),
+        CHAT_UI(Category.GENERAL, "config.group.chat_ui"),
+        COMMANDS(Category.GENERAL, "config.group.commands"),
         FISHING(Category.FISHING, "config.group.fishing"),
         MAPS(Category.MAPS, "config.group.maps"),
         WAYPOINTS(Category.MAPS, "config.group.waypoints"),
@@ -621,7 +623,6 @@ public final class ConfigScreen extends Screen {
         PET_DISPLAY(Category.ITEMS_AND_MENUS, "config.group.pet_display"),
         CENTURY_CAKES(Category.ITEMS_AND_MENUS, "config.group.century_cakes"),
         SHARD_FUSION(Category.ITEMS_AND_MENUS, "config.group.shard_fusion"),
-        CHAT_UI(Category.GENERAL, "config.group.chat_ui"),
         INVENTORY_TOOLS(Category.ITEMS_AND_MENUS, "config.group.inventory_tools"),
         DUNGEON_TOOLS(Category.DUNGEONS, "config.group.dungeons"),
         SLAYER_TOOLS(Category.SLAYER, "config.group.slayer"),
@@ -646,6 +647,16 @@ public final class ConfigScreen extends Screen {
         UNIFIED_HUD_EDITOR(FeatureGroup.INTEGRATIONS, "config.integration.hud_editor",
                 "config.desc.integration.hud_editor"),
         MANUAL_RECONNECT(FeatureGroup.CONNECTION, "config.manual_reconnect", "config.desc.manual_reconnect"),
+        CHAT_PEEK(FeatureGroup.CHAT_UI, "config.chat_peek", "config.desc.chat_peek"),
+        PARTY_AUTO_ACCEPT(FeatureGroup.CHAT_UI, "config.party.auto_accept", "config.desc.party.auto_accept"),
+        DIRECT_MESSAGE_PARTY_REQUEST(FeatureGroup.CHAT_UI, "config.chat.dm_party_request",
+                "config.desc.chat.dm_party_request"),
+        QUICK_PRIVATE_PARTY_REQUEST(FeatureGroup.CHAT_UI, "config.chat.quick_private_party_request",
+                "config.desc.chat.quick_private_party_request"),
+        FAST_PARTY_COMMANDS(FeatureGroup.CHAT_UI, "config.chat.fast_party_commands",
+                "config.desc.chat.fast_party_commands"),
+        PARTY_COMMANDS(FeatureGroup.COMMANDS, "config.commands.party_commands",
+                "config.desc.commands.party_commands"),
         FISHING_BITE_ALERT(FeatureGroup.FISHING, "config.fishing.bite_alert", "config.desc.fishing.bite_alert"),
         DWARVEN_MAP(FeatureGroup.MAPS, "config.dwarven_map", "config.desc.dwarven_map"),
         GLACITE_MAP(FeatureGroup.MAPS, "config.glacite_map", "config.desc.glacite_map"),
@@ -689,7 +700,6 @@ public final class ConfigScreen extends Screen {
         CENTURY_CAKE_EFFECTS(FeatureGroup.CENTURY_CAKES, "config.century_cake",
                 "config.desc.century_cake"),
         SHARD_FUSION_HELPER(FeatureGroup.SHARD_FUSION, "config.shard_fusion", "config.desc.shard_fusion"),
-        CHAT_PEEK(FeatureGroup.CHAT_UI, "config.chat_peek", "config.desc.chat_peek"),
         ITEM_TIMESTAMPS(FeatureGroup.INVENTORY_TOOLS, "config.item_timestamps", "config.desc.item_timestamps"),
         CURSOR_MEMORY(FeatureGroup.INVENTORY_TOOLS, "config.cursor_memory", "config.desc.cursor_memory"),
         TELEPORT_SOUNDS(FeatureGroup.INVENTORY_TOOLS, "config.teleport_sounds", "config.desc.teleport_sounds");
@@ -710,6 +720,11 @@ public final class ConfigScreen extends Screen {
             return switch (this) {
                 case HUD_ANIMATIONS -> config.hudStyle.animations;
                 case MANUAL_RECONNECT -> config.manualReconnectButton;
+                case PARTY_AUTO_ACCEPT -> config.chat.partyAutoAccept;
+                case DIRECT_MESSAGE_PARTY_REQUEST -> config.chat.directMessagePartyRequest;
+                case QUICK_PRIVATE_PARTY_REQUEST -> config.chat.quickPrivatePartyRequest;
+                case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands;
+                case PARTY_COMMANDS -> config.chat.partyCommands;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels;
@@ -761,6 +776,13 @@ public final class ConfigScreen extends Screen {
             switch (this) {
                 case HUD_ANIMATIONS -> config.hudStyle.animations = !config.hudStyle.animations;
                 case MANUAL_RECONNECT -> config.manualReconnectButton = !config.manualReconnectButton;
+                case PARTY_AUTO_ACCEPT -> config.chat.partyAutoAccept = !config.chat.partyAutoAccept;
+                case DIRECT_MESSAGE_PARTY_REQUEST -> config.chat.directMessagePartyRequest =
+                        !config.chat.directMessagePartyRequest;
+                case QUICK_PRIVATE_PARTY_REQUEST -> config.chat.quickPrivatePartyRequest =
+                        !config.chat.quickPrivatePartyRequest;
+                case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands = !config.chat.fastPartyCommands;
+                case PARTY_COMMANDS -> config.chat.partyCommands = !config.chat.partyCommands;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert = !config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines = !config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels = !config.maps.glaciteTunnels;
@@ -832,7 +854,9 @@ public final class ConfigScreen extends Screen {
                 case BONZO_MASK_COOLDOWN_HUD -> ModConfig.HudType.BONZO_MASK_COOLDOWN;
                 case PHOENIX_COOLDOWN_HUD -> ModConfig.HudType.PHOENIX_COOLDOWN;
                 case HUD_ANIMATIONS, HUNTING_ALERT_SOUND, UNIFIED_SETTINGS_EDITOR, UNIFIED_HUD_EDITOR,
-                        MANUAL_RECONNECT, FISHING_BITE_ALERT,
+                        MANUAL_RECONNECT, PARTY_AUTO_ACCEPT, DIRECT_MESSAGE_PARTY_REQUEST,
+                        QUICK_PRIVATE_PARTY_REQUEST, FAST_PARTY_COMMANDS, PARTY_COMMANDS,
+                        FISHING_BITE_ALERT,
                         COLD_SAFETY, DOOMSPIRAL_READY, WARDEN_READY_ALERT,
                         FAIRY_SOUL_WAYPOINTS, SAFARI_CRITTER_HIGHLIGHT, BEEHEEMOTH_HELPER,
                         LASSO_REEL_SOUND, TREE_GIFT_ALERTS,
@@ -855,7 +879,9 @@ public final class ConfigScreen extends Screen {
 
         boolean hasSettings() {
             if (this == HUD_ANIMATIONS || this == HUNTING_ALERT_SOUND
-                    || this == MANUAL_RECONNECT || this == DEATH_SAVE_ALERTS) return false;
+                    || this == MANUAL_RECONNECT || this == DEATH_SAVE_ALERTS
+                    || this == DIRECT_MESSAGE_PARTY_REQUEST
+                    || this == QUICK_PRIVATE_PARTY_REQUEST) return false;
             if (this == FAIRY_SOUL_WAYPOINTS) return false;
             if (huntingFeature()) return hudType() != null || !HuntingOption.forFeature(this).isEmpty();
             return true;

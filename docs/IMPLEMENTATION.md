@@ -1,6 +1,6 @@
 # QCloudy_Addition implementation and data-flow reference
 
-This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It describes Release `0.3.9` for Minecraft 26.1.2 and 26.2.
+This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the current Alpha 32 development build for Minecraft 26.1.2; the latest stable Release remains `0.3.9` for Minecraft 26.1.2 and 26.2.
 
 ## 1. Runtime architecture
 
@@ -347,6 +347,16 @@ All information rows on; icon+name accessory mode; read/render only; no runtime 
 - **Expected effect:** chat expands only while the chord is held; wheel controls chat by default.
 - **Default/outbound:** feature on, chord unbound, scroll target Chat; no message is sent.
 
+### 11.1 Party and chat command utilities
+
+- **Inputs and bounded parsing:** `PartyText` removes Minecraft formatting before parsing. `PartyChatLine` accepts only received English Party Chat lines, extracts the sender, and accepts only a recognized `!` alias with normalized whitespace. `PrivatePartyRequestCommands` accepts only exact received English private-message bodies `!p`, `!party`, or `!invite`. Public chat, guild chat, unrecognized Party Chat text, and nonmatching private messages do not select an action.
+- **Roster and completion:** `PartyRosterTracker` observes the client-visible party roster and resolves a player argument by exact case-insensitive name first, then a unique case-insensitive prefix. Ambiguous prefixes produce no command; a syntactically valid full player name remains usable when it is not in the observed roster. `!pt`/`!ptme` transfer leadership to the Party Chat sender; `//pt`/`//ptme` transfer it to the local player. The same resolver supplies command suggestions for aliases and player arguments.
+- **Fast Party Commands:** this parent switch defaults off. Its independent children for Warp, All Invite, Transfer, Kick, Coordinates, Promote, Stream, Dungeon, and Kuudra default on. A child can independently accept the local player, other party members, or everyone as a Party Chat trigger. `!warp`/`!w` and `!allinvite`/`!all`/`!allinv` use shared action cooldowns of five seconds and two seconds respectively. All other recognized aliases have no added cooldown. The command is sent only after the parent, child, sender scope, parse, player resolution, and any cooldown permit it.
+- **Party Commands:** the separate local `//` parent and all nine independent children default on. It shares the same parser and command mapping but has no sender scope because it is local input. Known malformed `//` commands are consumed with local feedback; unknown `//` commands are not intercepted and remain available to other client/server command handlers.
+- **Private utilities:** Party Auto Accept remains a separately configured local friend/whitelist check. Private-message Party Request is off by default and sends `party invite <sender>` only for an exact allowed received keyword. Quick Private `!p` is off by default; local `//invited <player>`, `//invited by <player>`, and `//i <player>` send `msg <player> !p`.
+- **Exact mapping:** Warp → `party warp`; All Invite → `party settings allinvite`; Transfer → `party transfer <player>`; Kick → `party kick <player>`; Coordinates → `pc x: <x>, y: <y>, z: <z>` using the local block position; Promote → `party promote <player>`; bare Stream → `stream`; Stream followed by any pure decimal `<n>` → `stream open <n>`; Stream followed by `c`, `close`, or `off` → `stream close`. `fe`/`f0` → `joininstance CATACOMBS_ENTRANCE`; `me`/`m0` → `joininstance MASTER_CATACOMBS_ENTRANCE`; `f1`–`f7` → `joininstance CATACOMBS_FLOOR_ONE` through `CATACOMBS_FLOOR_SEVEN`; `m1`–`m7` → `joininstance MASTER_CATACOMBS_FLOOR_ONE` through `MASTER_CATACOMBS_FLOOR_SEVEN`; `t1`–`t5` → `joininstance KUUDRA_NORMAL`, `KUUDRA_HOT`, `KUUDRA_BURNING`, `KUUDRA_FIERY`, and `KUUDRA_INFERNAL`.
+- **Session boundaries:** message-command deduplication and private-request deduplication are short-lived local guards. Roster, deduplication, and cooldown state are reset when the client disconnects; neither stores chat history.
+
 ## 12. Inventory and menu tools
 
 ### 12.1 Item timestamps
@@ -411,8 +421,13 @@ QCA stores no password, access token, Hypixel API key, chat history, remote acco
 | Player types `/helia` | `sendCommand("chapter torrhus")` | No |
 | Player clicks the underlined Century Cake renewal text | `sendCommand("visit northwestcloudy")` through Minecraft's `RUN_COMMAND` chat click event | No |
 | Player clicks Reconnect | One normal Minecraft server connection to the remembered in-memory target | No |
+| Enabled Party Auto Accept receives a qualifying invite | `sendCommand("party accept <sender>")` | Yes, only after its local sender check |
+| Enabled Private-message Party Request receives exact `!p`, `!party`, or `!invite` | `sendCommand("party invite <sender>")` | Yes, only after its exact message match |
+| Enabled Fast Party Commands receives an allowed recognized Party Chat alias | `sendCommand` with the documented Party/Stream/`joininstance` payload | Yes, only after parent, child, sender-scope, parser, completion, and cooldown checks |
+| Enabled Quick Private `!p` receives local `//invited …` or `//i …` input | `sendCommand("msg <player> !p")` | No; typed locally |
+| Enabled Party Commands receives a recognized local `//` alias | `sendCommand` with the documented Party/Stream/`joininstance` payload | No; typed locally |
 
-`sendChat` calls: none. Automatically generated chat: none. Automatic commands: none. Automatic movement, combat, capture, item use, block interaction, or reconnect: none.
+`sendChat` calls: none. The only generated message payload is `msg <player> !p`, through `sendCommand`, and only from the separately enabled Quick Private `!p` feature. Automatic movement, combat, capture, item use, block interaction, or reconnect: none.
 
 ## 15. Expected validation boundary
 

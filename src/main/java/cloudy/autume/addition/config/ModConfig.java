@@ -1,7 +1,9 @@
 package cloudy.autume.addition.config;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -179,13 +181,21 @@ public final class ModConfig {
         }
         if (configVersion < 25) {
             // Confirmed server messages now drive three independent
-            // death-prevention alerts and cooldown HUDs. Keep the central
-            // warning and every HUD visible by default for existing users.
-            combat.deathSaveAlerts = true;
-            combat.spiritMaskCooldownHud = true;
-            combat.bonzoMaskCooldownHud = true;
-            combat.phoenixCooldownHud = true;
+            // death-prevention alerts and cooldown HUDs. Their field defaults
+            // remain opt-in; migration must not overwrite a saved choice.
             configVersion = 25;
+        }
+        if (configVersion < 26) {
+            // Party auto-accept is opt-in. Missing fields already receive the
+            // field default, so an upgrade only advances the schema version
+            // and never overwrites an explicitly saved choice.
+            configVersion = 26;
+        }
+        if (configVersion < 27) {
+            // These party-command controls did not exist before schema 27, so
+            // initializing them cannot overwrite a choice from an older build.
+            chat.initializePartyCommandDefaults();
+            configVersion = 27;
         }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
@@ -513,10 +523,10 @@ public final class ModConfig {
         public boolean deployableFlareAlerts = true;
         public boolean deployableExpiryCenterText = true;
         public AlertAudio deployableExpiryAudio = new AlertAudio();
-        public boolean deathSaveAlerts = true;
-        public boolean spiritMaskCooldownHud = true;
-        public boolean bonzoMaskCooldownHud = true;
-        public boolean phoenixCooldownHud = true;
+        public boolean deathSaveAlerts;
+        public boolean spiritMaskCooldownHud;
+        public boolean bonzoMaskCooldownHud;
+        public boolean phoenixCooldownHud;
 
         private void normalize() {
             enderDragonHighlightColor &= 0xFFFFFF;
@@ -590,14 +600,189 @@ public final class ModConfig {
         }
     }
 
+    public enum PartyAcceptFriendMode {
+        NORMAL_ONLY,
+        SPECIAL_ONLY
+    }
+
+    public enum PartyCommandTrigger {
+        SELF_ONLY,
+        OTHERS_ONLY,
+        EVERYONE
+    }
+
     public static final class Chat {
+        public static final int PARTY_AUTO_ACCEPT_WHITELIST_LIMIT = 16;
+
         public boolean chatPeek = true;
         public String peekScrollTarget = "CHAT";
+        public boolean partyAutoAccept;
+        public PartyAcceptFriendMode partyAutoAcceptFriendMode = PartyAcceptFriendMode.NORMAL_ONLY;
+        public List<String> partyAutoAcceptWhitelist = new ArrayList<>();
+
+        /** Invite the sender when a supported keyword arrives in a private message. */
+        public boolean directMessagePartyRequest;
+        /** Send a private !p request from the local double-slash helper. */
+        public boolean quickPrivatePartyRequest;
+
+        /** Party-chat keyword commands. The master is opt-in; child choices persist independently. */
+        public boolean fastPartyCommands;
+        public boolean fastPartyWarp = true;
+        public boolean fastPartyAllInvite = true;
+        public boolean fastPartyTransfer = true;
+        public boolean fastPartyKick = true;
+        public boolean fastPartyCoordinates = true;
+        public boolean fastPartyPromote = true;
+        public boolean fastPartyStream = true;
+        public boolean fastPartyDungeon = true;
+        public boolean fastPartyKuudra = true;
+        public PartyCommandTrigger fastPartyWarpTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyAllInviteTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyTransferTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyKickTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyCoordinatesTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyPromoteTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyStreamTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyDungeonTrigger = PartyCommandTrigger.EVERYONE;
+        public PartyCommandTrigger fastPartyKuudraTrigger = PartyCommandTrigger.EVERYONE;
+
+        /** Local client-only command aliases. This family is independent from party-chat keywords. */
+        public boolean partyCommands = true;
+        public boolean partyCommandWarp = true;
+        public boolean partyCommandAllInvite = true;
+        public boolean partyCommandTransfer = true;
+        public boolean partyCommandKick = true;
+        public boolean partyCommandCoordinates = true;
+        public boolean partyCommandPromote = true;
+        public boolean partyCommandStream = true;
+        public boolean partyCommandDungeon = true;
+        public boolean partyCommandKuudra = true;
 
         private void normalize() {
             if (!"CHAT".equals(peekScrollTarget) && !"HOTBAR".equals(peekScrollTarget)) {
                 peekScrollTarget = "CHAT";
             }
+            if (partyAutoAcceptFriendMode == null) {
+                partyAutoAcceptFriendMode = PartyAcceptFriendMode.NORMAL_ONLY;
+            }
+            repairPartyCommandTriggers();
+            List<String> repairedWhitelist = new ArrayList<>();
+            if (partyAutoAcceptWhitelist != null) {
+                for (String name : partyAutoAcceptWhitelist) {
+                    String normalized = normalizePartyAutoAcceptName(name);
+                    if (!isValidMinecraftUsername(normalized)
+                            || containsIgnoreCase(repairedWhitelist, normalized)) {
+                        continue;
+                    }
+                    repairedWhitelist.add(normalized);
+                    if (repairedWhitelist.size() >= PARTY_AUTO_ACCEPT_WHITELIST_LIMIT) break;
+                }
+            }
+            partyAutoAcceptWhitelist = repairedWhitelist;
+        }
+
+        private void initializePartyCommandDefaults() {
+            directMessagePartyRequest = false;
+            quickPrivatePartyRequest = false;
+            fastPartyCommands = false;
+            fastPartyWarp = true;
+            fastPartyAllInvite = true;
+            fastPartyTransfer = true;
+            fastPartyKick = true;
+            fastPartyCoordinates = true;
+            fastPartyPromote = true;
+            fastPartyStream = true;
+            fastPartyDungeon = true;
+            fastPartyKuudra = true;
+            fastPartyWarpTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyAllInviteTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyTransferTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyKickTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyCoordinatesTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyPromoteTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyStreamTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyDungeonTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyKuudraTrigger = PartyCommandTrigger.EVERYONE;
+            partyCommands = true;
+            partyCommandWarp = true;
+            partyCommandAllInvite = true;
+            partyCommandTransfer = true;
+            partyCommandKick = true;
+            partyCommandCoordinates = true;
+            partyCommandPromote = true;
+            partyCommandStream = true;
+            partyCommandDungeon = true;
+            partyCommandKuudra = true;
+        }
+
+        private void repairPartyCommandTriggers() {
+            if (fastPartyWarpTrigger == null) fastPartyWarpTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyAllInviteTrigger == null) fastPartyAllInviteTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyTransferTrigger == null) fastPartyTransferTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyKickTrigger == null) fastPartyKickTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyCoordinatesTrigger == null) fastPartyCoordinatesTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyPromoteTrigger == null) fastPartyPromoteTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyStreamTrigger == null) fastPartyStreamTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyDungeonTrigger == null) fastPartyDungeonTrigger = PartyCommandTrigger.EVERYONE;
+            if (fastPartyKuudraTrigger == null) fastPartyKuudraTrigger = PartyCommandTrigger.EVERYONE;
+        }
+
+        public static String normalizePartyAutoAcceptName(String name) {
+            return name == null ? "" : name.trim();
+        }
+
+        public static boolean isValidMinecraftUsername(String name) {
+            String normalized = normalizePartyAutoAcceptName(name);
+            return normalized.matches("[A-Za-z0-9_]{1,16}");
+        }
+
+        public boolean containsPartyAutoAcceptWhitelist(String name) {
+            String normalized = normalizePartyAutoAcceptName(name);
+            return containsIgnoreCase(partyAutoAcceptWhitelist, normalized);
+        }
+
+        public boolean addPartyAutoAcceptWhitelist(String name) {
+            String normalized = normalizePartyAutoAcceptName(name);
+            if (!isValidMinecraftUsername(normalized)
+                    || partyAutoAcceptWhitelist.size() >= PARTY_AUTO_ACCEPT_WHITELIST_LIMIT
+                    || containsIgnoreCase(partyAutoAcceptWhitelist, normalized)) {
+                return false;
+            }
+            partyAutoAcceptWhitelist.add(normalized);
+            return true;
+        }
+
+        public boolean replacePartyAutoAcceptWhitelist(String oldName, String newName) {
+            String oldNormalized = normalizePartyAutoAcceptName(oldName);
+            String newNormalized = normalizePartyAutoAcceptName(newName);
+            if (!isValidMinecraftUsername(newNormalized)) return false;
+            int index = indexOfIgnoreCase(partyAutoAcceptWhitelist, oldNormalized);
+            if (index < 0) return false;
+            int duplicate = indexOfIgnoreCase(partyAutoAcceptWhitelist, newNormalized);
+            if (duplicate >= 0 && duplicate != index) return false;
+            partyAutoAcceptWhitelist.set(index, newNormalized);
+            return true;
+        }
+
+        public boolean removePartyAutoAcceptWhitelist(String name) {
+            int index = indexOfIgnoreCase(partyAutoAcceptWhitelist,
+                    normalizePartyAutoAcceptName(name));
+            if (index < 0) return false;
+            partyAutoAcceptWhitelist.remove(index);
+            return true;
+        }
+
+        private static boolean containsIgnoreCase(List<String> names, String candidate) {
+            return indexOfIgnoreCase(names, candidate) >= 0;
+        }
+
+        private static int indexOfIgnoreCase(List<String> names, String candidate) {
+            if (names == null || candidate == null) return -1;
+            for (int index = 0; index < names.size(); index++) {
+                String name = names.get(index);
+                if (name != null && name.equalsIgnoreCase(candidate)) return index;
+            }
+            return -1;
         }
     }
 

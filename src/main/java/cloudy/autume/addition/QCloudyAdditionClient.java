@@ -3,6 +3,7 @@ package cloudy.autume.addition;
 import cloudy.autume.addition.config.ConfigManager;
 import cloudy.autume.addition.config.ConfigScreen;
 import cloudy.autume.addition.config.IntegrationScanService;
+import cloudy.autume.addition.config.ModConfig;
 import cloudy.autume.addition.combat.DeathSaveAlertManager;
 import cloudy.autume.addition.combat.DeployableExpiryAlert;
 import cloudy.autume.addition.compat.MinecraftClientCompat;
@@ -18,6 +19,10 @@ import cloudy.autume.addition.inventory.ShardWarehouseManager;
 import cloudy.autume.addition.hunting.HuntingTracker;
 import cloudy.autume.addition.hunting.HuntingWorldRenderer;
 import cloudy.autume.addition.inventory.SafariBeltTooltip;
+import cloudy.autume.addition.party.FriendRosterStore;
+import cloudy.autume.addition.party.PartyAutoAcceptManager;
+import cloudy.autume.addition.party.PartyCommandEngine;
+import cloudy.autume.addition.party.PrivatePartyRequestCommands;
 import cloudy.autume.addition.tracker.LocationTracker;
 import cloudy.autume.addition.tracker.HotmSlotTracker;
 import cloudy.autume.addition.tracker.PetTracker;
@@ -37,6 +42,11 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -50,9 +60,18 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+
 public final class QCloudyAdditionClient implements ClientModInitializer {
     public static final String MOD_ID = "qcloudy_addition";
     public static final Logger LOGGER = LoggerFactory.getLogger("QCloudy_Addition");
+    private static final PartyAutoAcceptManager PARTY_AUTO_ACCEPT =
+            new PartyAutoAcceptManager(FriendRosterStore.createDefault());
+    private static final PartyCommandEngine PARTY_COMMAND_ENGINE = new PartyCommandEngine();
+    private static final PrivatePartyRequestCommands PRIVATE_PARTY_REQUESTS =
+            new PrivatePartyRequestCommands();
     private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath(MOD_ID, "controls"));
     private static final KeyMapping OPEN_CONFIG = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -68,6 +87,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ConfigManager.load();
+        PARTY_AUTO_ACCEPT.load();
         ShardWarehouseManager.load();
         CenturyCakeManager.load();
         ItemTimestampTooltip.register();
@@ -109,6 +129,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            onPartyMessage(message, overlay);
             onDeathSaveMessage(message, overlay);
             PetTracker.onChat(message.getString(), overlay);
             HuntingTracker.onMessage(message, overlay);
@@ -119,6 +140,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         // Compatibility path for chat compactors (for example SkyHanni): GAME
         // and GAME_CANCELED are mutually exclusive for one received message.
         ClientReceiveMessageEvents.GAME_CANCELED.register((message, overlay) -> {
+            onPartyMessage(message, overlay);
             onDeathSaveMessage(message, overlay);
             HuntingTracker.onMessage(message, overlay);
             DeployableExpiryAlert.onMessage(message, overlay);
@@ -173,6 +195,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             }
             registerCenturyCakeCommand(dispatcher, "cake");
             registerCenturyCakeCommand(dispatcher, "centurycakeeffect");
+            registerPartyClientCommands(dispatcher);
         });
 
         LOGGER.info("QCloudy_Addition initialized in client-side mode");
@@ -257,6 +280,221 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         }));
     }
 
+    /**
+     * Registers roots whose literal begins with {@code /}. Minecraft removes
+     * the first slash before Fabric parses a command, so these roots are
+     * reached only from the documented double-slash forms such as
+     * {@code //m7}; the normal Hypixel {@code /m7} namespace is untouched.
+     */
+    private static void registerPartyClientCommands(
+            CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        registerLocalNoArg(dispatcher, "/warp", "//warp");
+        registerLocalNoArg(dispatcher, "/w", "//w");
+        registerLocalNoArg(dispatcher, "/allinvite", "//allinvite");
+        registerLocalNoArg(dispatcher, "/all", "//all");
+        registerLocalNoArg(dispatcher, "/allinv", "//allinv");
+
+        registerLocalTarget(dispatcher, "/pt", "//pt", PartyCommandEngine.Feature.TRANSFER);
+        registerLocalNoArg(dispatcher, "/ptme", "//ptme");
+        registerLocalTarget(dispatcher, "/k", "//k", PartyCommandEngine.Feature.KICK);
+        registerLocalNoArg(dispatcher, "/sc", "//sc");
+        registerLocalNoArg(dispatcher, "/sendcoords", "//sendcoords");
+        registerLocalNoArg(dispatcher, "/c", "//c");
+        registerLocalTarget(dispatcher, "/pp", "//pp", PartyCommandEngine.Feature.PROMOTE);
+        registerLocalWord(dispatcher, "/stream", "//stream");
+        registerLocalWord(dispatcher, "/st", "//st");
+        registerLocalWord(dispatcher, "/s", "//s");
+
+        for (String alias : List.of("fe", "f0", "me", "m0",
+                "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+                "m1", "m2", "m3", "m4", "m5", "m6", "m7",
+                "t1", "t2", "t3", "t4", "t5")) {
+            registerLocalNoArg(dispatcher, "/" + alias, "//" + alias);
+        }
+
+        registerQuickPrivateCommands(dispatcher);
+        registerPartyChatSuggestions(dispatcher);
+    }
+
+    private static void registerLocalNoArg(CommandDispatcher<FabricClientCommandSource> dispatcher,
+                                           String root, String input) {
+        if (!availableClientRoot(dispatcher, root)) return;
+        dispatcher.register(ClientCommands.literal(root)
+                .executes(context -> executeLocalPartyCommand(context.getSource(), input)));
+    }
+
+    private static void registerLocalTarget(CommandDispatcher<FabricClientCommandSource> dispatcher,
+                                            String root, String input,
+                                            PartyCommandEngine.Feature feature) {
+        if (!availableClientRoot(dispatcher, root)) return;
+        LiteralArgumentBuilder<FabricClientCommandSource> command = ClientCommands.literal(root)
+                .executes(context -> executeLocalPartyCommand(context.getSource(), input));
+        command.then(ClientCommands.argument("player", StringArgumentType.word())
+                .suggests((context, builder) -> suggestPartyPlayers(context, builder, feature))
+                .executes(context -> executeLocalPartyCommand(context.getSource(),
+                        input + " " + StringArgumentType.getString(context, "player"))));
+        dispatcher.register(command);
+    }
+
+    private static void registerLocalWord(CommandDispatcher<FabricClientCommandSource> dispatcher,
+                                          String root, String input) {
+        if (!availableClientRoot(dispatcher, root)) return;
+        dispatcher.register(ClientCommands.literal(root)
+                .executes(context -> executeLocalPartyCommand(context.getSource(), input))
+                .then(ClientCommands.argument("value", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            String remaining = builder.getRemainingLowerCase();
+                            for (String value : List.of("c", "close", "off")) {
+                                if (value.startsWith(remaining)) builder.suggest(value);
+                            }
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> executeLocalPartyCommand(context.getSource(),
+                                input + " " + StringArgumentType.getString(context, "value")))));
+    }
+
+    private static void registerQuickPrivateCommands(
+            CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        if (availableClientRoot(dispatcher, "/i")) {
+            dispatcher.register(ClientCommands.literal("/i")
+                    .executes(context -> executeQuickPrivateCommand(context.getSource(), "//i"))
+                    .then(ClientCommands.argument("player", StringArgumentType.word())
+                            .suggests(QCloudyAdditionClient::suggestAllPartyPlayers)
+                            .executes(context -> executeQuickPrivateCommand(context.getSource(),
+                                    "//i " + StringArgumentType.getString(context, "player")))));
+        }
+        if (availableClientRoot(dispatcher, "/invited")) {
+            dispatcher.register(ClientCommands.literal("/invited")
+                    .executes(context -> executeQuickPrivateCommand(context.getSource(), "//invited"))
+                    .then(ClientCommands.argument("player", StringArgumentType.word())
+                            .suggests(QCloudyAdditionClient::suggestAllPartyPlayers)
+                            .executes(context -> executeQuickPrivateCommand(context.getSource(),
+                                    "//invited " + StringArgumentType.getString(context, "player"))))
+                    .then(ClientCommands.literal("by")
+                            .executes(context -> executeQuickPrivateCommand(
+                                    context.getSource(), "//invited by"))
+                            .then(ClientCommands.argument("player", StringArgumentType.word())
+                                    .suggests(QCloudyAdditionClient::suggestAllPartyPlayers)
+                                    .executes(context -> executeQuickPrivateCommand(context.getSource(),
+                                            "//invited by "
+                                                    + StringArgumentType.getString(context, "player"))))));
+        }
+    }
+
+    /** Suggests QCA party-chat verbs without claiming or executing /pc. */
+    private static void registerPartyChatSuggestions(
+            CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        if (!availableClientRoot(dispatcher, "pc")) return;
+        dispatcher.register(ClientCommands.literal("pc")
+                .then(ClientCommands.argument("qca_party_message", StringArgumentType.greedyString())
+                        .suggests(QCloudyAdditionClient::suggestPartyChatCommand)));
+    }
+
+    private static boolean availableClientRoot(CommandDispatcher<FabricClientCommandSource> dispatcher,
+                                               String root) {
+        if (dispatcher.getRoot().getChild(root) == null) return true;
+        LOGGER.warn("Skipping client command root {} because another mod already registered it", root);
+        return false;
+    }
+
+    private static int executeLocalPartyCommand(FabricClientCommandSource source, String input) {
+        Minecraft client = source.getClient();
+        if (!isOnHypixel(client)) {
+            source.sendError(ModText.component("party.command.hypixel_only"));
+            return 0;
+        }
+        ModConfig.Chat chat = ConfigManager.get().chat;
+        PartyCommandEngine.Result result = PARTY_COMMAND_ENGINE.handleLocalDoubleSlash(
+                input, localPlayerName(client), chat.partyCommands,
+                feature -> localPartyFeatureEnabled(chat, feature), playerCoordinates(client),
+                System.nanoTime());
+        return handlePartyCommandResult(client, result, true) ? 1 : 0;
+    }
+
+    private static int executeQuickPrivateCommand(FabricClientCommandSource source, String input) {
+        Minecraft client = source.getClient();
+        if (!isOnHypixel(client)) {
+            source.sendError(ModText.component("party.command.hypixel_only"));
+            return 0;
+        }
+        if (!ConfigManager.get().chat.quickPrivatePartyRequest) {
+            source.sendError(ModText.component("party.command.disabled"));
+            return 0;
+        }
+        PrivatePartyRequestCommands.LocalResult result =
+                PrivatePartyRequestCommands.fromLocalDoubleSlash(input);
+        if (result.status() == PrivatePartyRequestCommands.Status.COMMAND) {
+            sendServerCommand(client, result.payload());
+            return 1;
+        }
+        source.sendError(ModText.component("party.command.invalid_arguments"));
+        return 0;
+    }
+
+    private static CompletableFuture<Suggestions> suggestPartyPlayers(
+            CommandContext<FabricClientCommandSource> context, SuggestionsBuilder builder,
+            PartyCommandEngine.Feature feature) {
+        ModConfig.Chat chat = ConfigManager.get().chat;
+        if (!chat.partyCommands || !localPartyFeatureEnabled(chat, feature)) {
+            return builder.buildFuture();
+        }
+        return appendPartyPlayerSuggestions(context, builder);
+    }
+
+    private static CompletableFuture<Suggestions> suggestAllPartyPlayers(
+            CommandContext<FabricClientCommandSource> context, SuggestionsBuilder builder) {
+        return appendPartyPlayerSuggestions(context, builder);
+    }
+
+    private static CompletableFuture<Suggestions> appendPartyPlayerSuggestions(
+            CommandContext<FabricClientCommandSource> context, SuggestionsBuilder builder) {
+        Minecraft client = context.getSource().getClient();
+        for (String player : PARTY_COMMAND_ENGINE.suggestPlayers(
+                builder.getRemaining(), localPlayerName(client))) {
+            builder.suggest(player);
+        }
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestPartyChatCommand(
+            CommandContext<FabricClientCommandSource> context, SuggestionsBuilder builder) {
+        ModConfig.Chat chat = ConfigManager.get().chat;
+        if (!chat.fastPartyCommands) return builder.buildFuture();
+        String input = builder.getRemaining();
+        String normalized = input.trim().toLowerCase(Locale.ROOT);
+        int split = normalized.indexOf(' ');
+        if (split < 0) {
+            for (String suggestion : PARTY_COMMAND_ENGINE.suggestCommands(
+                    normalized, PartyCommandEngine.EntryPoint.PARTY_CHAT, true,
+                    feature -> fastPartyFeatureEnabled(chat, feature))) {
+                builder.suggest(suggestion);
+            }
+            return builder.buildFuture();
+        }
+
+        String verb = normalized.substring(0, split);
+        String fragment = normalized.substring(split + 1).trim();
+        PartyCommandEngine.Feature targetFeature = switch (verb) {
+            case "!pt" -> PartyCommandEngine.Feature.TRANSFER;
+            case "!k" -> PartyCommandEngine.Feature.KICK;
+            case "!pp" -> PartyCommandEngine.Feature.PROMOTE;
+            default -> null;
+        };
+        if (targetFeature != null && fastPartyFeatureEnabled(chat, targetFeature)
+                && fragment.indexOf(' ') < 0) {
+            for (String player : PARTY_COMMAND_ENGINE.suggestPlayers(
+                    fragment, localPlayerName(context.getSource().getClient()))) {
+                builder.suggest(verb + " " + player);
+            }
+        } else if (fastPartyFeatureEnabled(chat, PartyCommandEngine.Feature.STREAM)
+                && (verb.equals("!stream") || verb.equals("!st") || verb.equals("!s"))) {
+            for (String value : List.of("c", "close", "off")) {
+                if (value.startsWith(fragment)) builder.suggest(verb + " " + value);
+            }
+        }
+        return builder.buildFuture();
+    }
+
     private static void setChord(ChordAction action, InputConstants.Key input, int modifiers) {
         key(action).setKey(input);
         setModifiers(action, modifierMask(modifiers));
@@ -338,6 +576,141 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         FishingBiteAlert.reset();
         DeployableExpiryAlert.reset();
         DeathSaveAlertManager.resetRuntime();
+        PARTY_AUTO_ACCEPT.resetSession();
+        PARTY_COMMAND_ENGINE.resetSession();
+        PRIVATE_PARTY_REQUESTS.resetSession();
+    }
+
+    private static void onPartyMessage(Component message, boolean overlay) {
+        if (message == null || overlay) return;
+        Minecraft client = Minecraft.getInstance();
+        var server = client.getCurrentServer();
+        String serverAddress = server == null ? "" : server.ip;
+        boolean onHypixel = PartyAutoAcceptManager.isHypixelAddress(serverAddress);
+        var chat = ConfigManager.get().chat;
+        String command = PARTY_AUTO_ACCEPT.onMessage(message, overlay,
+                onHypixel,
+                client.getUser().getProfileId().toString(), chat.partyAutoAccept,
+                chat.partyAutoAcceptFriendMode, chat.partyAutoAcceptWhitelist,
+                System.currentTimeMillis());
+        if (command != null) sendServerCommand(client, command);
+        if (!onHypixel) return;
+
+        if (chat.directMessagePartyRequest) {
+            PRIVATE_PARTY_REQUESTS.handleIncomingDirectMessage(message.getString(), System.nanoTime())
+                    .ifPresent(payload -> sendServerCommand(client, payload));
+        }
+
+        PartyCommandEngine.Result result = PARTY_COMMAND_ENGINE.handlePartyChat(
+                message.getString(), localPlayerName(client), chat.fastPartyCommands,
+                feature -> fastPartyFeatureEnabled(chat, feature),
+                feature -> fastPartyTrigger(chat, feature), playerCoordinates(client),
+                System.nanoTime());
+        handlePartyCommandResult(client, result, false);
+    }
+
+    private static boolean handlePartyCommandResult(Minecraft client,
+                                                    PartyCommandEngine.Result result,
+                                                    boolean localInput) {
+        if (result == null || result.status() == PartyCommandEngine.Status.IGNORED) return false;
+        if (result.status() == PartyCommandEngine.Status.COMMAND) {
+            sendServerCommand(client, result.payload());
+            return true;
+        }
+
+        if (client.player == null) return false;
+        Component feedback;
+        if (result.status() == PartyCommandEngine.Status.DISABLED) {
+            feedback = ModText.component("party.command.disabled");
+        } else if (result.status() == PartyCommandEngine.Status.COOLDOWN) {
+            long seconds = Math.max(1L,
+                    (result.retryAfterNanos() + 999_999_999L) / 1_000_000_000L);
+            feedback = ModText.component("party.command.cooldown", seconds);
+        } else {
+            feedback = switch (result.error()) {
+                case INVALID_ARGUMENTS -> ModText.component("party.command.invalid_arguments");
+                case INVALID_PLAYER -> ModText.component("party.command.invalid_player");
+                case AMBIGUOUS_PLAYER -> ModText.component("party.command.ambiguous_player",
+                        String.join(", ", result.candidates()));
+                case COORDINATES_UNAVAILABLE -> ModText.component("party.command.coordinates_unavailable");
+                case NONE -> ModText.component("party.command.invalid_arguments");
+            };
+        }
+        client.player.sendSystemMessage(Component.literal("[QCA] ")
+                .withStyle(ChatFormatting.AQUA).append(feedback.copy().withStyle(ChatFormatting.RED)));
+        return localInput;
+    }
+
+    private static void sendServerCommand(Minecraft client, String payload) {
+        if (payload == null || payload.isBlank()) return;
+        var connection = client.getConnection();
+        if (connection != null) connection.sendCommand(payload);
+    }
+
+    private static boolean isOnHypixel(Minecraft client) {
+        var server = client.getCurrentServer();
+        return server != null && PartyAutoAcceptManager.isHypixelAddress(server.ip);
+    }
+
+    private static String localPlayerName(Minecraft client) {
+        return client.getUser().getName();
+    }
+
+    private static PartyCommandEngine.BlockCoordinates playerCoordinates(Minecraft client) {
+        if (client.player == null) return null;
+        var position = client.player.blockPosition();
+        return new PartyCommandEngine.BlockCoordinates(
+                position.getX(), position.getY(), position.getZ());
+    }
+
+    private static boolean fastPartyFeatureEnabled(ModConfig.Chat chat,
+                                                   PartyCommandEngine.Feature feature) {
+        return switch (feature) {
+            case WARP -> chat.fastPartyWarp;
+            case ALL_INVITE -> chat.fastPartyAllInvite;
+            case TRANSFER -> chat.fastPartyTransfer;
+            case KICK -> chat.fastPartyKick;
+            case COORDINATES -> chat.fastPartyCoordinates;
+            case PROMOTE -> chat.fastPartyPromote;
+            case STREAM -> chat.fastPartyStream;
+            case DUNGEON -> chat.fastPartyDungeon;
+            case KUUDRA -> chat.fastPartyKuudra;
+        };
+    }
+
+    private static boolean localPartyFeatureEnabled(ModConfig.Chat chat,
+                                                    PartyCommandEngine.Feature feature) {
+        return switch (feature) {
+            case WARP -> chat.partyCommandWarp;
+            case ALL_INVITE -> chat.partyCommandAllInvite;
+            case TRANSFER -> chat.partyCommandTransfer;
+            case KICK -> chat.partyCommandKick;
+            case COORDINATES -> chat.partyCommandCoordinates;
+            case PROMOTE -> chat.partyCommandPromote;
+            case STREAM -> chat.partyCommandStream;
+            case DUNGEON -> chat.partyCommandDungeon;
+            case KUUDRA -> chat.partyCommandKuudra;
+        };
+    }
+
+    private static PartyCommandEngine.TriggerScope fastPartyTrigger(
+            ModConfig.Chat chat, PartyCommandEngine.Feature feature) {
+        ModConfig.PartyCommandTrigger trigger = switch (feature) {
+            case WARP -> chat.fastPartyWarpTrigger;
+            case ALL_INVITE -> chat.fastPartyAllInviteTrigger;
+            case TRANSFER -> chat.fastPartyTransferTrigger;
+            case KICK -> chat.fastPartyKickTrigger;
+            case COORDINATES -> chat.fastPartyCoordinatesTrigger;
+            case PROMOTE -> chat.fastPartyPromoteTrigger;
+            case STREAM -> chat.fastPartyStreamTrigger;
+            case DUNGEON -> chat.fastPartyDungeonTrigger;
+            case KUUDRA -> chat.fastPartyKuudraTrigger;
+        };
+        return switch (trigger) {
+            case SELF_ONLY -> PartyCommandEngine.TriggerScope.SELF_ONLY;
+            case OTHERS_ONLY -> PartyCommandEngine.TriggerScope.OTHERS_ONLY;
+            case EVERYONE -> PartyCommandEngine.TriggerScope.EVERYONE;
+        };
     }
 
     private static void onDeathSaveMessage(Component message, boolean overlay) {

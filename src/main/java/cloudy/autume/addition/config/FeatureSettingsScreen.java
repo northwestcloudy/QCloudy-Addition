@@ -154,8 +154,9 @@ final class FeatureSettingsScreen extends Screen {
         int swatchX = setting.color()
                 ? Math.max(x + 2, x + rowWidth - 10 - valueWidth - 18)
                 : x + rowWidth;
-        drawFittedText(graphics, setting.label(), x + 10, y + 9,
-                Math.max(1, (setting.color() ? swatchX : x + rowWidth - valueWidth - 10) - x - 14));
+        drawFittedText(graphics, Component.literal(setting.label()), x + 10, y + 9,
+                Math.max(1, (setting.color() ? swatchX : x + rowWidth - valueWidth - 10) - x - 14),
+                available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
         if (setting.color()) {
             if (setting.kind == Kind.BACKGROUND_COLOR && panelStyle().backgroundOpacity == 0) {
                 graphics.fill(swatchX, y + 7, swatchX + 13, y + 20, 0xFFE6E6E6);
@@ -224,6 +225,24 @@ final class FeatureSettingsScreen extends Screen {
             if (events >= 2) rows.add(new Setting(Kind.INTEGRATION_SCAN_EVENT_2, "config.integration.scan.recent"));
             if (events >= 3) rows.add(new Setting(Kind.INTEGRATION_SCAN_EVENT_3, "config.integration.scan.recent"));
             rows.add(new Setting(Kind.INTEGRATION_SCAN_REFRESH, "config.integration.scan.refresh"));
+            return rows;
+        }
+        if (feature == ConfigScreen.Feature.PARTY_AUTO_ACCEPT) {
+            rows.add(new Setting(Kind.PARTY_FRIEND_MODE, "config.setting.party_friend_mode"));
+            rows.add(new Setting(Kind.OPEN_PARTY_WHITELIST, "config.setting.party_whitelist"));
+            return rows;
+        }
+        if (feature == ConfigScreen.Feature.FAST_PARTY_COMMANDS) {
+            for (PartyCommandOption option : PartyCommandOption.values()) {
+                rows.add(new Setting(option, false, false));
+                rows.add(new Setting(option, true, false));
+            }
+            return rows;
+        }
+        if (feature == ConfigScreen.Feature.PARTY_COMMANDS) {
+            for (PartyCommandOption option : PartyCommandOption.values()) {
+                rows.add(new Setting(option, false, true));
+            }
             return rows;
         }
         rows.add(new Setting(Kind.PROVIDER, "config.integration.provider"));
@@ -463,6 +482,17 @@ final class FeatureSettingsScreen extends Screen {
             ConfigManager.save();
             return;
         }
+        if (setting.partyCommandOption != null) {
+            if (setting.partyCommandTrigger) {
+                setting.partyCommandOption.cycleFastTrigger(config.chat);
+            } else if (setting.localPartyCommand) {
+                setting.partyCommandOption.toggleLocal(config.chat);
+            } else {
+                setting.partyCommandOption.toggleFast(config.chat);
+            }
+            ConfigManager.save();
+            return;
+        }
         ModConfig.PanelStyle style = panelStyle();
         switch (setting.kind) {
             case PROVIDER -> {
@@ -480,6 +510,12 @@ final class FeatureSettingsScreen extends Screen {
             case INTEGRATION_SCAN_PROGRESS, INTEGRATION_SCAN_CURRENT, INTEGRATION_SCAN_SUMMARY,
                     INTEGRATION_SCAN_PROVIDERS, INTEGRATION_SCAN_EVENT_1,
                     INTEGRATION_SCAN_EVENT_2, INTEGRATION_SCAN_EVENT_3 -> { }
+            case PARTY_FRIEND_MODE -> config.chat.partyAutoAcceptFriendMode =
+                    config.chat.partyAutoAcceptFriendMode == ModConfig.PartyAcceptFriendMode.NORMAL_ONLY
+                            ? ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY
+                            : ModConfig.PartyAcceptFriendMode.NORMAL_ONLY;
+            case OPEN_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
+                    new PartyWhitelistScreen(this));
             case OPEN_SHARD_GUIDE -> QCloudyAdditionClient.openShardFusionGuide(minecraft, this, "");
             case OPEN_SHARD_PLANNER -> MinecraftClientCompat.setScreen(minecraft, new ShardPlanningScreen(this,
                     ConfigManager.get().inventory.shardPlannerTarget));
@@ -621,6 +657,117 @@ final class FeatureSettingsScreen extends Screen {
         return Math.max(1, windowHeight - (contentY - windowY) - 12);
     }
 
+    private enum PartyCommandOption {
+        WARP("config.setting.fast_party.warp", "config.setting.party_command.warp"),
+        ALL_INVITE("config.setting.fast_party.all_invite", "config.setting.party_command.all_invite"),
+        TRANSFER("config.setting.fast_party.transfer", "config.setting.party_command.transfer"),
+        KICK("config.setting.fast_party.kick", "config.setting.party_command.kick"),
+        COORDINATES("config.setting.fast_party.coordinates", "config.setting.party_command.coordinates"),
+        PROMOTE("config.setting.fast_party.promote", "config.setting.party_command.promote"),
+        STREAM("config.setting.fast_party.stream", "config.setting.party_command.stream"),
+        DUNGEON("config.setting.fast_party.dungeon", "config.setting.party_command.dungeon"),
+        KUUDRA("config.setting.fast_party.kuudra", "config.setting.party_command.kuudra");
+
+        private final String fastLabelKey;
+        private final String localLabelKey;
+
+        PartyCommandOption(String fastLabelKey, String localLabelKey) {
+            this.fastLabelKey = fastLabelKey;
+            this.localLabelKey = localLabelKey;
+        }
+
+        boolean fastEnabled(ModConfig.Chat chat) {
+            return switch (this) {
+                case WARP -> chat.fastPartyWarp;
+                case ALL_INVITE -> chat.fastPartyAllInvite;
+                case TRANSFER -> chat.fastPartyTransfer;
+                case KICK -> chat.fastPartyKick;
+                case COORDINATES -> chat.fastPartyCoordinates;
+                case PROMOTE -> chat.fastPartyPromote;
+                case STREAM -> chat.fastPartyStream;
+                case DUNGEON -> chat.fastPartyDungeon;
+                case KUUDRA -> chat.fastPartyKuudra;
+            };
+        }
+
+        void toggleFast(ModConfig.Chat chat) {
+            switch (this) {
+                case WARP -> chat.fastPartyWarp = !chat.fastPartyWarp;
+                case ALL_INVITE -> chat.fastPartyAllInvite = !chat.fastPartyAllInvite;
+                case TRANSFER -> chat.fastPartyTransfer = !chat.fastPartyTransfer;
+                case KICK -> chat.fastPartyKick = !chat.fastPartyKick;
+                case COORDINATES -> chat.fastPartyCoordinates = !chat.fastPartyCoordinates;
+                case PROMOTE -> chat.fastPartyPromote = !chat.fastPartyPromote;
+                case STREAM -> chat.fastPartyStream = !chat.fastPartyStream;
+                case DUNGEON -> chat.fastPartyDungeon = !chat.fastPartyDungeon;
+                case KUUDRA -> chat.fastPartyKuudra = !chat.fastPartyKuudra;
+            }
+        }
+
+        ModConfig.PartyCommandTrigger fastTrigger(ModConfig.Chat chat) {
+            return switch (this) {
+                case WARP -> chat.fastPartyWarpTrigger;
+                case ALL_INVITE -> chat.fastPartyAllInviteTrigger;
+                case TRANSFER -> chat.fastPartyTransferTrigger;
+                case KICK -> chat.fastPartyKickTrigger;
+                case COORDINATES -> chat.fastPartyCoordinatesTrigger;
+                case PROMOTE -> chat.fastPartyPromoteTrigger;
+                case STREAM -> chat.fastPartyStreamTrigger;
+                case DUNGEON -> chat.fastPartyDungeonTrigger;
+                case KUUDRA -> chat.fastPartyKuudraTrigger;
+            };
+        }
+
+        void cycleFastTrigger(ModConfig.Chat chat) {
+            ModConfig.PartyCommandTrigger current = fastTrigger(chat);
+            ModConfig.PartyCommandTrigger next = switch (current == null
+                    ? ModConfig.PartyCommandTrigger.EVERYONE : current) {
+                case EVERYONE -> ModConfig.PartyCommandTrigger.SELF_ONLY;
+                case SELF_ONLY -> ModConfig.PartyCommandTrigger.OTHERS_ONLY;
+                case OTHERS_ONLY -> ModConfig.PartyCommandTrigger.EVERYONE;
+            };
+            switch (this) {
+                case WARP -> chat.fastPartyWarpTrigger = next;
+                case ALL_INVITE -> chat.fastPartyAllInviteTrigger = next;
+                case TRANSFER -> chat.fastPartyTransferTrigger = next;
+                case KICK -> chat.fastPartyKickTrigger = next;
+                case COORDINATES -> chat.fastPartyCoordinatesTrigger = next;
+                case PROMOTE -> chat.fastPartyPromoteTrigger = next;
+                case STREAM -> chat.fastPartyStreamTrigger = next;
+                case DUNGEON -> chat.fastPartyDungeonTrigger = next;
+                case KUUDRA -> chat.fastPartyKuudraTrigger = next;
+            }
+        }
+
+        boolean localEnabled(ModConfig.Chat chat) {
+            return switch (this) {
+                case WARP -> chat.partyCommandWarp;
+                case ALL_INVITE -> chat.partyCommandAllInvite;
+                case TRANSFER -> chat.partyCommandTransfer;
+                case KICK -> chat.partyCommandKick;
+                case COORDINATES -> chat.partyCommandCoordinates;
+                case PROMOTE -> chat.partyCommandPromote;
+                case STREAM -> chat.partyCommandStream;
+                case DUNGEON -> chat.partyCommandDungeon;
+                case KUUDRA -> chat.partyCommandKuudra;
+            };
+        }
+
+        void toggleLocal(ModConfig.Chat chat) {
+            switch (this) {
+                case WARP -> chat.partyCommandWarp = !chat.partyCommandWarp;
+                case ALL_INVITE -> chat.partyCommandAllInvite = !chat.partyCommandAllInvite;
+                case TRANSFER -> chat.partyCommandTransfer = !chat.partyCommandTransfer;
+                case KICK -> chat.partyCommandKick = !chat.partyCommandKick;
+                case COORDINATES -> chat.partyCommandCoordinates = !chat.partyCommandCoordinates;
+                case PROMOTE -> chat.partyCommandPromote = !chat.partyCommandPromote;
+                case STREAM -> chat.partyCommandStream = !chat.partyCommandStream;
+                case DUNGEON -> chat.partyCommandDungeon = !chat.partyCommandDungeon;
+                case KUUDRA -> chat.partyCommandKuudra = !chat.partyCommandKuudra;
+            }
+        }
+    }
+
     private enum Kind {
         PROVIDER, EXTERNAL_STATUS,
         INTEGRATION_SCAN_PROGRESS, INTEGRATION_SCAN_CURRENT, INTEGRATION_SCAN_SUMMARY,
@@ -637,11 +784,16 @@ final class FeatureSettingsScreen extends Screen {
         FISHING_BITE_VOLUME, DEPLOYABLE_POWER_ORB_ALERTS, DEPLOYABLE_FLARE_ALERTS,
         DEPLOYABLE_EXPIRY_CENTER_TEXT, DEPLOYABLE_EXPIRY_SOUND, DEPLOYABLE_EXPIRY_VOLUME,
         OPEN_CENTURY_CAKES, CENTURY_CAKE_SOUND, CENTURY_CAKE_VOLUME,
-        CHAT_PEEK_KEY, CHAT_SCROLL_TARGET
+        CHAT_PEEK_KEY, CHAT_SCROLL_TARGET,
+        PARTY_FRIEND_MODE, OPEN_PARTY_WHITELIST
     }
 
     static boolean shardGuideEntryEnabled(ModConfig config) {
         return config.inventory.shardFusionHelper;
+    }
+
+    static boolean partyCommandChildSettingsAvailable(ModConfig config, boolean localPartyCommand) {
+        return localPartyCommand ? config.chat.partyCommands : config.chat.fastPartyCommands;
     }
 
     private final class Setting {
@@ -649,12 +801,18 @@ final class FeatureSettingsScreen extends Screen {
         private final String labelKey;
         private final HuntingOption huntingOption;
         private final UnifiedModIntegration.NativeSetting externalSetting;
+        private final PartyCommandOption partyCommandOption;
+        private final boolean partyCommandTrigger;
+        private final boolean localPartyCommand;
 
         private Setting(Kind kind, String labelKey) {
             this.kind = kind;
             this.labelKey = labelKey;
             this.huntingOption = null;
             this.externalSetting = null;
+            this.partyCommandOption = null;
+            this.partyCommandTrigger = false;
+            this.localPartyCommand = false;
         }
 
         private Setting(HuntingOption huntingOption) {
@@ -662,6 +820,9 @@ final class FeatureSettingsScreen extends Screen {
             this.labelKey = huntingOption.labelKey;
             this.huntingOption = huntingOption;
             this.externalSetting = null;
+            this.partyCommandOption = null;
+            this.partyCommandTrigger = false;
+            this.localPartyCommand = false;
         }
 
         private Setting(UnifiedModIntegration.NativeSetting externalSetting) {
@@ -669,10 +830,29 @@ final class FeatureSettingsScreen extends Screen {
             this.labelKey = "";
             this.huntingOption = null;
             this.externalSetting = externalSetting;
+            this.partyCommandOption = null;
+            this.partyCommandTrigger = false;
+            this.localPartyCommand = false;
+        }
+
+        private Setting(PartyCommandOption partyCommandOption, boolean partyCommandTrigger,
+                        boolean localPartyCommand) {
+            this.kind = null;
+            this.labelKey = "";
+            this.huntingOption = null;
+            this.externalSetting = null;
+            this.partyCommandOption = partyCommandOption;
+            this.partyCommandTrigger = partyCommandTrigger;
+            this.localPartyCommand = localPartyCommand;
         }
 
         String label() {
             if (externalSetting != null) return externalSetting.label;
+            if (partyCommandOption != null) {
+                String option = ModText.get(localPartyCommand
+                        ? partyCommandOption.localLabelKey : partyCommandOption.fastLabelKey);
+                return partyCommandTrigger ? ModText.get("config.setting.party_trigger_scope", option) : option;
+            }
             return ModText.get(labelKey);
         }
 
@@ -686,6 +866,17 @@ final class FeatureSettingsScreen extends Screen {
                     case COLOR -> String.format("#%06X", huntingOption.intValue(config.hunting) & 0xFFFFFF);
                 };
             }
+            if (partyCommandOption != null) {
+                if (partyCommandTrigger) {
+                    ModConfig.PartyCommandTrigger trigger = partyCommandOption.fastTrigger(config.chat);
+                    return ModText.get("config.value.party_trigger."
+                            + (trigger == null ? ModConfig.PartyCommandTrigger.EVERYONE : trigger)
+                            .name().toLowerCase(java.util.Locale.ROOT));
+                }
+                return onOff(localPartyCommand
+                        ? partyCommandOption.localEnabled(config.chat)
+                        : partyCommandOption.fastEnabled(config.chat));
+            }
             ModConfig.PanelStyle style = panelStyle();
             return switch (kind) {
                 case PROVIDER -> unifiedFeature.selectedProvider().displayName;
@@ -698,6 +889,13 @@ final class FeatureSettingsScreen extends Screen {
                 case INTEGRATION_SCAN_EVENT_2 -> scanEventValue(1);
                 case INTEGRATION_SCAN_EVENT_3 -> scanEventValue(2);
                 case INTEGRATION_SCAN_REFRESH -> ModText.get("config.integration.scan.refresh_action");
+                case PARTY_FRIEND_MODE -> ModText.get(config.chat.partyAutoAcceptFriendMode
+                        == ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY
+                        ? "config.value.party_mode.special_only"
+                        : "config.value.party_mode.normal_only");
+                case OPEN_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
+                        config.chat.partyAutoAcceptWhitelist.size(),
+                        ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT);
                 case OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER ->
                         ModText.get(available() ? "config.open" : "config.disabled");
                 case YIELD_FIRMAMENT -> onOff(config.inventory.yieldToFirmament);
@@ -801,6 +999,9 @@ final class FeatureSettingsScreen extends Screen {
 
         boolean available() {
             if (externalSetting != null) return externalSetting.editable() && externalSetting.value() != null;
+            if (partyCommandOption != null) {
+                return partyCommandChildSettingsAvailable(ConfigManager.get(), localPartyCommand);
+            }
             if (kind == Kind.EXTERNAL_STATUS) return false;
             if (kind == Kind.INTEGRATION_SCAN_REFRESH) {
                 return feature != null && feature.enabled(ConfigManager.get())
@@ -813,6 +1014,7 @@ final class FeatureSettingsScreen extends Screen {
         boolean color() {
             if (externalSetting != null) return false;
             if (huntingOption != null) return huntingOption.type == HuntingOption.Type.COLOR;
+            if (partyCommandOption != null) return false;
             return kind == Kind.DRAGON_COLOR || kind == Kind.BACKGROUND_COLOR
                     || kind == Kind.BORDER_COLOR || kind == Kind.TITLE_COLOR;
         }
@@ -820,6 +1022,7 @@ final class FeatureSettingsScreen extends Screen {
         QCloudyAdditionClient.ChordAction chordAction() {
             if (externalSetting != null) return null;
             if (huntingOption != null) return null;
+            if (partyCommandOption != null) return null;
             return switch (kind) {
                 case SHARD_GUIDE_KEY -> QCloudyAdditionClient.ChordAction.OPEN_SHARD_FUSION;
                 case OPEN_CONFIG_KEY -> QCloudyAdditionClient.ChordAction.OPEN_CONFIG;
@@ -832,6 +1035,7 @@ final class FeatureSettingsScreen extends Screen {
             if (externalSetting != null) return 0xFFFFFF;
             ModConfig config = ConfigManager.get();
             if (huntingOption != null) return huntingOption.intValue(config.hunting) & 0xFFFFFF;
+            if (partyCommandOption != null) return 0xFFFFFF;
             ModConfig.PanelStyle style = panelStyle();
             return switch (kind) {
                 case DRAGON_COLOR -> config.combat.enderDragonHighlightColor;
@@ -849,6 +1053,7 @@ final class FeatureSettingsScreen extends Screen {
                         && externalSetting.minimum != null && externalSetting.maximum != null;
             }
             if (huntingOption != null) return huntingOption.type == HuntingOption.Type.SLIDER;
+            if (partyCommandOption != null) return false;
             return switch (kind) {
                 case OPACITY, SCALE, CURSOR_TOLERANCE, INSTANT_SOUND_VOLUME,
                         ETHERWARP_SOUND_VOLUME, FISHING_BITE_VOLUME, DEPLOYABLE_EXPIRY_VOLUME,
@@ -863,6 +1068,7 @@ final class FeatureSettingsScreen extends Screen {
             if (huntingOption != null) {
                 return fraction(huntingOption.intValue(config.hunting), huntingOption.minimum, huntingOption.maximum);
             }
+            if (partyCommandOption != null) return 0.0;
             ModConfig.PanelStyle style = panelStyle();
             return switch (kind) {
                 case OPACITY -> style.backgroundOpacity / 255.0;
@@ -888,6 +1094,7 @@ final class FeatureSettingsScreen extends Screen {
                         ranged(Math.clamp(fraction, 0.0, 1.0), huntingOption.minimum, huntingOption.maximum));
                 return;
             }
+            if (partyCommandOption != null) return;
             ModConfig.PanelStyle style = panelStyle();
             double clamped = Math.clamp(fraction, 0.0, 1.0);
             switch (kind) {

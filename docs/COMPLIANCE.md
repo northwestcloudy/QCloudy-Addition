@@ -30,6 +30,11 @@
 | Century Cake expiry tracking | Exact received 48-hour first-activation/refresh chat lines and local wall-clock time | Local timers, effects screen, center/chat alert, local sound | Only a direct click on the underlined renewal text runs exactly `/visit northwestcloudy`; never automatic |
 | Pet HUD | Received chat and Tab display names | Text HUD | None |
 | Chat Peek | Physical held key and already received chat history | Temporarily changes local chat rendering/scroll target | None |
+| Party Auto Accept | Received party-invitation chat plus locally cached friend/whitelist data | Optional local acceptance decision | When enabled and the sender matches the selected category or whitelist, sends `party accept <sender>` |
+| Private-message Party Request | Exact received English private-message keyword `!p`, `!party`, or `!invite` | Optional local request match | When enabled, sends `party invite <sender>` |
+| Fast Party Commands | Exact received English Party Chat line beginning with a recognized `!` alias; local player name, party roster, and local coordinates where required | Optional alias resolution, unique-prefix player completion, and local cooldown state | When its master, child switch, and configured sender scope allow it, sends the mapped Party/Stream/Dungeon/Kuudra command below |
+| Party Commands | A local recognized `//` command; local player name, party roster, and local coordinates where required | Optional alias resolution and unique-prefix player completion | When its master and child switch allow it, sends the mapped Party/Stream/Dungeon/Kuudra command below; unknown `//` input passes through unchanged |
+| Quick Private `!p` | Local `//invited <player>`, `//invited by <player>`, or `//i <player>` input | Local player-name validation | When enabled, sends `msg <player> !p` |
 | AOTE/AOTV sound customization | Held-item ID and received nearby sound event | Keeps the original sound or replaces it with a local vanilla sound at configured volume/pitch | None |
 | Attribute Shard Fusion Guide | Bundled offline 320-Shard JSON with effect/acquisition/Fusion data and 320 local icons; optional native ItemStacks already received in local menus/inventory; physical search/click/key input | Local Details/Recipes/Uses screen, Shard-specific offline icons, semantic text colours, and resource-pack-aware observed overrides | None; `/qshard` is a client-only screen command |
 | Shard Planner | Bundled recipe/rate data; local planner settings; optional prices already cached by compatible Skyblocker; Shard counts/lore on Hunting Box pages physically opened by the player | Local route tree, alternatives, material totals, direct recipe filters, details, Fusion Lines, and per-profile warehouse | None; does not send `/hb`, request prices, click, or fuse |
@@ -48,13 +53,36 @@
 - Registered local Century Cake commands: `/cake` and `/centurycakeeffect`; both open the same local effects-style timer screen and send no server payload. The underlined renewal component sends exactly `/visit northwestcloudy` only after the player physically clicks it; a timer or expiry never sends it automatically.
 - Registered local Torrhus shortcut: `/th`; it has no setting and cannot be disabled. When the user explicitly types it, QCA sends the exact payload `warp torrhus`, equivalent to the user entering `/warp torrhus`. It is skipped only if another client command already owns `/th`.
 - Registered local Helia shortcut: `/helia`; it has no setting. When the user explicitly types it, QCA sends the exact payload `chapter torrhus`, equivalent to the user entering `/chapter torrhus`. It is skipped only if another client command already owns `/helia`.
-- Automatic `sendCommand` calls: **none**.
+- **Party Auto Accept** is off by default. When enabled, a received party invitation from a configured qualifying sender sends exactly `party accept <sender>`. Its friend-category and whitelist checks are local configuration; a whitelist entry takes priority over the category selection.
+- **Private-message Party Request** is off by default. It matches only the exact English private-message keywords `!p`, `!party`, and `!invite`; a match sends exactly `party invite <sender>`. Repeated matching messages from the same sender are deduplicated for the short local cooldown window.
+- **Quick Private `!p`** is off by default. Local `//invited <player>`, `//invited by <player>`, and `//i <player>` each send exactly `msg <player> !p`.
+- **Fast Party Commands** is off by default. It handles only recognized `!` messages received in Party Chat; public and guild chat do not qualify. Its nine child switches default on and each may restrict triggers to Self only, Others only, or Everyone. `!warp`/`!w` share a five-second `party warp` cooldown; `!allinvite`/`!all`/`!allinv` share a two-second `party settings allinvite` cooldown.
+- **Party Commands** is on by default, as are its nine child switches. It handles the same recognized aliases through local `//` commands. Unknown `//` input is not intercepted. A player argument accepts an exact case-insensitive name or a unique party-member prefix; an ambiguous prefix produces no outbound command.
+
+| Alias family | Exact server-command payload |
+|---|---|
+| `!warp`, `!w` / `//warp`, `//w` | `party warp` |
+| `!allinvite`, `!all`, `!allinv` / local `//` equivalents | `party settings allinvite` |
+| `!pt`, `!ptme` / `//pt`, `//ptme` | `party transfer <sender-or-local-player>` |
+| `!pt <player>` / `//pt <player>` | `party transfer <player>` |
+| `!k <player>` / `//k <player>` | `party kick <player>` |
+| `!sc`, `!sendcoords`, `!c` / local `//` equivalents | `pc x: <x>, y: <y>, z: <z>` |
+| `!pp <player>` / `//pp <player>` | `party promote <player>` |
+| `!stream`, `!st`, `!s` / local `//` equivalents | `stream` |
+| Stream alias followed by any pure decimal number `<n>` | `stream open <n>` |
+| Stream alias followed by `c`, `close`, or `off` | `stream close` |
+| `!fe`, `!f0` / `//fe`, `//f0` | `joininstance CATACOMBS_ENTRANCE` |
+| `!me`, `!m0` / `//me`, `//m0` | `joininstance MASTER_CATACOMBS_ENTRANCE` |
+| `!f1` … `!f7` / local `//` equivalents | `joininstance CATACOMBS_FLOOR_ONE` … `joininstance CATACOMBS_FLOOR_SEVEN` |
+| `!m1` … `!m7` / local `//` equivalents | `joininstance MASTER_CATACOMBS_FLOOR_ONE` … `joininstance MASTER_CATACOMBS_FLOOR_SEVEN` |
+| `!t1` … `!t5` / local `//` equivalents | `joininstance KUUDRA_NORMAL`, `KUUDRA_HOT`, `KUUDRA_BURNING`, `KUUDRA_FIERY`, `KUUDRA_INFERNAL` |
+
 - `sendChat` calls: **none**.
-- Automatically generated chat contents: **none**.
+- Automatically generated chat contents: only the exact `msg <player> !p` payload from the separately enabled Quick Private `!p` feature; no other `sendChat` call is used.
 
 ## Network and automation audit
 
-QCA contains no Hypixel Mod API, Hypixel public API, WebSocket, HTTP client, telemetry, coordinate sharing, remote updater, macro, simulated input, automatic click/movement helper, or block interaction. The only outbound actions are the documented user-triggered `/th` warp command, `/helia` chapter command, `/visit northwestcloudy` after a physical click on the underlined Century Cake renewal component, and one ordinary server connection when the player clicks `Reconnect`; none run without physical user input. Reconnect has no timer, retry loop, background attempt, or automatic join.
+QCA contains no Hypixel Mod API, Hypixel public API, WebSocket, HTTP client, telemetry, coordinate sharing service, remote updater, macro, simulated input, automatic click/movement helper, or block interaction. Outbound command and chat payloads are limited to the explicitly enumerated shortcuts, click action, party/chat utilities, and a normal server connection after `Reconnect` is clicked. Reconnect has no timer, retry loop, background attempt, or automatic join.
 
 The Fishing Bite Sound prefers the local player's directly owned loaded hook. To support Hypixel lava hooks whose owner link may be absent, it observes a physical local rod use, excludes every hook already present and every explicitly other-player-owned hook, and accepts a newly loaded local/ownerless hook only during a bounded 40-tick window. A second physical use while the selected hook is active is classified as reeling and cannot re-arm playback. It then scans only that selected hook's four-block neighborhood for the exact received `!!!` ArmorStand and plays the bundled local cue at most once per hook. The callback passes the original use through unchanged; it never casts, reels, clicks, moves the player, or sends a command or additional packet. The broader scan is inactive while idle.
 

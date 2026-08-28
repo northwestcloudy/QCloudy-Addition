@@ -2,14 +2,79 @@ package cloudy.autume.addition.config;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class UnifiedModIntegrationTest {
+    @Test
+    void localFeatureIdsStayStableAndCollisionFreeAcrossLanguages() {
+        String originalLanguage = ConfigManager.get().language;
+        try {
+            ConfigManager.get().language = "en_us";
+            Map<ConfigScreen.Feature, String> english = localFeatureIds(
+                    UnifiedModIntegration.buildFeatures(List.of()));
+
+            ConfigManager.get().language = "zh_cn";
+            Map<ConfigScreen.Feature, String> chinese = localFeatureIds(
+                    UnifiedModIntegration.buildFeatures(List.of()));
+
+            assertEquals(ConfigScreen.Feature.values().length, english.size());
+            assertEquals(english, chinese);
+            assertEquals(english.size(), new HashSet<>(english.values()).size());
+
+            // These are legacy English selectedProviders keys. Keeping them
+            // stable prevents a language switch from losing provider choices.
+            assertEquals("general:ui_animations", english.get(ConfigScreen.Feature.HUD_ANIMATIONS));
+            assertEquals("general:manage_other_mod_settings",
+                    english.get(ConfigScreen.Feature.UNIFIED_SETTINGS_EDITOR));
+            assertEquals("maps:fairy_souls",
+                    english.get(ConfigScreen.Feature.FAIRY_SOUL_WAYPOINTS));
+            assertEquals("items_and_menus:cursor_memory",
+                    english.get(ConfigScreen.Feature.CURSOR_MEMORY));
+        } finally {
+            ConfigManager.get().language = originalLanguage;
+        }
+    }
+
+    @Test
+    void englishProviderFeatureStillMergesWithLocalFeatureInChinese() {
+        String originalLanguage = ConfigManager.get().language;
+        try {
+            UnifiedModIntegration.Classification classification = new UnifiedModIntegration.Classification(
+                    ConfigScreen.Category.MAPS,
+                    UnifiedModIntegration.ClassificationSource.VERIFIED_RULE, 1.0);
+            UnifiedModIntegration.NativeFeature providerFeature = new UnifiedModIntegration.NativeFeature(
+                    UnifiedModIntegration.Provider.SKYHANNI, "maps:fairy_souls",
+                    "Fairy Soul Waypoints", "Provider description", classification,
+                    "Waypoints", null, List.of());
+
+            ConfigManager.get().language = "zh_cn";
+            List<UnifiedModIntegration.UnifiedFeature> features =
+                    UnifiedModIntegration.buildFeatures(List.of(providerFeature));
+            UnifiedModIntegration.UnifiedFeature merged = features.stream()
+                    .filter(feature -> feature.qcloudyFeature
+                            == ConfigScreen.Feature.FAIRY_SOUL_WAYPOINTS)
+                    .findFirst().orElse(null);
+
+            assertNotNull(merged);
+            assertEquals("maps:fairy_souls", merged.id);
+            assertEquals(1, merged.external.size());
+            assertEquals(UnifiedModIntegration.Provider.SKYHANNI,
+                    merged.external.getFirst().provider);
+        } finally {
+            ConfigManager.get().language = originalLanguage;
+        }
+    }
+
     @Test
     void providerHudDiscoveryIsEmptyWhileItsMasterSwitchIsOff() {
         assertFalse(ConfigManager.get().integrations.unifiedHudEditor);
@@ -93,5 +158,17 @@ final class UnifiedModIntegrationTest {
                 UnifiedModIntegration.feeshFeatureTitle("fishingProfitTrackerOverlay"));
         assertEquals("Alert On Rare Drops",
                 UnifiedModIntegration.feeshFeatureTitle("alertOnRareDrops"));
+    }
+
+    private static Map<ConfigScreen.Feature, String> localFeatureIds(
+            List<UnifiedModIntegration.UnifiedFeature> features) {
+        Map<ConfigScreen.Feature, String> result = new EnumMap<>(ConfigScreen.Feature.class);
+        Set<String> ids = new HashSet<>();
+        for (UnifiedModIntegration.UnifiedFeature feature : features) {
+            if (feature.qcloudyFeature == null) continue;
+            assertTrue(ids.add(feature.id), "Duplicate local feature ID: " + feature.id);
+            result.put(feature.qcloudyFeature, feature.id);
+        }
+        return result;
     }
 }

@@ -1,6 +1,6 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod for Minecraft 26.1.2 and 26.2. It focuses on readable SkyBlock maps, compact objective HUDs, passive visual helpers, pet information, and inventory quality-of-life tools. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current stable release is 0.3.9.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 32 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
 
 ## Quick links
 
@@ -12,7 +12,7 @@ QCloudy_Addition is a client-only Fabric mod for Minecraft 26.1.2 and 26.2. It f
 - [Validation](docs/VALIDATION.md)
 - [Compliance](docs/COMPLIANCE.md)
 
-Default language: English. Press `O` (rebindable under Controls → Key Binds → QCloudy_Addition) or use `/qca` or `/qc` to open the client-side settings, then switch to Simplified Chinese at any time. Command aliases are registered only when their client-command names are free. They open a local screen and are never sent to Hypixel.
+Default language: English. Press `O` (rebindable under Controls → Key Binds → QCloudy_Addition) or use `/qca` or `/qc` to open the client-side settings, then switch to Simplified Chinese at any time. These settings aliases are registered only when their client-command names are free, open a local screen, and send nothing. The separately configured party/chat aliases are documented below.
 
 The language option translates QCA interface labels only. Hypixel location names, task names, pets, skins, accessories, items, and player-renamed HOTM slots remain in their original client-received form.
 
@@ -93,6 +93,11 @@ Foraging and Hunting are separate top-level settings categories, while Safari is
 ### Chat
 
 - **Chat Peek** — hold a user-defined key or modifier combination to temporarily render the focused-height chat history without opening Chat. While peeking, the mouse wheel defaults to scrolling chat; the secondary setting can leave it controlling the hotbar instead. The peek key is intentionally unbound by default to avoid conflicts.
+- **Party Auto Accept** — optionally accepts qualifying party invitations from the configured friend category or a 16-player whitelist. The master switch is off by default; the whitelist overrides the friend-category choice.
+- **Private-message Party Request** — when enabled, an exact received private-message keyword `!p`, `!party`, or `!invite` sends `party invite <sender>`. It is off by default and ignores unrelated private messages.
+- **Quick Private `!p`** — when enabled, local `//invited <player>`, `//invited by <player>`, and `//i <player>` send `msg <player> !p`. It is off by default.
+- **Fast Party Commands** — an opt-in Party Chat interpreter. It only handles recognized `!` aliases sent in Party Chat, never public or guild chat. The master switch is off by default; its nine independent child switches default on. Each command can be limited to the local player, other party members, or everyone. `!warp`/`!w` sends `party warp` with a shared five-second cooldown, and `!allinvite`/`!all`/`!allinv` sends `party settings allinvite` with a shared two-second cooldown. The remaining aliases send the documented Party, Stream, Dungeon, Kuudra, coordinate, transfer, kick, and promote commands listed in [the implementation notes](docs/IMPLEMENTATION.md).
+- **Party Commands** — local double-slash equivalents such as `//m7` and `//pt <player>`. This master and all of its independent child switches are on by default. Known commands are handled locally; unknown `//` commands are left untouched. Player arguments accept exact names or a unique party-member prefix.
 
 ### HUD appearance
 
@@ -123,7 +128,7 @@ Install JDK 25 and run `bash tools/build_all_versions.sh`. Release 0.3.9 tests a
 
 ## Safety boundary
 
-The release contains no `sendChat`, Hypixel Mod API subscription, WebSocket, HTTP client, runtime Shard-data request, macro, automatic movement, or chunk-request code. Its normal HUD features consume only client-received state. `/qshard`, `/cake`, and `/centurycakeeffect` are local screen commands and send nothing. The always-available local `/th` and `/helia` shortcuts send exactly `warp torrhus` and `chapter torrhus`, equivalent to entering `/warp torrhus` and `/chapter torrhus`; they run only when the player types the corresponding shortcut. The underlined Century Cake renewal action sends exactly `/visit northwestcloudy`, but only after the player physically clicks it. No server command, chat, click, or movement action is generated automatically.
+The release contains no `sendChat`, Hypixel Mod API subscription, WebSocket, HTTP client, runtime Shard-data request, macro, automatic movement, or chunk-request code. Its normal HUD features consume only client-received state. `/qshard`, `/cake`, and `/centurycakeeffect` are local screen commands and send nothing. The always-available local `/th` and `/helia` shortcuts send exactly `warp torrhus` and `chapter torrhus`, equivalent to entering `/warp torrhus` and `/chapter torrhus`; they run only when the player types the corresponding shortcut. The underlined Century Cake renewal action sends exactly `/visit northwestcloudy`, but only after the player physically clicks it. The documented opt-in party/chat utilities can additionally send their listed server-command payloads after their own configured triggers; they never simulate a click, move the player, or use an item.
 
 Hypixel states that all modifications are used at the player's own risk and that an unlisted feature is not guaranteed to be allowed. Review [docs/COMPLIANCE.md](docs/COMPLIANCE.md) and the current [Hypixel Allowed Modifications guide](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications) before use.
 

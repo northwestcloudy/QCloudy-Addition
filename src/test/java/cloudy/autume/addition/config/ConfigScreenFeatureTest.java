@@ -85,6 +85,85 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void partyAutoAcceptIsAnOptInGeneralFeatureWithModeAndOrderedWhitelist() {
+        ModConfig config = new ModConfig();
+        ConfigScreen.Feature feature = ConfigScreen.Feature.PARTY_AUTO_ACCEPT;
+
+        assertEquals(ConfigScreen.Category.GENERAL, feature.category);
+        assertEquals(ConfigScreen.FeatureGroup.CHAT_UI, feature.group);
+        assertFalse(feature.enabled(config));
+        assertTrue(feature.hasSettings());
+        assertEquals(null, feature.hudType());
+        assertEquals(ModConfig.PartyAcceptFriendMode.NORMAL_ONLY,
+                config.chat.partyAutoAcceptFriendMode);
+        assertEquals(List.of(), config.chat.partyAutoAcceptWhitelist);
+
+        feature.toggle(config);
+        assertTrue(config.chat.partyAutoAccept);
+        assertTrue(feature.enabled(config));
+    }
+
+    @Test
+    void generalChatGroupHasTheRequiredFixedFeatureOrder() {
+        List<ConfigScreen.Feature> chatFeatures = java.util.Arrays.stream(ConfigScreen.Feature.values())
+                .filter(feature -> feature.group == ConfigScreen.FeatureGroup.CHAT_UI)
+                .toList();
+
+        assertEquals(List.of(
+                ConfigScreen.Feature.CHAT_PEEK,
+                ConfigScreen.Feature.PARTY_AUTO_ACCEPT,
+                ConfigScreen.Feature.DIRECT_MESSAGE_PARTY_REQUEST,
+                ConfigScreen.Feature.QUICK_PRIVATE_PARTY_REQUEST,
+                ConfigScreen.Feature.FAST_PARTY_COMMANDS), chatFeatures);
+        assertTrue(chatFeatures.stream().allMatch(feature -> feature.category == ConfigScreen.Category.GENERAL));
+        assertEquals(ConfigScreen.FeatureGroup.COMMANDS, ConfigScreen.Feature.PARTY_COMMANDS.group);
+        assertEquals(ConfigScreen.Category.GENERAL, ConfigScreen.Feature.PARTY_COMMANDS.category);
+    }
+
+    @Test
+    void partyCommandFamiliesUseIndependentMastersAndParentGatedSettings() {
+        ModConfig config = new ModConfig();
+        ConfigScreen.Feature fast = ConfigScreen.Feature.FAST_PARTY_COMMANDS;
+        ConfigScreen.Feature local = ConfigScreen.Feature.PARTY_COMMANDS;
+
+        assertFalse(fast.enabled(config));
+        assertTrue(local.enabled(config));
+        assertTrue(fast.hasSettings());
+        assertTrue(local.hasSettings());
+        assertFalse(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, false));
+        assertTrue(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, true));
+        assertTrue(config.chat.fastPartyPromote);
+        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, config.chat.fastPartyPromoteTrigger);
+        assertTrue(config.chat.partyCommandPromote);
+
+        fast.toggle(config);
+        assertTrue(fast.enabled(config));
+        assertTrue(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, false));
+        assertTrue(local.enabled(config));
+
+        local.toggle(config);
+        assertFalse(local.enabled(config));
+        assertFalse(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, true));
+        assertTrue(config.chat.partyCommandPromote);
+        assertTrue(config.chat.fastPartyPromote);
+    }
+
+    @Test
+    void privateMessagePartyFeaturesAreIndependentSettingsFreeOptIns() {
+        ModConfig config = new ModConfig();
+        ConfigScreen.Feature request = ConfigScreen.Feature.DIRECT_MESSAGE_PARTY_REQUEST;
+        ConfigScreen.Feature quick = ConfigScreen.Feature.QUICK_PRIVATE_PARTY_REQUEST;
+
+        assertFalse(request.enabled(config));
+        assertFalse(quick.enabled(config));
+        assertFalse(request.hasSettings());
+        assertFalse(quick.hasSettings());
+        request.toggle(config);
+        assertTrue(request.enabled(config));
+        assertFalse(quick.enabled(config));
+    }
+
+    @Test
     void unifiedEditorsAreIndependentDefaultOffGeneralMasterSwitches() {
         ModConfig config = new ModConfig();
         ConfigScreen.Feature settings = ConfigScreen.Feature.UNIFIED_SETTINGS_EDITOR;

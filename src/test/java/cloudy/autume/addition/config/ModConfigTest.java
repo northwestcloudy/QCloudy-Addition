@@ -47,7 +47,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(25, config.configVersion);
+        assertEquals(27, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -86,10 +86,10 @@ final class ModConfigTest {
         assertEquals(true, config.combat.deployableExpiryCenterText);
         assertEquals(true, config.combat.deployableExpiryAudio.sound);
         assertEquals(64, config.combat.deployableExpiryAudio.volume);
-        assertEquals(true, config.combat.deathSaveAlerts);
-        assertEquals(true, config.combat.spiritMaskCooldownHud);
-        assertEquals(true, config.combat.bonzoMaskCooldownHud);
-        assertEquals(true, config.combat.phoenixCooldownHud);
+        assertEquals(false, config.combat.deathSaveAlerts);
+        assertEquals(false, config.combat.spiritMaskCooldownHud);
+        assertEquals(false, config.combat.bonzoMaskCooldownHud);
+        assertEquals(false, config.combat.phoenixCooldownHud);
         assertNotNull(config.hudStyle.spiritMaskCooldown);
         assertNotNull(config.hudStyle.bonzoMaskCooldown);
         assertNotNull(config.hudStyle.phoenixCooldown);
@@ -124,6 +124,52 @@ final class ModConfigTest {
         assertEquals(true, config.hunting.wardenReadyAlert);
         assertEquals(true, config.hunting.wardenReadyAudio.sound);
         assertEquals(64, config.hunting.wardenReadyAudio.volume);
+        assertEquals(false, config.chat.partyAutoAccept);
+        assertEquals(ModConfig.PartyAcceptFriendMode.NORMAL_ONLY,
+                config.chat.partyAutoAcceptFriendMode);
+        assertEquals(java.util.List.of(), config.chat.partyAutoAcceptWhitelist);
+        assertEquals(false, config.chat.directMessagePartyRequest);
+        assertEquals(false, config.chat.quickPrivatePartyRequest);
+        assertEquals(false, config.chat.fastPartyCommands);
+        assertEquals(true, config.chat.fastPartyWarp);
+        assertEquals(true, config.chat.fastPartyAllInvite);
+        assertEquals(true, config.chat.fastPartyTransfer);
+        assertEquals(true, config.chat.fastPartyKick);
+        assertEquals(true, config.chat.fastPartyCoordinates);
+        assertEquals(true, config.chat.fastPartyPromote);
+        assertEquals(true, config.chat.fastPartyStream);
+        assertEquals(true, config.chat.fastPartyDungeon);
+        assertEquals(true, config.chat.fastPartyKuudra);
+        assertEquals(java.util.List.of(
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE,
+                        ModConfig.PartyCommandTrigger.EVERYONE),
+                java.util.List.of(
+                        config.chat.fastPartyWarpTrigger,
+                        config.chat.fastPartyAllInviteTrigger,
+                        config.chat.fastPartyTransferTrigger,
+                        config.chat.fastPartyKickTrigger,
+                        config.chat.fastPartyCoordinatesTrigger,
+                        config.chat.fastPartyPromoteTrigger,
+                        config.chat.fastPartyStreamTrigger,
+                        config.chat.fastPartyDungeonTrigger,
+                        config.chat.fastPartyKuudraTrigger));
+        assertEquals(true, config.chat.partyCommands);
+        assertEquals(true, config.chat.partyCommandWarp);
+        assertEquals(true, config.chat.partyCommandAllInvite);
+        assertEquals(true, config.chat.partyCommandTransfer);
+        assertEquals(true, config.chat.partyCommandKick);
+        assertEquals(true, config.chat.partyCommandCoordinates);
+        assertEquals(true, config.chat.partyCommandPromote);
+        assertEquals(true, config.chat.partyCommandStream);
+        assertEquals(true, config.chat.partyCommandDungeon);
+        assertEquals(true, config.chat.partyCommandKuudra);
         assertEquals(true, config.hunting.showChapter);
         assertEquals(true, config.hunting.galateaTracker);
         assertEquals(true, config.hunting.agathaContest);
@@ -157,7 +203,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(25, migrated.configVersion);
+        assertEquals(27, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -171,10 +217,11 @@ final class ModConfigTest {
         assertEquals(true, migrated.combat.deployableFlareAlerts);
         assertEquals(true, migrated.combat.deployableExpiryCenterText);
         assertEquals(64, migrated.combat.deployableExpiryAudio.volume);
-        assertEquals(true, migrated.combat.deathSaveAlerts);
-        assertEquals(true, migrated.combat.spiritMaskCooldownHud);
-        assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
-        assertEquals(true, migrated.combat.phoenixCooldownHud);
+        assertEquals(false, migrated.combat.deathSaveAlerts);
+        assertEquals(false, migrated.combat.spiritMaskCooldownHud);
+        assertEquals(false, migrated.combat.bonzoMaskCooldownHud);
+        assertEquals(false, migrated.combat.phoenixCooldownHud);
+        assertEquals(false, migrated.chat.partyAutoAccept);
         assertEquals(true, migrated.centuryCakes.expiryAlerts);
         assertEquals(64, migrated.centuryCakes.expiryAudio.volume);
 
@@ -191,27 +238,112 @@ final class ModConfigTest {
     }
 
     @Test
-    void migratesDeathSaveAlertsAndKeepsTheirHudStateIndependent() {
+    void migrationsPreserveExplicitDeathSaveAndPartyAutoAcceptChoices() {
         ModConfig migrated = new ModConfig();
-        migrated.configVersion = 24;
-        migrated.combat.deathSaveAlerts = false;
-        migrated.combat.spiritMaskCooldownHud = false;
-        migrated.combat.bonzoMaskCooldownHud = false;
-        migrated.combat.phoenixCooldownHud = false;
+        migrated.configVersion = 25;
+        migrated.combat.deathSaveAlerts = true;
+        migrated.combat.spiritMaskCooldownHud = true;
+        migrated.combat.bonzoMaskCooldownHud = true;
+        migrated.combat.phoenixCooldownHud = true;
+        migrated.chat.partyAutoAccept = true;
 
         migrated.normalize();
 
-        assertEquals(25, migrated.configVersion);
+        assertEquals(27, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
         assertEquals(true, migrated.combat.phoenixCooldownHud);
+        assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(ModConfig.HudType.SPIRIT_MASK_COOLDOWN,
                 ModConfig.HudType.valueOf("SPIRIT_MASK_COOLDOWN"));
         assertEquals(false, migrated.hudStyle.spiritMaskCooldownY
                 == migrated.hudStyle.bonzoMaskCooldownY);
         assertEquals(false, migrated.hudStyle.bonzoMaskCooldownY
                 == migrated.hudStyle.phoenixCooldownY);
+    }
+
+    @Test
+    void migration27InitializesOnlyNewPartyCommandFields() {
+        ModConfig migrated = new ModConfig();
+        migrated.configVersion = 26;
+        migrated.combat.deathSaveAlerts = true;
+        migrated.chat.partyAutoAccept = true;
+        migrated.chat.directMessagePartyRequest = true;
+        migrated.chat.fastPartyWarp = false;
+        migrated.chat.fastPartyWarpTrigger = ModConfig.PartyCommandTrigger.SELF_ONLY;
+        migrated.chat.partyCommands = false;
+        migrated.chat.partyCommandKuudra = false;
+
+        migrated.normalize();
+
+        assertEquals(27, migrated.configVersion);
+        assertEquals(true, migrated.combat.deathSaveAlerts);
+        assertEquals(true, migrated.chat.partyAutoAccept);
+        assertEquals(false, migrated.chat.directMessagePartyRequest);
+        assertEquals(false, migrated.chat.quickPrivatePartyRequest);
+        assertEquals(false, migrated.chat.fastPartyCommands);
+        assertEquals(true, migrated.chat.fastPartyWarp);
+        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, migrated.chat.fastPartyWarpTrigger);
+        assertEquals(true, migrated.chat.partyCommands);
+        assertEquals(true, migrated.chat.partyCommandKuudra);
+    }
+
+    @Test
+    void currentSchemaPreservesCommandChoicesAndRepairsOnlyNullTriggerScopes() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 27;
+        config.chat.directMessagePartyRequest = true;
+        config.chat.quickPrivatePartyRequest = true;
+        config.chat.fastPartyCommands = true;
+        config.chat.fastPartyWarp = false;
+        config.chat.fastPartyWarpTrigger = ModConfig.PartyCommandTrigger.OTHERS_ONLY;
+        config.chat.fastPartyPromoteTrigger = null;
+        config.chat.partyCommands = false;
+        config.chat.partyCommandPromote = false;
+
+        config.normalize();
+
+        assertEquals(true, config.chat.directMessagePartyRequest);
+        assertEquals(true, config.chat.quickPrivatePartyRequest);
+        assertEquals(true, config.chat.fastPartyCommands);
+        assertEquals(false, config.chat.fastPartyWarp);
+        assertEquals(ModConfig.PartyCommandTrigger.OTHERS_ONLY, config.chat.fastPartyWarpTrigger);
+        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, config.chat.fastPartyPromoteTrigger);
+        assertEquals(false, config.chat.partyCommands);
+        assertEquals(false, config.chat.partyCommandPromote);
+    }
+
+    @Test
+    void partyWhitelistIsOrderedCaseInsensitiveValidatedAndCappedAtSixteen() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 27;
+        config.chat.partyAutoAcceptFriendMode = null;
+        config.chat.partyAutoAcceptWhitelist = new java.util.ArrayList<>();
+        config.chat.partyAutoAcceptWhitelist.add("  Alice  ");
+        config.chat.partyAutoAcceptWhitelist.add("alice");
+        config.chat.partyAutoAcceptWhitelist.add("bad-name");
+        config.chat.partyAutoAcceptWhitelist.add("");
+        for (int index = 0; index < 20; index++) {
+            config.chat.partyAutoAcceptWhitelist.add("Player_" + index);
+        }
+
+        config.normalize();
+
+        assertEquals(ModConfig.PartyAcceptFriendMode.NORMAL_ONLY,
+                config.chat.partyAutoAcceptFriendMode);
+        assertEquals(16, config.chat.partyAutoAcceptWhitelist.size());
+        assertEquals("Alice", config.chat.partyAutoAcceptWhitelist.getFirst());
+        assertEquals(true, config.chat.containsPartyAutoAcceptWhitelist("ALICE"));
+        assertEquals(false, config.chat.addPartyAutoAcceptWhitelist("overflow"));
+        assertEquals(false, ModConfig.Chat.isValidMinecraftUsername("bad-name"));
+        assertEquals(true, ModConfig.Chat.isValidMinecraftUsername("_"));
+
+        assertEquals(true, config.chat.replacePartyAutoAcceptWhitelist("alice", "Cloudy"));
+        assertEquals("Cloudy", config.chat.partyAutoAcceptWhitelist.getFirst());
+        assertEquals(false, config.chat.replacePartyAutoAcceptWhitelist("Cloudy", "Player_0"));
+        assertEquals(true, config.chat.removePartyAutoAcceptWhitelist("cLoUdY"));
+        assertEquals(false, config.chat.containsPartyAutoAcceptWhitelist("Cloudy"));
     }
 
     @Test

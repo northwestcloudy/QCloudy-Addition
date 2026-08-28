@@ -47,6 +47,66 @@ final class UnifiedModIntegration {
     private static volatile ScanProgress scanProgress = ScanProgress.idle();
     private static @Nullable ScanJob scanJob;
 
+    /**
+     * Stable identities for QCA features that existed before local feature IDs
+     * stopped being derived from their translated display titles.
+     *
+     * <p>The values intentionally match the canonical IDs produced by the old
+     * English UI. Keeping them here both makes IDs independent of the selected
+     * language and preserves existing {@code selectedProviders} entries. New
+     * features that are not listed fall back to their enum name, which is also
+     * stable and language independent.</p>
+     */
+    private static final Map<String, String> LEGACY_LOCAL_FEATURE_IDS = Map.ofEntries(
+            Map.entry("HUD_ANIMATIONS", "general:ui_animations"),
+            Map.entry("HUNTING_ALERT_SOUND", "general:alert_sound_master"),
+            Map.entry("UNIFIED_SETTINGS_EDITOR", "general:manage_other_mod_settings"),
+            Map.entry("UNIFIED_HUD_EDITOR", "general:manage_other_mod_huds"),
+            Map.entry("MANUAL_RECONNECT", "general:manual_reconnect_button"),
+            Map.entry("PARTY_AUTO_ACCEPT", "general:friend_party_auto_accept"),
+            Map.entry("FISHING_BITE_ALERT", "fishing:fishing_bite_sound"),
+            Map.entry("DWARVEN_MAP", "maps:dwarven_mines_map"),
+            Map.entry("GLACITE_MAP", "maps:glacite_tunnels_map"),
+            Map.entry("FAIRY_SOUL_WAYPOINTS", "maps:fairy_soul_waypoints"),
+            Map.entry("MINING_TRACKER", "mining:mining_tasks_powders"),
+            Map.entry("TORRHUS_TRACKER", "foraging:torrhus_chapter_resources"),
+            Map.entry("GALATEA_TRACKER", "foraging:galatea_chapter_resources"),
+            Map.entry("TREE_CRITTER_TIMER", "foraging:tree_critter_timer"),
+            Map.entry("MIRIA_CONTEST", "foraging:miria_contest_hud"),
+            Map.entry("AGATHA_CONTEST", "foraging:agatha_contest_hud"),
+            Map.entry("BENEFACTOR_HUD", "foraging:benefactor_status_hud"),
+            Map.entry("TREE_GIFT_ALERTS", "foraging:rare_tree_gift_alerts"),
+            Map.entry("BEEHEEMOTH_HELPER", "hunting:beeheemoth_helper"),
+            Map.entry("LASSO_REEL_SOUND", "hunting:lasso_reel_sound"),
+            Map.entry("CRITTER_BEHAVIOR", "hunting:critter_behavior_assistant"),
+            Map.entry("COLD_SAFETY", "hunting:cold_safety_alert"),
+            Map.entry("DOOMSPIRAL_READY", "hunting:doomspiral_ready_alert"),
+            Map.entry("WARDEN_READY_ALERT", "hunting:warden_capture_ready_alert"),
+            Map.entry("SAFARI_CRITTER_HIGHLIGHT", "hunting:safari_critter_highlight"),
+            Map.entry("SAFARI_DASHBOARD", "hunting:safari_run_dashboard"),
+            Map.entry("SAFARI_SHARD_STATS", "hunting:captured_shard_stats"),
+            Map.entry("SAFARI_CRITTERDEX", "hunting:safari_run_critterdex"),
+            Map.entry("SPARKLING_ALERT", "hunting:sparkling_critter_alert"),
+            Map.entry("FLOOR_QUEST_ASSISTANT", "hunting:floor_drop_quest_items"),
+            Map.entry("WUMPA_HUD", "hunting:wumpa_encounter_hud"),
+            Map.entry("SNOOZLE_WALL_OVERLAY", "hunting:snoozle_wall_overlay"),
+            Map.entry("SAFARI_BELT", "hunting:safari_belt_details"),
+            Map.entry("CRIMSON_TASKS", "combat:crimson_isle_tasks"),
+            Map.entry("DEATH_SAVE_ALERTS", "combat:death_save_center_alerts"),
+            Map.entry("SPIRIT_MASK_COOLDOWN_HUD", "combat:spirit_mask_cooldown_hud"),
+            Map.entry("BONZO_MASK_COOLDOWN_HUD", "combat:bonzo_s_mask_cooldown_hud"),
+            Map.entry("PHOENIX_COOLDOWN_HUD", "combat:phoenix_rekindle_cooldown_hud"),
+            Map.entry("DEPLOYABLE_EXPIRY_ALERT", "combat:power_orb_sos_despawn_alert"),
+            Map.entry("DRAGON_HIGHLIGHT", "combat:ender_dragon_highlight"),
+            Map.entry("PET_HUD", "items_and_menus:equipped_pet_hud"),
+            Map.entry("CENTURY_CAKE_EFFECTS", "items_and_menus:century_cake_effect_expiry_alert"),
+            Map.entry("SHARD_FUSION_HELPER", "items_and_menus:shard_fusion_helper"),
+            Map.entry("CHAT_PEEK", "general:chat_peek"),
+            Map.entry("ITEM_TIMESTAMPS", "items_and_menus:item_timestamps"),
+            Map.entry("CURSOR_MEMORY", "items_and_menus:save_cursor_position"),
+            Map.entry("TELEPORT_SOUNDS", "items_and_menus:aote_aotv_sound_settings")
+    );
+
     private UnifiedModIntegration() { }
 
     enum Provider {
@@ -1096,10 +1156,10 @@ final class UnifiedModIntegration {
         return null;
     }
 
-    private static List<UnifiedFeature> buildFeatures(List<NativeFeature> nativeFeatures) {
+    static List<UnifiedFeature> buildFeatures(List<NativeFeature> nativeFeatures) {
         Map<String, MutableUnified> merged = new LinkedHashMap<>();
         for (ConfigScreen.Feature feature : ConfigScreen.Feature.values()) {
-            String id = canonicalId(feature.category, ModText.get(feature.titleKey));
+            String id = localFeatureId(feature);
             MutableUnified entry = merged.computeIfAbsent(id, ignored -> new MutableUnified(id));
             entry.local = feature;
             entry.title = ModText.get(feature.titleKey);
@@ -1128,6 +1188,13 @@ final class UnifiedModIntegration {
                 .thenComparing(feature -> feature.group, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(feature -> feature.title, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(features);
+    }
+
+    private static String localFeatureId(ConfigScreen.Feature feature) {
+        String legacyId = LEGACY_LOCAL_FEATURE_IDS.get(feature.name());
+        if (legacyId != null) return alias(legacyId);
+        return alias(feature.category.name().toLowerCase(Locale.ROOT) + ":"
+                + feature.name().toLowerCase(Locale.ROOT));
     }
 
     private static List<Adapter> adapters() {

@@ -3,7 +3,7 @@
   "id": "qcloudy_addition",
   "version": "${version}",
   "name": "QCloudy_Addition",
-  "description": "Client-only mining, hunting, map, pet, inventory and visibility tools for Hypixel SkyBlock.",
+  "description": "Client-only mining, hunting, map, pet, inventory, visibility, and opt-in party/chat tools for Hypixel SkyBlock.",
   "authors": ["QCloudy_Addition contributors"],
   "license": "LGPL-3.0-or-later",
   "icon": "assets/qcloudy_addition/icon.png",

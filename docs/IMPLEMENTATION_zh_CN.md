@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文对应 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。
+本文跟踪 Minecraft 26.1.2 的当前 Alpha 32 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -332,6 +332,16 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - **效果：**只在按住时扩展聊天；默认滚轮翻聊天。
 - **默认/对外：**功能开启但按键未绑定；不发送消息。
 
+### 11.1 聊天与组队指令工具
+
+- **输入与有限解析：**`PartyText` 会先移除 Minecraft 格式代码。`PartyChatLine` 只接受收到的英文 Party Chat 行，提取发送者后只接受已识别的、经空白规范化的 `!` 别名。`PrivatePartyRequestCommands` 只接受精确收到的英文私信内容 `!p`、`!party`、`!invite`。公屏、公会聊天、未识别 Party Chat 文字及其他私信都不会选中动作。
+- **成员名单与补全：**`PartyRosterTracker` 观察客户端可见的队伍成员名单，先按不区分大小写的精确名称解析玩家参数，再按唯一的不区分大小写前缀解析。前缀有歧义时不发送指令；未出现在已观察名单中的合法完整玩家名仍可使用。`!pt`/`!ptme` 把队长交给 Party Chat 发送者；`//pt`/`//ptme` 把队长交给本机玩家。同一解析器也给别名和玩家参数提供指令补全。
+- **快速组队指令：**父开关默认关闭。传送、All Invite、变更队长、踢出、坐标、晋升、Stream、地牢与 Kuudra 九个独立子开关默认开启。每个子项可分别选择只接受本机、其他队员或所有人的 Party Chat 触发。`!warp`/`!w` 与 `!allinvite`/`!all`/`!allinv` 分别使用共享的五秒与两秒动作冷却；其他已识别别名不额外增加冷却。只有父开关、子开关、触发人范围、解析、玩家名解析与冷却都允许时才发送指令。
+- **组队指令：**独立的本机 `//` 父开关和全部九个独立子开关默认开启。它复用相同解析器和指令映射，但由于来自本机输入，不使用触发人范围。已识别但格式错误的 `//` 指令会被消费并给出本地反馈；未知 `//` 不拦截，仍可交给其他客户端/服务器指令处理器。
+- **私信工具：**自动接受组队仍是独立的本地好友/白名单判定。私信组队申请默认关闭，只有收到精确允许关键词时发送 `party invite <发送者>`。快速私信 `!p` 默认关闭；本机 `//invited <玩家>`、`//invited by <玩家>`、`//i <玩家>` 发送 `msg <玩家> !p`。
+- **精确映射：**Warp → `party warp`；All Invite → `party settings allinvite`；变更队长 → `party transfer <玩家>`；踢出 → `party kick <玩家>`；坐标 → 使用本机方块坐标的 `pc x: <x>, y: <y>, z: <z>`；晋升 → `party promote <玩家>`；无参数 Stream → `stream`；Stream 后接任意纯十进制 `<n>` → `stream open <n>`；Stream 后接 `c`、`close` 或 `off` → `stream close`。`fe`/`f0` → `joininstance CATACOMBS_ENTRANCE`；`me`/`m0` → `joininstance MASTER_CATACOMBS_ENTRANCE`；`f1`–`f7` → `joininstance CATACOMBS_FLOOR_ONE` 至 `CATACOMBS_FLOOR_SEVEN`；`m1`–`m7` → `joininstance MASTER_CATACOMBS_FLOOR_ONE` 至 `MASTER_CATACOMBS_FLOOR_SEVEN`；`t1`–`t5` 依次 → `joininstance KUUDRA_NORMAL`、`KUUDRA_HOT`、`KUUDRA_BURNING`、`KUUDRA_FIERY`、`KUUDRA_INFERNAL`。
+- **会话边界：**消息指令去重和私信请求去重均为短暂的本地保护。客户端断线时成员名单、去重和冷却状态都会重置；不保存聊天历史。
+
 ## 12. 物品栏与菜单
 
 ### 12.1 物品时间戳
@@ -396,8 +406,13 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 | 玩家输入 `/helia` | `sendCommand("chapter torrhus")` | 否 |
 | 玩家点击带下划线的 Century Cake 续效果文字 | 通过 Minecraft 聊天 `RUN_COMMAND` 点击事件执行 `sendCommand("visit northwestcloudy")` | 否 |
 | 玩家点击“重新连接” | 对本次内存中记录的目标发起一次普通Minecraft连接 | 否 |
+| 已开启的自动接受组队收到符合条件的邀请 | `sendCommand("party accept <发送者>")` | 是，但仅在本地发送者判定通过后 |
+| 已开启的私信组队申请收到精确 `!p`、`!party` 或 `!invite` | `sendCommand("party invite <发送者>")` | 是，但仅在精确消息匹配后 |
+| 已开启的快速组队指令收到允许的已识别 Party Chat 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 是，但仅在父开关、子开关、触发人范围、解析、补全与冷却均通过后 |
+| 已开启的快速私信 `!p` 收到本机 `//invited …` 或 `//i …` 输入 | `sendCommand("msg <玩家> !p")` | 否；来自本机输入 |
+| 已开启的组队指令收到本机已识别 `//` 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 否；来自本机输入 |
 
-`sendChat`：无。自动生成聊天：无。自动命令：无。自动移动、战斗、捕捉、物品使用、方块交互或重连：无。
+`sendChat`：无。唯一生成的消息载荷是独立开启的快速私信 `!p` 功能通过 `sendCommand` 发送的 `msg <玩家> !p`。自动移动、战斗、捕捉、物品使用、方块交互或重连：无。
 
 ## 15. 应如何验收
 
