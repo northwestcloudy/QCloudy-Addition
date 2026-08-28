@@ -36,7 +36,7 @@ public final class ConfigScreen extends Screen {
     private final List<Hit<UnifiedModIntegration.UnifiedFeature>> featureHits = new ArrayList<>();
     private final List<Hit<String>> groupHits = new ArrayList<>();
     private @Nullable Hit<Boolean> compatibilityReportHit;
-    private final Set<String> expandedGroups = new HashSet<>();
+    private final GroupExpansionState groupExpansionState = new GroupExpansionState();
     private Category category = Category.GENERAL;
     private EditBox searchBox;
     private String query = "";
@@ -67,10 +67,6 @@ public final class ConfigScreen extends Screen {
     public ConfigScreen(@Nullable Screen parent, @Nullable HudFocus focus) {
         super(Component.literal("QCloudy_Addition"));
         this.parent = parent;
-        // These are the two opt-in master switches for editing other mods.
-        // Keep this one General section open by default so it cannot be
-        // mistaken for the unrelated "Edit HUD" layout button in the sidebar.
-        expandedGroups.add(ModText.get(FeatureGroup.INTEGRATIONS.key));
         if (focus != null) {
             category = switch (focus) {
                 case MAP -> Category.MAPS;
@@ -231,13 +227,8 @@ public final class ConfigScreen extends Screen {
         int cardWidth = Math.max(1, (contentWidth - 5 - CARD_GAP * (columns - 1)) / columns);
         int totalHeight = 0;
         for (GroupBlock block : blocks) {
-            totalHeight += GROUP_HEADER_HEIGHT;
-            if (block.expanded()) {
-                int itemCount = block.features().size() + (block.compatibilityReport() ? 1 : 0);
-                int rows = (itemCount + columns - 1) / columns;
-                totalHeight += 5 + rows * (CARD_HEIGHT + CARD_GAP) - CARD_GAP;
-            }
-            totalHeight += CARD_GAP;
+            int itemCount = block.features().size() + (block.compatibilityReport() ? 1 : 0);
+            totalHeight += featureGroupBlockHeight(block.expanded(), itemCount, columns);
         }
         maximumScroll = Math.max(0, totalHeight - CARD_GAP - contentHeight);
         scroll = Math.clamp(scroll, 0, maximumScroll);
@@ -277,6 +268,15 @@ public final class ConfigScreen extends Screen {
         }
     }
 
+    static int featureGroupBlockHeight(boolean expanded, int itemCount, int columns) {
+        int height = GROUP_HEADER_HEIGHT + 5;
+        if (expanded) {
+            int rows = (itemCount + columns - 1) / columns;
+            height += rows * (CARD_HEIGHT + CARD_GAP) - CARD_GAP;
+        }
+        return height + CARD_GAP;
+    }
+
     private boolean intersectsContent(int y, int height) {
         return y + height > contentY && y < contentY + contentHeight;
     }
@@ -296,13 +296,18 @@ public final class ConfigScreen extends Screen {
         for (var entry : byGroup.entrySet()) {
             boolean compatibilityReport = reportMatches && entry.getKey().equals(integrationGroup);
             blocks.add(new GroupBlock(entry.getKey(), entry.getValue(),
-                    searching || expandedGroups.contains(entry.getKey()), compatibilityReport));
+                    searching || groupExpansionState.isExpanded(entry.getKey()), compatibilityReport));
             if (compatibilityReport) reportMatches = false;
         }
         if (reportMatches) {
-            blocks.addFirst(new GroupBlock(integrationGroup, List.of(), true, true));
+            blocks.addFirst(new GroupBlock(integrationGroup, List.of(),
+                    reportOnlyGroupExpanded(searching), true));
         }
         return blocks;
+    }
+
+    static boolean reportOnlyGroupExpanded(boolean searching) {
+        return searching;
     }
 
     private void drawGroupHeader(GuiGraphicsExtractor graphics, GroupBlock block, int x, int y, int width,
@@ -447,18 +452,16 @@ public final class ConfigScreen extends Screen {
             config.language = "zh_cn".equals(config.language) ? "en_us" : "zh_cn";
             ConfigManager.save();
             UnifiedModIntegration.invalidate();
-            // Group ids are localized display strings in the current UI.
-            // Re-open the integration masters under the newly selected
-            // language so both switches remain immediately visible.
-            expandedGroups.clear();
-            expandedGroups.add(ModText.get(FeatureGroup.INTEGRATIONS.key));
+            // Group ids are localized display strings, so discard the stale
+            // names. Every group remains collapsed after the language change.
+            groupExpansionState.clear();
             rebuildWidgets();
             return true;
         }
         if (!AcaUiTheme.contains(mouseX, mouseY, contentX, contentY, contentWidth, contentHeight)) return false;
         for (Hit<String> hit : groupHits) {
             if (!hit.contains(mouseX, mouseY)) continue;
-            if (!expandedGroups.remove(hit.value)) expandedGroups.add(hit.value);
+            groupExpansionState.toggle(hit.value);
             scroll = Math.clamp(scroll, 0, maximumScroll);
             return true;
         }
@@ -890,6 +893,22 @@ public final class ConfigScreen extends Screen {
 
     private record GroupBlock(String group, List<UnifiedModIntegration.UnifiedFeature> features,
                               boolean expanded, boolean compatibilityReport) { }
+
+    static final class GroupExpansionState {
+        private final Set<String> expandedGroups = new HashSet<>();
+
+        boolean isExpanded(String group) {
+            return expandedGroups.contains(group);
+        }
+
+        void toggle(String group) {
+            if (!expandedGroups.remove(group)) expandedGroups.add(group);
+        }
+
+        void clear() {
+            expandedGroups.clear();
+        }
+    }
 
     private record Hit<T>(T value, int x, int y, int width, int height) {
         boolean contains(double mouseX, double mouseY) {

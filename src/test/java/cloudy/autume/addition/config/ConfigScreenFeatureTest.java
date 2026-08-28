@@ -200,6 +200,24 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void integrationGroupStartsCollapsedAndKeepsManualStateForTheOpenScreen() {
+        ConfigScreen.GroupExpansionState state = new ConfigScreen.GroupExpansionState();
+        String group = ConfigScreen.FeatureGroup.INTEGRATIONS.name();
+
+        assertFalse(state.isExpanded(group));
+        state.toggle(group);
+        assertTrue(state.isExpanded(group));
+        state.toggle(group);
+        assertFalse(state.isExpanded(group));
+    }
+
+    @Test
+    void reportOnlyIntegrationGroupExpandsOnlyWhileSearching() {
+        assertFalse(ConfigScreen.reportOnlyGroupExpanded(false));
+        assertTrue(ConfigScreen.reportOnlyGroupExpanded(true));
+    }
+
+    @Test
     void onlyUnifiedEditorMastersOpenTheInitialScanConfirmation() {
         assertTrue(ConfigScreen.isIntegrationScanMaster(ConfigScreen.Feature.UNIFIED_SETTINGS_EDITOR));
         assertTrue(ConfigScreen.isIntegrationScanMaster(ConfigScreen.Feature.UNIFIED_HUD_EDITOR));
@@ -367,5 +385,11 @@ final class ConfigScreenFeatureTest {
         assertTrue(wide.trackX() >= 20);
         assertTrue(wide.trackX() + wide.trackWidth() <= 20 + 480);
         assertTrue(wide.trackWidth() > narrow.trackWidth());
+    }
+
+    @Test
+    void collapsedFeatureGroupsIncludeTheCardStartGapInTheirScrollHeight() {
+        assertEquals(35, ConfigScreen.featureGroupBlockHeight(false, 2, 2));
+        assertEquals(107, ConfigScreen.featureGroupBlockHeight(true, 1, 2));
     }
 }
