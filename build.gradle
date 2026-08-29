@@ -29,6 +29,12 @@ if (releaseChannelKey == 'alpha' && !(alphaIteration ==~ /[1-9][0-9]*/)) {
     throw new GradleException("Alpha builds require a positive numeric alpha_iteration")
 }
 
+def releaseBaselineSequenceText = project.findProperty('release_baseline_sequence')?.toString()?.trim()
+if (!(releaseBaselineSequenceText ==~ /[1-9][0-9]*/)) {
+    throw new GradleException("release_baseline_sequence must be a positive integer")
+}
+def releaseBaselineSequence = Long.parseLong(releaseBaselineSequenceText)
+
 def channelArtifactSuffix = releaseChannelKey == 'alpha'
         ? "Alpha-${alphaIteration}"
         : releaseChannel
@@ -88,6 +94,9 @@ processResources {
     inputs.property 'minecraft_version', targetMinecraftVersion
     inputs.property 'fabric_api_version', targetFabricApiVersion
     inputs.property 'loader_version', targetLoaderVersion
+    inputs.property 'release_channel', releaseChannel
+    inputs.property 'version_core', versionCore
+    inputs.property 'release_baseline_sequence', releaseBaselineSequence
     // Legacy pre-rendered pet PNGs caused stale/wrong fallbacks. Pet HUD icons
     // now render only verified player-head profiles, so do not ship them.
     exclude 'assets/qcloudy_addition/textures/gui/pets/**'
@@ -98,6 +107,12 @@ processResources {
                 minecraft_version: targetMinecraftVersion,
                 fabric_api_version: targetFabricApiVersion,
                 loader_version: targetLoaderVersion
+    }
+    filesMatching('qcloudy_addition.release.properties') {
+        expand release_channel: releaseChannel,
+                version_core: versionCore,
+                minecraft_version: targetMinecraftVersion,
+                release_baseline_sequence: releaseBaselineSequence
     }
 }
 
@@ -124,6 +139,9 @@ tasks.named('sourcesJar') {
     inputs.property 'minecraft_version', targetMinecraftVersion
     inputs.property 'fabric_api_version', targetFabricApiVersion
     inputs.property 'loader_version', targetLoaderVersion
+    inputs.property 'release_channel', releaseChannel
+    inputs.property 'version_core', versionCore
+    inputs.property 'release_baseline_sequence', releaseBaselineSequence
     exclude 'assets/qcloudy_addition/textures/gui/pets/**'
     exclude 'assets/qcloudy_addition/textures/gui/pet_skins/**'
     exclude '**/.DS_Store'
@@ -132,6 +150,12 @@ tasks.named('sourcesJar') {
                 minecraft_version: targetMinecraftVersion,
                 fabric_api_version: targetFabricApiVersion,
                 loader_version: targetLoaderVersion
+    }
+    filesMatching('qcloudy_addition.release.properties') {
+        expand release_channel: releaseChannel,
+                version_core: versionCore,
+                minecraft_version: targetMinecraftVersion,
+                release_baseline_sequence: releaseBaselineSequence
     }
     from('LICENSE') {
         rename 'LICENSE', licenseArchiveName

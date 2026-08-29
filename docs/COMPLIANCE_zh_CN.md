@@ -39,6 +39,7 @@
 | Attribute Shard Fusion Guide | 随模组打包的离线 320-Shard 效果/获取/Fusion JSON 与 320 张本地图标、已经在本地菜单/物品栏收到的可选原生 ItemStack、玩家真实搜索/点击/按键 | 本地详细信息/合成来源/可合成内容界面、Shard 专属离线图标、语义文字颜色与遵循材质包的已观察覆盖 | 无；`/qshard` 是纯客户端界面命令 |
 | Shard Planner | 打包配方/速率、本地 Planner 设置、兼容 Skyblocker 已缓存的可选价格、玩家亲自打开 Hunting Box 页面中可见的 Shard 数量/lore | 本地路线 Tree、候选、材料汇总、直接配方筛选、详情、Fusion Lines 与按 Profile 仓库 | 无；不发送 `/hb`、不请求价格、不点击、不 Fusion |
 | 配置 | 可改绑本地按键、本地 `/qca`/`/qc` 与鼠标输入 | JSON 配置文件 | 无 |
+| Release 更新提醒 | 构建内嵌的通道/版本/Minecraft/Release 基线元数据，以及公开稳定版 manifest | 确认存在更新且匹配当前版本时显示一次 Toast 与一条本地可点击聊天消息 | Alpha：无；Beta/Release：每个客户端进程最多向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`；绝不下载更新 |
 | 统一模组控制 | 对已安装 SkyHanni、Skyblocker、Firmament、BabyZombieAddons、Feesh 运行时对象的按需只读能力扫描；固定本地元数据分类；扫描后玩家在 QCA 中的真实点击/拖动 | 扫描进度、独立设置/HUD 数量、提供方选择、原生设置、原生 HUD 位置/缩放/对齐变化 | 无；扫描/分类只读，后续编辑也只通过对应提供方自己的保存/update 路径写入本地客户端配置 |
 | 兼容性缺失报告 | 最近一次完成的本地扫描快照中的已识别配置/HUD 结构 | 按提供方分组的本地“设置/HUD 编辑/分类”缺失报告 | 无；不会调用 setter 或保存路径 |
 | 手动重连 | 上一次正常 `ConnectScreen` 目标与玩家在断线页的明确点击 | 打开新的原版连接界面 | 仅点击后向已记录目标发起一次正常服务器连接 |
@@ -82,7 +83,13 @@
 
 ## 网络与自动化审计
 
-QCA 不包含 Hypixel Mod API、Hypixel 公共 API、WebSocket、HTTP 客户端、遥测、坐标共享服务、远程更新器、宏、模拟输入、自动点击/移动或方块交互。对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
+QCA 不包含 Hypixel Mod API、Hypixel 公共 API、WebSocket、遥测、坐标共享服务、自动下载/安装更新器、宏、模拟输入、自动点击/移动或方块交互。除下述 Release 提醒请求外，对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
+
+Release 更新提醒永久开启，没有功能卡片或配置项。Alpha 构建会在安排任何工作或打开 HTTP 连接前直接返回。Beta 或 Release 构建在第一次进入世界后安排一次检查，延迟五秒后异步向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送 HTTPS `GET`；整个客户端进程最多一次。连接超时为五秒、请求超时为十秒、禁止重定向、只接受 HTTP 200，并把响应限制为 128 KiB。失败只记日志，不向玩家报错，也没有重试循环。若确认结果等待展示时玩家已断线，则保留到下一次进入世界再显示。
+
+只有同时满足以下条件的 manifest 才能通过：schema 版本受支持；`channel` 精确为 `Release`；`releaseSequence` 是大于零且高于本机构建内嵌 Release 基线的整数；版本为三段式且 Tag 精确为 `v<版本>`；唯一匹配项的文件名精确为 `QCloudy_Addition-<版本>+<当前 Minecraft>-Release.jar`；同时带小写 `sha256:<64 位十六进制>` 与允许列表内的 `northwestcloudy/QCloudy-Addition` 官方 GitHub Release 资产链接。Alpha、Beta、格式错误、只有 Sources、重复匹配、Minecraft 版本不符、序号未增加、重定向或不可信链接都不能触发提醒。有效结果只生成一次原版 Toast 和一条本地可点击聊天消息，链接仅指向 `https://qcloudy.net/download/` 与 `https://qcloudy.net/changelog/`；不会获取 JAR、安装、替换文件、启动代码或重启 Minecraft。
+
+请求不包含 Minecraft 用户名、UUID、服务器地址、SkyBlock Profile、模组列表、玩法数据、遥测标识、访问 Token、Cookie 或认证头。它仍是一次普通对外 HTTPS 请求，因此目标服务器与网络基础设施可以看到连接 IP 与 `QCloudy_Addition/<版本>` HTTP User-Agent。响应内容不会作为账号/Profile记录持久保存。
 
 钓鱼上钩提示音优先使用直接归属于本地玩家的已加载鱼钩。为了兼容 owner 关联可能缺失的 Hypixel 岩浆鱼钩，它只在玩家真实使用钓竿后开启有限 40 tick 窗口，排除抛竿前已经存在的全部鱼钩及明确属于其他玩家的鱼钩，然后才接受一根新加载、归属本地或 owner 为空的鱼钩。选中鱼钩仍存在时的第二次真实使用会被判定为收杆，不能重新打开播放门。此后只扫描该鱼钩周围四格并精确匹配收到的 `!!!` ArmorStand，每根鱼钩最多播放一次内置本地提示音。回调会原样放行真实使用动作，不会自动抛竿、收杆、点击、移动玩家，也不发送命令或额外数据包；空闲时不会运行较大范围扫描。
 

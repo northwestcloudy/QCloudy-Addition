@@ -47,11 +47,17 @@ Also required: Fabric Loader 0.19.3 or newer and Java 25. Mod Menu is optional. 
 
 Open QCA with `O`, Mod Menu, `/qca`, or `/qc`. `/qca`, `/qc`, `/qshard`, `/cake`, and `/centurycakeeffect` are local client commands.
 
+## Release update notice — next Beta/Release
+
+Release 0.3.9 predates this checker. The checker is present but network-disabled in the Alpha 35 development build and will first become active in the next published Beta or Release. Once active, the Release update notice is always enabled and is not a settings card. Alpha builds never contact the update endpoint. Beta and Release builds make at most one asynchronous HTTPS request per client process to QCloudy's stable Release manifest after the first world join. Only a newer stable Release with an exact JAR for the running Minecraft version can trigger one toast and one local chat message; Alpha and Beta builds are never offered as update targets. The message links to QCloudy's download and changelog pages. QCA does not download, install, replace, or launch a mod file.
+
+The request sends no Minecraft username, UUID, server address, profile, mod list, gameplay data, telemetry identifier, token, or cookie. Normal HTTPS still exposes the connecting IP address and `QCloudy_Addition/<version>` HTTP User-Agent to the website server. Network or validation failure is silent and is not retried during that client process.
+
 ## Client-only boundary
 
-QCA reads information already delivered to the client: received Tab/scoreboard/chat/title text, open menus, local inventory, loaded entities, and already-loaded blocks. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, remote updater, hidden chunk request, or runtime Hypixel API dependency.
+QCA reads information already delivered to the client: received Tab/scoreboard/chat/title text, open menus, local inventory, loaded entities, and already-loaded blocks. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, automatic downloader/updater, hidden chunk request, or runtime Hypixel API dependency. Its only QCA-owned runtime web request is the bounded stable Release-manifest check disclosed above.
 
-The only server command payloads implemented by QCA are `warp torrhus`, `chapter torrhus`, and the directly clicked Century Cake renewal action `visit northwestcloudy`. None is sent without a direct player action.
+The always-available local `/th` and `/helia` shortcuts send `warp torrhus` and `chapter torrhus` only when the player enters those shortcuts; the Century Cake renewal action sends `visit northwestcloudy` only when its chat action is clicked. Separately enabled party/chat tools can send their documented Party, private-message, Stream, coordinate, Dungeon, and Kuudra command payloads only after their own master/child switches, sender scope, exact parser, player resolution, and cooldown gates permit them. These tools never simulate a click, move the player, or use an item.
 
 ## Compatibility and disclaimer
 
@@ -61,5 +67,6 @@ All Minecraft modifications are used at the player's own risk. QCloudy_Addition 
 
 - Website: [qcloudy.net](https://qcloudy.net/)
 - Downloads: [qcloudy.net/download](https://qcloudy.net/download/)
-- Wiki: [GitHub Wiki](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/wiki)
-- Source and issues: [GitHub](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition)
+- Source: [GitHub](https://github.com/northwestcloudy/QCloudy-Addition)
+- Issues: [GitHub Issues](https://github.com/northwestcloudy/QCloudy-Addition/issues)
+- Wiki: [GitHub Wiki](https://github.com/northwestcloudy/QCloudy-Addition/wiki)

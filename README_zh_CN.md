@@ -1,6 +1,6 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前稳定版为 0.3.9。
+QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前开发构建为适配 Minecraft 26.1.2 的 Alpha 35；最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release 0.3.9。
 
 ## 快速入口
 
@@ -15,6 +15,12 @@ QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric �
 默认语言为英文。按 `O`（可在“控制 → 按键绑定 → QCloudy_Addition”中改键）或输入 `/qca`、`/qc` 可打开客户端设置，并随时切换为简体中文。只有名称未被其他客户端命令占用时才会注册对应别名；这些命令只打开本地界面，不会发送给 Hypixel。
 
 语言选项只翻译 QCA 自己的界面标签。Hypixel 地点、任务、宠物、皮肤、配件、物品以及玩家重命名的 HOTM 配置均保留客户端收到的原始名称；例如 `Terminator` 不会被改写成中文名称。
+
+## 仅追踪 Release 的更新提醒
+
+QCA 的更新提醒永久开启，刻意不放进任何设置卡片。Alpha 构建不会安排或发起更新请求；Beta 与 Release 构建会在第一次进入世界后异步执行检查，每个客户端进程最多向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`。只有通过完整校验、通道精确为 `Release`、稳定版序号高于本机构建基线，并且存在唯一一项与当前 Minecraft 版本完全匹配的可运行 Release JAR 时，才会判定存在更新。Beta、Alpha、格式错误、Minecraft 版本不匹配、只有 Sources、匹配项重复或链接不可信的结果都会安全忽略，绝不会成为更新目标。
+
+确认存在新 Release 后，QCA 只显示一次原版 Toast 和一条本地可点击聊天消息，分别提供 `https://qcloudy.net/download/` 与 `https://qcloudy.net/changelog/`。它不会下载、替换或启动 JAR。请求不会包含 Minecraft 用户名、UUID、服务器地址、Profile、模组列表、玩法状态、遥测标识或认证 Token；与普通 HTTPS 请求相同，网站服务器仍可看到连接 IP 与 `QCloudy_Addition/<版本>` HTTP User-Agent。
 
 ## 统一 SkyBlock 模组控制——概念测试
 
@@ -119,11 +125,11 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 
 ## 从源码构建
 
-安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。Release 0.3.9 会测试并在 `release/` 分别生成 Minecraft 26.1.2 与 26.2 的可运行 JAR 和 Sources JAR。项目已包含固定为 Gradle 9.6.1 的 Wrapper与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据由本地 NEU item-repo 快照离线生成并直接打包进 QCA；发布版运行时不会联网，也不需要 Firmament。
+安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。脚本会按 `gradle.properties` 中选择的通道构建：Alpha 会测试并生成 Minecraft 26.1.2 的可运行 JAR 与 Sources JAR；Beta 与 Release 会测试并在 `release/` 生成 Minecraft 26.1.2 和 26.2 的两组文件。项目已包含固定为 Gradle 9.6.1 的 Wrapper 与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据由本地 NEU item-repo 快照离线生成并直接打包进 QCA；玩法、Shard、Wiki、图标与价格数据仍全部使用本地/离线来源，QCA 自己唯一的运行时网页请求是上面说明的有限 Release manifest 检查。QCA 不需要 Firmament。
 
 ## 安全边界
 
-发布版不包含 `sendChat`、Hypixel Mod API 订阅、WebSocket、HTTP 请求、运行时 Shard 数据请求、宏、自动移动或区块请求代码。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。模组不会自动生成服务器命令、聊天、点击或移动。
+发布版不包含 `sendChat`、Hypixel Mod API 订阅、WebSocket、遥测、运行时 Shard 数据请求、宏、自动移动或区块请求代码。QCA 自己唯一的 HTTP 路径是永久开启、每进程最多一次的 Release manifest 检查；Alpha 会在安排请求前直接返回，并且该检查无权下载或安装更新。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。文档列出的可选组队/聊天工具还可以在各自总开关、子开关、发送者范围、解析和冷却条件全部满足后发送对应服务器指令；它们不会模拟点击、移动玩家或使用物品。
 
 Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确列出的功能也不代表获得许可。使用前请阅读 [docs/COMPLIANCE_zh_CN.md](docs/COMPLIANCE_zh_CN.md) 和最新的 [Hypixel Allowed Modifications 说明](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications)。
 

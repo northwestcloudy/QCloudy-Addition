@@ -3,6 +3,7 @@ package cloudy.autume.addition.compat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
+import net.minecraft.client.gui.components.toasts.ToastManager;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -33,6 +34,10 @@ public final class MinecraftClientCompat {
 
     public static PlayerTabOverlay tabList(Minecraft client) {
         return client.gui.getTabList();
+    }
+
+    public static ToastManager toastManager(Minecraft client) {
+        return client.getToastManager();
     }
 
     public static void showTitle(Minecraft client, Component title, Component subtitle,

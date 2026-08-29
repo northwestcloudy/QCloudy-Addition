@@ -1,3 +1,25 @@
+# QCloudy_Addition 0.3.9 Alpha 35 当前验证
+
+日期：2026-08-29<br>
+交付 Alpha 目标：Minecraft 26.1.2<br>
+仅兼容验证目标：Minecraft 26.2<br>
+Java：25
+
+最终交付产物与 SHA-256：
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-35.jar` — 3,621,965 字节 — `31f22a427bce1472660512942cbfb6c0cc7c676569f9938f52b793743cc54939`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-35-sources.jar` — 3,099,206 字节 — `3d97118ddb63930937697cf90553aa29a8c57fdcf858434b2167dae59cbbfbc2`
+
+本工作区已验证：
+
+- Minecraft 26.1.2 独立运行 277 项测试，0 failure、0 error、0 skipped。
+- Minecraft 26.2 另行运行 277 项测试，0 failure、0 error、0 skipped；该目标只用于兼容验证，不发布也不交付 26.2 Alpha 产物。
+- 最终可运行 JAR 与 Sources JAR 均通过 JDK 25 `jar --validate` 和 `unzip -t`。
+- 归档检查未发现重复或冲突 class 条目。
+- Alpha 35 是不公开发布的 Alpha 构建；以上检查不会把它变成 Beta 或 Release，也不授权创建 GitHub Release、Tag 或 Modrinth 版本。
+
+---
+
 # QCloudy_Addition 0.3.9 Release 双目标验证
 
 日期：2026-08-25<br>

@@ -561,5 +561,14 @@
   "century_cake.expired.multiple": "%s Century Cake Effect Expired!",
   "century_cake.visit": "Click Here For Cake Eating",
   "century_cake.visit.hover": "Click to visit northwestcloudy and refresh Century Cake effects",
-  "subtitles.qcloudy_addition.fishing_bite": "Fishing bite alert"
+  "subtitles.qcloudy_addition.fishing_bite": "Fishing bite alert",
+  "qcloudy_addition.modmenu.official_website": "Official Website",
+  "qcloudy_addition.modmenu.downloads": "Downloads",
+  "update.release.toast.title": "QCA Release Update",
+  "update.release.toast.body": "Release %s is available",
+  "update.release.chat": "[QCA] Stable Release %s is available. Current version: %s.",
+  "update.release.download": "[Download latest Release]",
+  "update.release.download.hover": "Open the official QCloudy download page",
+  "update.release.changelog": "[View changelog]",
+  "update.release.changelog.hover": "Open the QCloudy changelog"
 }

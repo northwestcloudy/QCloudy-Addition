@@ -1,5 +1,7 @@
 # Release 0.3.9 发布检查清单
 
+> 本文件保留 Release 0.3.9 的发布基线。Release 0.3.9 并未包含 Release 更新检查器。下方与检查器相关的条目是留给首个后续 Beta/Release 的前瞻要求，不能据此声称已经发布的 0.3.9 JAR 具备更新提醒。
+
 ## 统一字段
 
 | 字段 | 内容 |
@@ -30,6 +32,10 @@ GitHub、Modrinth、Wiki 与官网发布内容顶部附近都要包含：
 - 自动测试及两个 Minecraft 目标必须全部通过。
 - 对四个归档执行 `jar --validate` 与 `unzip -t`。
 - 检查两个可运行 JAR 中的 `fabric.mod.json`：版本必须为 `0.3.9`，Minecraft 范围和 Fabric API 依赖必须正确。
+- 检查打包后的 `fabric.mod.json` 是否包含 `contact.homepage`、`contact.sources`、`contact.issues`，以及 Website、Downloads、Source 三项 `custom.modmenu.links`；确认 HMCL 能从 `contact.homepage` 显示“官方页面”，Mod Menu 能显示全部项目链接。
+- 对首个后续合格 Beta/Release，校验打包后的 Release 检查构建元数据：Alpha 必须在安排任务/联网前退出；Beta 与 Release 每个客户端进程最多请求一次 manifest。Beta 内嵌当前已经发布的稳定版 `releaseSequence`；新 Release 内嵌即将为该 Release 发布的同一个新序号，从而绝不会把自身提示为更新。
+- 对该后续合格构建，使用以下测试数据验证检查器：更新的 Release、相同/更低序号、Beta/Alpha 通道、畸形 JSON、Minecraft 版本不符、只有 Sources、SHA-256 无效、不可信 URL、重复匹配资产、重定向、非 200、超时与超大响应。只有有效、更新且唯一精确匹配的 Release 才能显示一次 Toast 与本地聊天消息。
+- 对该后续合格构建，确认 Toast/聊天链接精确为 `https://qcloudy.net/download/` 与 `https://qcloudy.net/changelog/`，且任何路径都不会下载、安装、替换或启动 JAR。
 - 核对 320 个 Shard 的目录、模型和纹理集合完全一致，且不包含 Rainbug。
 - 对最终复制到 `release/` 的文件重新计算 SHA-256，并写入双语验证报告和官网 manifest。
 - 完成独立启动冒烟测试；在把实验编辑器称为稳定前，还必须在已登录环境用五个提供方和多种 GUI Scale 回归。不要把本地自动测试表述成实服兼容证明。
@@ -67,6 +73,8 @@ GitHub、Modrinth、Wiki 与官网发布内容顶部附近都要包含：
 - 将最终 `website/` 包内的内容上传到现有站点根目录；不要把 ZIP 本身当网页公开。
 - 确认 `/`、`/download/`、`/features/`、`/compliance/` 与 `/changelog/` 可直接访问并可刷新。
 - 下载页只显示 Release 0.3.9，并使用准确的 GitHub Release 资产链接、大小与 SHA-256。
+- 在首个合格 Beta 前，先获取并校验现有线上 `/assets/data/release-manifest.json`，再把当前已经发布的稳定版 `releaseSequence` 内嵌进 Beta；发布 Beta 时不得覆盖或增加稳定版 manifest。发布新 Release 前，应先选定下一个大于零且严格递增的序号，让所有 Release JAR 内嵌同一序号，发布对应 GitHub 资产，最后再部署使用该精确序号、`channel: "Release"`、精确 `v<版本>` Tag 且每个支持 Minecraft 版本只有一个精确可运行资产的 manifest。
+- 确认普通 Release manifest 请求是 QCA 自己唯一的运行时网页请求；披露必须说明不发送标识、遥测、模组列表、玩法数据、Token、Cookie，不自动下载，同时承认普通 HTTPS 会暴露 IP 与 User-Agent。
 - 检查中英文切换、手机布局、可重复滚动动画、FAQ 动画、图标比例与导航高亮。
 
 ## GitHub Wiki

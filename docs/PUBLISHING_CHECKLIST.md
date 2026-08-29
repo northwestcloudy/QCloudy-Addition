@@ -1,5 +1,7 @@
 # Release 0.3.9 publication checklist
 
+> This file preserves the Release 0.3.9 publication baseline. Release 0.3.9 did not contain the Release-update checker. Checker-specific items below are forward-looking requirements for the first later Beta/Release that contains it and must not be used to claim that the published 0.3.9 JARs already provide update notices.
+
 ## Shared metadata
 
 | Field | Value |
@@ -30,6 +32,10 @@ Place this near the top of GitHub, Modrinth, Wiki, and website release copy:
 - Require all tests and both target builds to pass.
 - Validate all four archives with `jar --validate` and `unzip -t`.
 - Inspect `fabric.mod.json` in both playable JARs for `0.3.9`, the correct Minecraft range, and the expected Fabric API dependency.
+- Inspect packaged `fabric.mod.json` for `contact.homepage`, `contact.sources`, and `contact.issues`, and for `custom.modmenu.links` entries for Website, Downloads, and Source. Confirm HMCL exposes the official page from `contact.homepage` and Mod Menu shows every project link.
+- For the first later eligible Beta/Release, verify the packaged Release-check build metadata: Alpha must exit before scheduling/network access; Beta and Release must make at most one manifest request per client process. A Beta embeds the currently published stable `releaseSequence`; a new Release embeds the exact new sequence that will be published for that same Release, so it can never notify the player about itself.
+- For that later eligible build, test the checker with newer Release, equal/older sequence, Beta/Alpha channel, malformed JSON, wrong Minecraft, Sources-only asset, invalid SHA-256, untrusted URL, duplicate matching asset, redirect, non-200, timeout, and oversized-response fixtures. Only the valid newer unique matching Release may produce the one toast and local chat message.
+- For that later eligible build, confirm the toast/chat links are exactly `https://qcloudy.net/download/` and `https://qcloudy.net/changelog/`, and that no path downloads, installs, replaces, or launches a JAR.
 - Verify exact catalog/model/texture sets for all 320 Shards and confirm Rainbug is absent.
 - Recalculate SHA-256 from the final copied files and record it in both validation reports and the website manifest.
 - Perform standalone smoke testing and, before calling the experimental editors stable, repeat authenticated five-provider and multi-GUI-scale testing. Do not imply that local automated tests prove live compatibility.
@@ -67,6 +73,8 @@ Only playable JARs belong in users' `mods` folders. Sources JARs are optional de
 - Upload the contents of the final `website/` package to the current site root; do not upload the ZIP as a public page.
 - Confirm `/`, `/download/`, `/features/`, `/compliance/`, and `/changelog/` load directly and after refresh.
 - Confirm the download page shows only Release 0.3.9 and uses the exact GitHub release-asset URLs, sizes, and SHA-256 values.
+- Before the first eligible Beta, fetch and validate the existing live `/assets/data/release-manifest.json`, then embed that currently published stable `releaseSequence` in the Beta; publishing a Beta must not replace or increment the stable manifest. Before a new Release, choose the next positive monotonic sequence, build every Release JAR with that same sequence embedded, publish the matching GitHub assets, and only then deploy the manifest with that exact sequence, `channel: "Release"`, exact `v<version>` tag, and one exact playable asset per supported Minecraft version.
+- Confirm an ordinary Release-manifest request is the only QCA-owned runtime web request. The disclosure must state no identifiers, telemetry, mod list, gameplay data, token, cookie, or automatic download, while acknowledging normal IP/User-Agent exposure.
 - Confirm English/Chinese switching, mobile layout, repeatable reveal animations, FAQ animations, icon aspect ratio, and navigation highlighting.
 
 ## GitHub Wiki

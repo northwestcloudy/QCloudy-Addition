@@ -38,4 +38,4 @@
 
 只安装与你的 Minecraft 版本完全对应的一份可运行 JAR；不要把 `-sources.jar` 当作模组安装。
 
-完整累计变化见：[CHANGELOG_zh_CN.md](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/CHANGELOG_zh_CN.md)
+完整累计变化见：[CHANGELOG_zh_CN.md](https://github.com/northwestcloudy/QCloudy-Addition/blob/main/CHANGELOG_zh_CN.md)

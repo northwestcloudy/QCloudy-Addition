@@ -38,4 +38,4 @@ Stable client-only Fabric release for Minecraft 26.1.2 and 26.2. This release co
 
 Install exactly one playable JAR matching your Minecraft version. Do not install a `-sources.jar` as the mod.
 
-Full cumulative details: [CHANGELOG.md](https://github.com/gprztb6nw4-dotcom/QCloudy-Addition/blob/main/CHANGELOG.md)
+Full cumulative details: [CHANGELOG.md](https://github.com/northwestcloudy/QCloudy-Addition/blob/main/CHANGELOG.md)

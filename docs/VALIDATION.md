@@ -1,3 +1,25 @@
+# QCloudy_Addition 0.3.9 Alpha 35 current validation
+
+Date: 2026-08-29<br>
+Deliverable Alpha target: Minecraft 26.1.2<br>
+Compatibility-only target: Minecraft 26.2<br>
+Java: 25
+
+Final deliverable artifacts and SHA-256:
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-35.jar` — 3,621,965 bytes — `31f22a427bce1472660512942cbfb6c0cc7c676569f9938f52b793743cc54939`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-35-sources.jar` — 3,099,206 bytes — `3d97118ddb63930937697cf90553aa29a8c57fdcf858434b2167dae59cbbfbc2`
+
+Verified in this workspace:
+
+- Minecraft 26.1.2 ran 277 tests with 0 failures, 0 errors, and 0 skipped tests.
+- Minecraft 26.2 independently ran 277 tests with 0 failures, 0 errors, and 0 skipped tests as a compatibility check only; no 26.2 Alpha artifact is published or delivered.
+- The final playable and Sources JARs pass both JDK 25 `jar --validate` and `unzip -t`.
+- Archive inspection found no duplicate or conflicting class entry.
+- Alpha 35 is an unpublished Alpha build. These checks do not convert it into a Beta or Release and do not authorize a GitHub Release, tag, or Modrinth version publication.
+
+---
+
 # QCloudy_Addition 0.3.9 Release dual-target validation
 
 Date: 2026-08-25<br>

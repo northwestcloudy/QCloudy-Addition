@@ -5,6 +5,11 @@
   "name": "QCloudy_Addition",
   "description": "Client-only mining, hunting, map, pet, inventory, visibility, and opt-in party/chat tools for Hypixel SkyBlock.",
   "authors": ["QCloudy_Addition contributors"],
+  "contact": {
+    "homepage": "https://qcloudy.net/",
+    "sources": "https://github.com/northwestcloudy/QCloudy-Addition",
+    "issues": "https://github.com/northwestcloudy/QCloudy-Addition/issues"
+  },
   "license": "LGPL-3.0-or-later",
   "icon": "assets/qcloudy_addition/icon.png",
   "environment": "client",
@@ -31,5 +36,13 @@
     "firmament": "*",
     "babyzombieaddons": "*",
     "feesh": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "qcloudy_addition.modmenu.official_website": "https://qcloudy.net/",
+        "qcloudy_addition.modmenu.downloads": "https://qcloudy.net/download/"
+      }
+    }
   }
 }

@@ -28,6 +28,7 @@ import cloudy.autume.addition.tracker.HotmSlotTracker;
 import cloudy.autume.addition.tracker.PetTracker;
 import cloudy.autume.addition.tracker.PetSkinTracker;
 import cloudy.autume.addition.tracker.TabListTracker;
+import cloudy.autume.addition.update.ReleaseUpdateChecker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -72,6 +73,8 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
     private static final PartyCommandEngine PARTY_COMMAND_ENGINE = new PartyCommandEngine();
     private static final PrivatePartyRequestCommands PRIVATE_PARTY_REQUESTS =
             new PrivatePartyRequestCommands();
+    private static final ReleaseUpdateChecker RELEASE_UPDATES =
+            ReleaseUpdateChecker.createDefault();
     private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath(MOD_ID, "controls"));
     private static final KeyMapping OPEN_CONFIG = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -149,6 +152,8 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             resetTrackers();
         });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+                RELEASE_UPDATES.onJoin(client));
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.OVERLAY_MESSAGE,
                 Identifier.fromNamespaceAndPath(MOD_ID, "main_hud"), (graphics, tickCounter) -> HudRenderer.render(graphics));

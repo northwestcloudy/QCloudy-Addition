@@ -1,16 +1,17 @@
 # QCloudy_Addition implementation and data-flow reference
 
-This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the current Alpha 34 development build for Minecraft 26.1.2; the latest stable Release remains `0.3.9` for Minecraft 26.1.2 and 26.2.
+This document explains what each public feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the current Alpha 35 development build for Minecraft 26.1.2; the latest stable Release remains `0.3.9` for Minecraft 26.1.2 and 26.2.
 
 ## 1. Runtime architecture
 
-QCA is a Fabric client entrypoint. `QCloudyAdditionClient` performs five kinds of registration:
+QCA is a Fabric client entrypoint. `QCloudyAdditionClient` performs six kinds of registration:
 
 1. Loads normalized JSON settings and profile-aware inventory data.
 2. Samples the vanilla Tab list and scoreboard once per second.
 3. Receives normal and canceled-display game chat through Fabric message events.
 4. Registers HUD and world-render callbacks.
 5. Applies narrowly targeted Mixins for container input/rendering, chat peek, outlines, sound replacement, hotkeys, cursor memory, and connection screens.
+6. Initializes the Release-only notification gate; Alpha ends at the local gate, while Beta/Release may schedule one bounded manifest request after the first world join.
 
 The main tracking flow is:
 
@@ -45,6 +46,16 @@ Feesh uses Kotlin delegated settings rather than public fields. Its adapter pair
 `IntegrationCompatibilityScreen` is deliberately separate from `Feature` and `UnifiedFeature` toggles. It reads the latest completed snapshot and reports named features whose primary control, secondary setting, classification, or recognised HUD coordinate contract is unavailable, with independent Settings/HUD flags; supported features are filtered out. Empty or unreadable recognised provider roots become a provider-level configuration gap instead of a false all-supported result. The report never invokes a setter or save path. Provider grouping is computed once per opened report, and wrapped row geometry is cached until the content width changes instead of being rebuilt every render frame.
 
 Location detection first confirms a Hypixel host and a received SkyBlock scoreboard. It then classifies the current island from the location-marked scoreboard line and a bounded list of known original location names. Island-specific parsers and renders do not run globally.
+
+### 1.2 Always-on Release notification
+
+This is lifecycle infrastructure, not a configurable gameplay feature, so it has no `ModConfig` value and no feature card. `ReleaseBuildInfo` loads the build resource containing the QCA channel, version, Minecraft target, and positive Release-baseline sequence; Alpha 35 embeds baseline `1`. The client entrypoint registers the world-join listener for every channel, but Alpha returns from the local gate before scheduling a task or constructing an HTTP request. For Beta and Release, the atomic process guard in `ReleaseUpdateChecker` permits only one scheduled check for the lifetime of the client process. The first join schedules the check after five seconds; the network work runs away from the render/client thread.
+
+`ReleaseUpdateChecker` attempts at most one HTTPS `GET` to `https://www.qcloudy.net/assets/data/release-manifest.json`, with a five-second connect timeout, ten-second request timeout, redirect policy `NEVER`, an HTTP-200 requirement, a `QCloudy_Addition/<version>` User-Agent, and a 128-KiB maximum response. `ReleaseManifest` parses schema version 1 and rejects the whole response unless `channel` is exactly `Release`, `releaseSequence` is a positive integer greater than the embedded baseline, the version is three numeric parts with an exact `v<version>` tag, and exactly one asset has the exact current-Minecraft playable filename `QCloudy_Addition-<version>+<minecraft>-Release.jar`. That asset must also contain a lowercase `sha256:<64 hex>` digest and an HTTPS URL whose host, repository, exact `v<version>` Release tag, and filename all match the official `northwestcloudy/QCloudy-Addition` GitHub asset path. Duplicate matches are invalid. The checker does not choose the first vaguely matching release or compare Alpha/Beta suffixes as if they were stable versions.
+
+On failure, timeout, malformed data, an unsupported schema, a Beta/Alpha channel, missing or duplicate compatible asset, non-increasing sequence, Sources-only entry, redirect, or untrusted URL, the checker logs and stops without player-facing errors or retries during that process; the next launch may check again. On success it hands the immutable result back to the Minecraft client thread. If no player is available, the pending result remains in memory until the next world join. Presentation occurs at most once per process as a vanilla `SystemToast` through version-specific `MinecraftClientCompat.toastManager` and a local clickable chat message. The two user actions open `https://qcloudy.net/download/` and `https://qcloudy.net/changelog/`; neither action is a JAR URL, and QCA never downloads, installs, replaces, launches, or restarts anything.
+
+No username, UUID, server address, SkyBlock profile, mod list, gameplay value, telemetry identifier, cookie, token, or authentication header is added to the request. Ordinary HTTPS transport still exposes the connecting IP address and `QCloudy_Addition/<version>` User-Agent to the destination. The manifest result is not written into account/profile persistence. `ReleaseBuildInfoTest`, `ReleaseManifestTest`, `ReleaseUpdateCheckerTest`, and `ReleaseUpdateStateTest` cover the build gate, embedded metadata, direct endpoint and transport bounds, strict stable-channel/sequence checks, exact asset selection, untrusted URLs, malformed input, duplicate matches, process-lifetime request gating, pending-result retention, and one-time notification consumption.
 
 ## 2. Settings, localization, and HUD framework
 
@@ -409,6 +420,7 @@ All information rows on; icon+name accessory mode; read/render only; no runtime 
 - Configuration writes use a temporary file followed by atomic replacement when supported.
 
 QCA stores no password, access token, Hypixel API key, chat history, remote account data, or reconnect address on disk.
+Release-check state and a confirmed remote result are process-memory only; no update response, notification history, username, UUID, or server address is persisted.
 
 ## 14. Complete outbound-action inventory
 
@@ -421,6 +433,7 @@ QCA stores no password, access token, Hypixel API key, chat history, remote acco
 | Player types `/helia` | `sendCommand("chapter torrhus")` | No |
 | Player clicks the underlined Century Cake renewal text | `sendCommand("visit northwestcloudy")` through Minecraft's `RUN_COMMAND` chat click event | No |
 | Player clicks Reconnect | One normal Minecraft server connection to the remembered in-memory target | No |
+| First world join in a Beta/Release build | After five seconds, at most one HTTPS `GET` in the client process to the fixed stable Release manifest; Alpha performs none | Yes; metadata check only, with no download or installation |
 | Enabled Party Auto Accept receives a qualifying invite | `sendCommand("party accept <sender>")` | Yes, only after its local sender check |
 | Enabled Private-message Party Request receives exact `!p`, `!party`, or `!invite` | `sendCommand("party invite <sender>")` | Yes, only after its exact message match |
 | Enabled Fast Party Commands receives an allowed recognized Party Chat alias | `sendCommand` with the documented Party/Stream/`joininstance` payload | Yes, only after parent, child, sender-scope, parser, completion, and cooldown checks |

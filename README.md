@@ -1,6 +1,6 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 34 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 35 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
 
 ## Quick links
 
@@ -15,6 +15,12 @@ QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, 
 Default language: English. Press `O` (rebindable under Controls → Key Binds → QCloudy_Addition) or use `/qca` or `/qc` to open the client-side settings, then switch to Simplified Chinese at any time. These settings aliases are registered only when their client-command names are free, open a local screen, and send nothing. The separately configured party/chat aliases are documented below.
 
 The language option translates QCA interface labels only. Hypixel location names, task names, pets, skins, accessories, items, and player-renamed HOTM slots remain in their original client-received form.
+
+## Release-only update notice
+
+QCA's update notice is always enabled and deliberately has no settings card. Alpha builds never schedule or perform an update request. Beta and Release builds make at most one asynchronous HTTPS `GET` per client process, after the first world join, to `https://www.qcloudy.net/assets/data/release-manifest.json`. The response is accepted only when it is a valid stable `Release` manifest with a higher monotonic release sequence and exactly one playable Release JAR for the running Minecraft version. Beta, Alpha, malformed, wrong-version, Sources-only, duplicate, or untrusted-URL results fail closed and never become an update target.
+
+When a newer Release is confirmed, QCA shows one vanilla toast and one local clickable chat message linking to `https://qcloudy.net/download/` and `https://qcloudy.net/changelog/`. It never downloads, replaces, or launches a JAR. The request includes no Minecraft username, UUID, server address, profile, mod list, gameplay state, telemetry identifier, or authentication token. As with any ordinary HTTPS request, the web server can observe the connecting IP address and the `QCloudy_Addition/<version>` HTTP User-Agent.
 
 ## Unified SkyBlock mod controls — experimental concept test
 
@@ -124,11 +130,11 @@ Inventory and menu tools include the Attribute Shard Fusion Guide, item timestam
 
 ## Building from source
 
-Install JDK 25 and run `bash tools/build_all_versions.sh`. Release 0.3.9 tests and produces playable and Sources JARs for Minecraft 26.1.2 and 26.2 in `release/`. The repository includes its own pinned Gradle 9.6.1 Wrapper and Fabric Loom 1.17.17 configuration; the inspected reference mods are not build or runtime dependencies. Pet profile metadata is generated offline from a local NEU repository snapshot and committed into QCA resources. The shipped mod performs no runtime network request and runs without Firmament.
+Install JDK 25 and run `bash tools/build_all_versions.sh`. The script builds the channel selected in `gradle.properties`: Alpha builds test and produce the Minecraft 26.1.2 playable and Sources JARs, while Beta and Release builds test and produce both the Minecraft 26.1.2 and 26.2 pairs in `release/`. The repository includes its own pinned Gradle 9.6.1 Wrapper and Fabric Loom 1.17.17 configuration; the inspected reference mods are not build or runtime dependencies. Pet profile metadata is generated offline from a local NEU repository snapshot and committed into QCA resources. Gameplay, Shard, Wiki, icon, and price data remain local/offline; the only QCA-owned runtime web request is the bounded Release-manifest check described above. QCA runs without Firmament.
 
 ## Safety boundary
 
-The release contains no `sendChat`, Hypixel Mod API subscription, WebSocket, HTTP client, runtime Shard-data request, macro, automatic movement, or chunk-request code. Its normal HUD features consume only client-received state. `/qshard`, `/cake`, and `/centurycakeeffect` are local screen commands and send nothing. The always-available local `/th` and `/helia` shortcuts send exactly `warp torrhus` and `chapter torrhus`, equivalent to entering `/warp torrhus` and `/chapter torrhus`; they run only when the player types the corresponding shortcut. The underlined Century Cake renewal action sends exactly `/visit northwestcloudy`, but only after the player physically clicks it. The documented opt-in party/chat utilities can additionally send their listed server-command payloads after their own configured triggers; they never simulate a click, move the player, or use an item.
+The release contains no `sendChat`, Hypixel Mod API subscription, WebSocket, telemetry, runtime Shard-data request, macro, automatic movement, or chunk-request code. Its only QCA-owned HTTP path is the always-on, once-per-process Release-manifest check; Alpha builds return before scheduling it, and it cannot download or install an update. Normal HUD features consume only client-received state. `/qshard`, `/cake`, and `/centurycakeeffect` are local screen commands and send nothing. The always-available local `/th` and `/helia` shortcuts send exactly `warp torrhus` and `chapter torrhus`, equivalent to entering `/warp torrhus` and `/chapter torrhus`; they run only when the player types the corresponding shortcut. The underlined Century Cake renewal action sends exactly `/visit northwestcloudy`, but only after the player physically clicks it. The documented opt-in party/chat utilities can additionally send their listed server-command payloads after their own configured triggers; they never simulate a click, move the player, or use an item.
 
 Hypixel states that all modifications are used at the player's own risk and that an unlisted feature is not guaranteed to be allowed. Review [docs/COMPLIANCE.md](docs/COMPLIANCE.md) and the current [Hypixel Allowed Modifications guide](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications) before use.
 

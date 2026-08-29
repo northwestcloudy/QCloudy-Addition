@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪 Minecraft 26.1.2 的当前 Alpha 34 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
+本文跟踪 Minecraft 26.1.2 的当前 Alpha 35 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -11,6 +11,7 @@ QCA 是 Fabric 纯客户端入口。`QCloudyAdditionClient` 启动时完成以�
 3. 通过 Fabric 消息事件接收正常显示和被聊天压缩模组取消显示的游戏聊天。
 4. 注册 HUD 与世界渲染回调。
 5. 使用目标明确的 Mixin 处理容器输入/渲染、Chat Peek、实体轮廓、声音替换、快捷键、光标记忆和连接界面。
+6. 初始化仅追踪 Release 的提醒门控；Alpha 在本地门控处结束，Beta/Release 才可能在第一次进入世界后安排一次有限 manifest 请求。
 
 总体数据流：
 
@@ -45,6 +46,16 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 `IntegrationCompatibilityScreen` 与 `Feature`、`UnifiedFeature` 的功能开关完全分离。它读取最近一次完成的扫描快照；某个已命名功能的主控制、二级设置、分类或已识别 HUD 坐标契约不可用时，会分别标记“设置”或“HUD 编辑”，可完整管理的功能会被过滤。配置根为空或无法读取时显示提供方级缺失，不会错误显示“全部支持”。报告不会调用 setter 或保存路径。提供方分组在每次打开报告时只计算一次，已经换行的行布局会缓存到内容宽度改变，不会每个渲染帧重复生成。
 
 地点识别先确认当前服务器域名属于 Hypixel，并确认计分板中存在 SkyBlock 证据；随后使用带地点标记的计分板行和有限原始地点名进行分类。只在对应岛屿运行对应解析与渲染，不在所有服务器全局扫描。
+
+### 1.2 永久开启的 Release 更新提醒
+
+这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Alpha 35 内嵌基线为 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
+
+`ReleaseUpdateChecker` 最多尝试向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`：连接超时五秒、请求超时十秒、重定向策略为 `NEVER`、只接受 HTTP 200、User-Agent 为 `QCloudy_Addition/<版本>`，响应上限为 128 KiB。`ReleaseManifest` 解析 schema 版本 1，并要求 `channel` 精确为 `Release`、`releaseSequence` 为大于零且高于内嵌基线的整数、版本为三段纯数字且 Tag 精确为 `v<版本>`，同时资产列表中必须只有一项与当前 Minecraft 完全匹配的可运行文件 `QCloudy_Addition-<版本>+<minecraft>-Release.jar`。该资产还必须包含小写 `sha256:<64 位十六进制>`，而且 HTTPS URL 的主机、仓库、精确 `v<版本>` Release Tag 与文件名都必须符合官方 `northwestcloudy/QCloudy-Addition` GitHub 资产路径；重复匹配直接判为无效。它不会选择第一个模糊匹配的 Release，也不会把 Alpha/Beta 后缀当成稳定版本比较。
+
+网络失败、超时、格式错误、schema 不支持、通道为 Beta/Alpha、缺少或重复匹配资产、序号未增加、只有 Sources、重定向或链接不可信时，检查器只记日志并停止，不向玩家报错，本次进程内也不重试；下一次启动仍可重新检查。成功后会把不可变结果交回 Minecraft 客户端线程；若此时不存在玩家，则结果只保存在内存，等下次进入世界展示。整个进程最多通过各版本 `MinecraftClientCompat.toastManager` 展示一次原版 `SystemToast`，并发送一条本地可点击聊天消息；两个操作分别打开 `https://qcloudy.net/download/` 与 `https://qcloudy.net/changelog/`，都不是 JAR 直链。QCA 不会下载、安装、替换、启动任何文件，也不会重启游戏。
+
+请求不会添加用户名、UUID、服务器地址、SkyBlock Profile、模组列表、玩法数值、遥测标识、Cookie、Token 或认证头。普通 HTTPS 传输仍会让目标服务器看到连接 IP 和 `QCloudy_Addition/<版本>` User-Agent。manifest 结果不会写入账号/Profile持久化文件。`ReleaseBuildInfoTest`、`ReleaseManifestTest`、`ReleaseUpdateCheckerTest` 与 `ReleaseUpdateStateTest` 覆盖构建门控、内嵌元数据、直连端点与传输边界、严格稳定通道/序号校验、精确资产选择、不可信 URL、畸形输入、重复匹配、进程级请求门控、等待结果保留与提醒只消费一次。
 
 ## 2. 设置、语言与 HUD
 
@@ -394,6 +405,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - 配置先写临时文件，再尽可能原子替换。
 
 QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程账号数据或重连地址。
+Release 检查状态和已经确认的远端结果只保存在本次进程内；不会持久化更新响应、提醒历史、用户名、UUID 或服务器地址。
 
 ## 14. 完整对外操作清单
 
@@ -406,6 +418,7 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 | 玩家输入 `/helia` | `sendCommand("chapter torrhus")` | 否 |
 | 玩家点击带下划线的 Century Cake 续效果文字 | 通过 Minecraft 聊天 `RUN_COMMAND` 点击事件执行 `sendCommand("visit northwestcloudy")` | 否 |
 | 玩家点击“重新连接” | 对本次内存中记录的目标发起一次普通Minecraft连接 | 否 |
+| Beta/Release 构建第一次进入世界 | 五秒后，每个客户端进程最多向固定稳定版 manifest 发送一次 HTTPS `GET`；Alpha 完全不发送 | 是；仅检查元数据，不下载或安装 |
 | 已开启的自动接受组队收到符合条件的邀请 | `sendCommand("party accept <发送者>")` | 是，但仅在本地发送者判定通过后 |
 | 已开启的私信组队申请收到精确 `!p`、`!party` 或 `!invite` | `sendCommand("party invite <发送者>")` | 是，但仅在精确消息匹配后 |
 | 已开启的快速组队指令收到允许的已识别 Party Chat 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 是，但仅在父开关、子开关、触发人范围、解析、补全与冷却均通过后 |
