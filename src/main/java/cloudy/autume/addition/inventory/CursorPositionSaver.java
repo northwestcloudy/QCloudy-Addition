@@ -1,6 +1,7 @@
 package cloudy.autume.addition.inventory;
 
 import cloudy.autume.addition.config.ConfigManager;
+import cloudy.autume.addition.config.ModConfig;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 
@@ -49,7 +50,11 @@ public final class CursorPositionSaver {
     }
 
     private static boolean enabled() {
-        return ConfigManager.get().inventory.saveCursorPosition && InventoryFeatureGate.available();
+        return enabled(ConfigManager.get().inventory);
+    }
+
+    static boolean enabled(ModConfig.Inventory config) {
+        return config.saveCursorPosition;
     }
 
     public record RestoredPosition(double x, double y) {

@@ -787,7 +787,6 @@ public final class ModConfig {
     }
 
     public static final class Inventory {
-        public boolean yieldToFirmament = true;
         public boolean shardFusionHelper = true;
         public String shardPlannerMode = "IRONMAN";
         public String shardPlannerObjective = "FASTEST";

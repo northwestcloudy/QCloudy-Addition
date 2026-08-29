@@ -1,6 +1,7 @@
 package cloudy.autume.addition.inventory;
 
 import cloudy.autume.addition.config.ConfigManager;
+import cloudy.autume.addition.config.ModConfig;
 import cloudy.autume.addition.i18n.ModText;
 import cloudy.autume.addition.tracker.LocationTracker;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
@@ -37,7 +38,7 @@ public final class ItemTimestampTooltip {
     public static void register() {
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
             var config = ConfigManager.get().inventory;
-            if (!config.itemTimestamps || !InventoryFeatureGate.available() || !LocationTracker.isSkyBlock()) return;
+            if (!enabled(config, LocationTracker.isSkyBlock())) return;
             if (config.showCreationTimestamp) {
                 Instant timestamp = SkyBlockItemData.timestamp(stack);
                 if (timestamp != null) {
@@ -47,6 +48,10 @@ public final class ItemTimestampTooltip {
             }
             if (config.showCountdownCompletion) appendCountdowns(lines);
         });
+    }
+
+    static boolean enabled(ModConfig.Inventory config, boolean inSkyBlock) {
+        return config.itemTimestamps && inSkyBlock;
     }
 
     static void appendCountdowns(List<Component> lines) {

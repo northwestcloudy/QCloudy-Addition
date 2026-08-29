@@ -309,7 +309,6 @@ final class FeatureSettingsScreen extends Screen {
             return rows;
         }
         if (feature.inventoryFeature()) {
-            rows.add(new Setting(Kind.YIELD_FIRMAMENT, "config.setting.yield_firmament"));
             switch (feature) {
                 case ITEM_TIMESTAMPS -> {
                     rows.add(new Setting(Kind.SHOW_CREATION, "config.setting.show_creation"));
@@ -343,6 +342,11 @@ final class FeatureSettingsScreen extends Screen {
             rows.add(new Setting(Kind.CHAT_SCROLL_TARGET, "config.setting.chat_scroll_target"));
             return rows;
         }
+        // Only real rendered HUD panels may expose the shared panel style.
+        // Without this guard, any local feature that reached this fallback
+        // (for example a settings-free chat toggle opened by right-click)
+        // silently edited the map HUD style even though it had no HUD at all.
+        if (!usesHudAppearanceSettings(feature)) return rows;
         rows.add(new Setting(Kind.OPACITY, "config.setting.opacity"));
         rows.add(new Setting(Kind.BACKGROUND_COLOR, "config.setting.background_color"));
         rows.add(new Setting(Kind.BORDER, "config.setting.border"));
@@ -366,6 +370,10 @@ final class FeatureSettingsScreen extends Screen {
         }
         rows.add(new Setting(Kind.EDIT_LAYOUT, "config.layout"));
         return rows;
+    }
+
+    static boolean usesHudAppearanceSettings(ConfigScreen.@Nullable Feature feature) {
+        return feature != null && feature.hudType() != null;
     }
 
     @Override
@@ -520,7 +528,6 @@ final class FeatureSettingsScreen extends Screen {
             case OPEN_SHARD_PLANNER -> MinecraftClientCompat.setScreen(minecraft, new ShardPlanningScreen(this,
                     ConfigManager.get().inventory.shardPlannerTarget));
             case SHARD_GUIDE_KEY -> listeningChord = QCloudyAdditionClient.ChordAction.OPEN_SHARD_FUSION;
-            case YIELD_FIRMAMENT -> config.inventory.yieldToFirmament = !config.inventory.yieldToFirmament;
             case OPEN_CONFIG_KEY -> listeningChord = QCloudyAdditionClient.ChordAction.OPEN_CONFIG;
             case SHOW_CREATION -> config.inventory.showCreationTimestamp = !config.inventory.showCreationTimestamp;
             case SHOW_COUNTDOWNS -> config.inventory.showCountdownCompletion = !config.inventory.showCountdownCompletion;
@@ -777,7 +784,7 @@ final class FeatureSettingsScreen extends Screen {
         TITLE_COLOR, BOLD, SHADOW, SCALE, PET_ICON, PET_LEVEL_XP, PET_MAX_XP, PET_OVERFLOW_LEVEL,
         PET_SKIN_NAME, PET_ACCESSORY, COMMISSION_PROGRESS, HOTM_SLOT, EDIT_LAYOUT,
         OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER, SHARD_GUIDE_KEY,
-        YIELD_FIRMAMENT, OPEN_CONFIG_KEY, SHOW_CREATION, SHOW_COUNTDOWNS,
+        OPEN_CONFIG_KEY, SHOW_CREATION, SHOW_COUNTDOWNS,
         TIMESTAMP_FORMAT, CURSOR_TOLERANCE,
         INSTANT_SOUND_MODE, INSTANT_CUSTOM_SOUND, INSTANT_SOUND_VOLUME,
         ETHERWARP_SOUND_MODE, ETHERWARP_CUSTOM_SOUND, ETHERWARP_SOUND_VOLUME,
@@ -898,7 +905,6 @@ final class FeatureSettingsScreen extends Screen {
                         ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT);
                 case OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER ->
                         ModText.get(available() ? "config.open" : "config.disabled");
-                case YIELD_FIRMAMENT -> onOff(config.inventory.yieldToFirmament);
                 case SHARD_GUIDE_KEY, OPEN_CONFIG_KEY, CHAT_PEEK_KEY -> {
                     QCloudyAdditionClient.ChordAction action = chordAction();
                     yield action == listeningChord ? ModText.get("config.key.waiting")

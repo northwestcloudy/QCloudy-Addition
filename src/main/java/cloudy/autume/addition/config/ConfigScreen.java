@@ -401,7 +401,9 @@ public final class ConfigScreen extends Screen {
                 && AcaUiTheme.contains(click.x(), click.y(), contentX, contentY, contentWidth, contentHeight)) {
             for (Hit<UnifiedModIntegration.UnifiedFeature> hit : featureHits) {
                 if (hit.contains(click.x(), click.y())) {
-                    MinecraftClientCompat.setScreen(minecraft, new FeatureSettingsScreen(this, hit.value));
+                    if (hasFeatureSettings(hit.value)) {
+                        MinecraftClientCompat.setScreen(minecraft, new FeatureSettingsScreen(this, hit.value));
+                    }
                     return true;
                 }
             }
@@ -496,6 +498,13 @@ public final class ConfigScreen extends Screen {
     static boolean isIntegrationScanMaster(Feature feature) {
         return feature == Feature.UNIFIED_SETTINGS_EDITOR
                 || feature == Feature.UNIFIED_HUD_EDITOR;
+    }
+
+    static boolean hasFeatureSettings(UnifiedModIntegration.UnifiedFeature feature) {
+        // External bindings may provide editable native options or a provider
+        // selector even when the matching QCA toggle itself has no settings.
+        return !feature.external.isEmpty()
+                || feature.qcloudyFeature != null && feature.qcloudyFeature.hasSettings();
     }
 
     static List<Feature> integrationMasterSwitches() {
@@ -626,12 +635,7 @@ public final class ConfigScreen extends Screen {
         PET_DISPLAY(Category.ITEMS_AND_MENUS, "config.group.pet_display"),
         CENTURY_CAKES(Category.ITEMS_AND_MENUS, "config.group.century_cakes"),
         SHARD_FUSION(Category.ITEMS_AND_MENUS, "config.group.shard_fusion"),
-        INVENTORY_TOOLS(Category.ITEMS_AND_MENUS, "config.group.inventory_tools"),
-        DUNGEON_TOOLS(Category.DUNGEONS, "config.group.dungeons"),
-        SLAYER_TOOLS(Category.SLAYER, "config.group.slayer"),
-        FARMING_TOOLS(Category.FARMING, "config.group.farming"),
-        RIFT_TOOLS(Category.RIFT, "config.group.rift"),
-        EVENT_TOOLS(Category.EVENTS, "config.group.events");
+        INVENTORY_TOOLS(Category.ITEMS_AND_MENUS, "config.group.inventory_tools");
 
         final Category category;
         final String key;
@@ -871,7 +875,10 @@ public final class ConfigScreen extends Screen {
         }
 
         boolean inventoryFeature() {
-            return group.category == Category.ITEMS_AND_MENUS;
+            // PET_HUD, Century Cakes and Shard Fusion share the sidebar
+            // category but are not inventory-tool implementations. In
+            // particular PET_HUD must continue into the HUD appearance rows.
+            return group == FeatureGroup.INVENTORY_TOOLS;
         }
 
         boolean huntingFeature() {

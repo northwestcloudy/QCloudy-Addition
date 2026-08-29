@@ -734,7 +734,7 @@ Alpha 2.5.4 已包含可独立运行、纯客户端的 Shard 合成辅助：提�
 | QCA 1.5.1 + Fabric/API | 独立 Loom 共加载 51 个模块；QCA 完成初始化、资源重载和声音引擎启动，进入主菜单后主动结束前没有出现 QCA 异常 |
 | QCA 1.5.1 + 四个指定参考模组 | 使用 BabyzombieAddons 3.4.1、SkyHanni 7.41.0、Skyblocker 6.8.2、Firmament 44.3.0 与 Mod Menu 18.0 的新鲜 94-mod 联合启动完成 QCA、组合资源与声音引擎初始化；客户端持续约 33 分钟后正常停止。最终已加载区块 API 清理后又重跑一次并到达相同初始化边界；两次均没有 QCA 或 mixin 注入异常 |
 
-联合实例中的警告/错误来自参考模组的 refmap/资源、可选 ModernUI 类、BabyzombieAddons 缺失的 custom-disc 文件、SkyHanni/Skyblocker 远程仓库请求、未认证的 profile/Realms 活动，以及 SkyHanni 7.41.0 无法接受当前 NEU 仓库中的 `HUNTING_FORTUNE` 与 `FISHING_NET` 常量；它们均不是由 QCA 抛出，也没有阻止客户端、资源和声音初始化。QCA 不依赖 Firmament 运行；可选的重复功能交接只检查该 mod id 是否已加载，Firmament 不存在时 QCA 的功能仍完整可用。
+联合实例中的警告/错误来自参考模组的 refmap/资源、可选 ModernUI 类、BabyzombieAddons 缺失的 custom-disc 文件、SkyHanni/Skyblocker 远程仓库请求、未认证的 profile/Realms 活动，以及 SkyHanni 7.41.0 无法接受当前 NEU 仓库中的 `HUNTING_FORTUNE` 与 `FISHING_NET` 常量；它们均不是由 QCA 抛出，也没有阻止客户端、资源和声音初始化。QCA 不依赖 Firmament 运行。物品时间戳与光标记忆现在只由各自的 QCA 功能开关控制，不会仅因为已安装 Firmament 就被禁用。
 
 ## 最终完整性修复
 

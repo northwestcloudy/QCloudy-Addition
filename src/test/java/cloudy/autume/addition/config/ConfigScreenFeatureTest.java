@@ -121,6 +121,15 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void everyDeclaredFeatureGroupOwnsAtLeastOneFeature() {
+        for (ConfigScreen.FeatureGroup group : ConfigScreen.FeatureGroup.values()) {
+            assertTrue(java.util.Arrays.stream(ConfigScreen.Feature.values())
+                            .anyMatch(feature -> feature.group == group),
+                    () -> "Empty feature group: " + group);
+        }
+    }
+
+    @Test
     void partyCommandFamiliesUseIndependentMastersAndParentGatedSettings() {
         ModConfig config = new ModConfig();
         ConfigScreen.Feature fast = ConfigScreen.Feature.FAST_PARTY_COMMANDS;
@@ -161,6 +170,41 @@ final class ConfigScreenFeatureTest {
         request.toggle(config);
         assertTrue(request.enabled(config));
         assertFalse(quick.enabled(config));
+    }
+
+    @Test
+    void settingsFreeFeaturesCannotExposeSharedHudAppearanceControls() {
+        assertFalse(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.QUICK_PRIVATE_PARTY_REQUEST));
+        assertFalse(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.DIRECT_MESSAGE_PARTY_REQUEST));
+        assertFalse(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.CHAT_PEEK));
+        assertFalse(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.DRAGON_HIGHLIGHT));
+        assertTrue(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.MINING_TRACKER));
+        assertTrue(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.SPIRIT_MASK_COOLDOWN_HUD));
+        assertTrue(FeatureSettingsScreen.usesHudAppearanceSettings(
+                ConfigScreen.Feature.PET_HUD));
+        assertFalse(ConfigScreen.Feature.PET_HUD.inventoryFeature());
+        assertFalse(ConfigScreen.Feature.CENTURY_CAKE_EFFECTS.inventoryFeature());
+        assertFalse(ConfigScreen.Feature.SHARD_FUSION_HELPER.inventoryFeature());
+        assertTrue(ConfigScreen.Feature.ITEM_TIMESTAMPS.inventoryFeature());
+        assertTrue(ConfigScreen.Feature.CURSOR_MEMORY.inventoryFeature());
+        assertTrue(ConfigScreen.Feature.TELEPORT_SOUNDS.inventoryFeature());
+
+        var settingsFree = new UnifiedModIntegration.UnifiedFeature(
+                "chat:quick_private_party_request", "Quick private !p", "",
+                ConfigScreen.Category.GENERAL, "Chat",
+                ConfigScreen.Feature.QUICK_PRIVATE_PARTY_REQUEST, List.of());
+        var realHud = new UnifiedModIntegration.UnifiedFeature(
+                "mining:mining_tasks_powders", "Mining", "",
+                ConfigScreen.Category.MINING, "Mining",
+                ConfigScreen.Feature.MINING_TRACKER, List.of());
+        assertFalse(ConfigScreen.hasFeatureSettings(settingsFree));
+        assertTrue(ConfigScreen.hasFeatureSettings(realHud));
     }
 
     @Test

@@ -56,7 +56,6 @@ final class ModConfigTest {
         assertEquals("PERCENT", config.mining.commissionProgressMode);
         assertEquals("", config.mining.lastHotmSlotName);
         assertEquals(true, config.mining.showHotmSlot);
-        assertEquals(true, config.inventory.yieldToFirmament);
         assertEquals(false, config.integrations.unifiedSettingsEditor);
         assertEquals(false, config.integrations.unifiedHudEditor);
         assertEquals(true, config.inventory.shardFusionHelper);

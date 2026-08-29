@@ -1413,11 +1413,6 @@ public final class HuntingTracker {
         return area == IslandArea.TORRHUS_CANYON || area == IslandArea.GALATEA;
     }
 
-    private static String afterColon(String value) {
-        int index = value.indexOf(':');
-        return index < 0 ? value : value.substring(index + 1).trim();
-    }
-
     public static String durationText(long seconds) {
         long hours = seconds / 3600;
         long minutes = seconds % 3600 / 60;
