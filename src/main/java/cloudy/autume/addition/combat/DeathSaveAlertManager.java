@@ -16,16 +16,20 @@ public final class DeathSaveAlertManager {
     private static final DeathSaveAlertManager RUNTIME = new DeathSaveAlertManager();
 
     private static final Pattern FORMATTING_CODE = Pattern.compile("§.");
+    /** Private-use glyph prefixed by Hypixel to the upgraded Bonzo's Mask name. */
+    private static final String UPGRADED_BONZO_MASK_MESSAGE =
+            "Your \uE068 Bonzo's Mask saved your life!";
     private static final Map<String, Ability> SERVER_MESSAGES = Map.of(
             "Second Wind Activated! Your Spirit Mask saved your life!", Ability.SPIRIT_MASK,
             "Your Bonzo's Mask saved your life!", Ability.BONZO_MASK,
+            UPGRADED_BONZO_MASK_MESSAGE, Ability.BONZO_MASK,
             "Your Phoenix Pet saved you from certain death!", Ability.PHOENIX);
 
     private final EnumMap<Ability, Long> readyAtNanos = new EnumMap<>(Ability.class);
     private final EnumMap<Ability, Long> lastAcceptedAtNanos = new EnumMap<>(Ability.class);
 
     /**
-     * Accepts only one of the three exact server messages after removing
+     * Accepts only a confirmed exact server message after removing
      * Minecraft formatting codes and surrounding whitespace.
      *
      * @return an alert event for a newly accepted activation, otherwise null

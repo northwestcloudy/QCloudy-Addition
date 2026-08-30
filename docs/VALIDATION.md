@@ -1,4 +1,34 @@
-# QCloudy_Addition 0.3.9 Alpha 35 current validation
+# QCloudy_Addition 0.3.9 Alpha 36 current validation
+
+Date: 2026-08-30<br>
+Deliverable Alpha target: Minecraft 26.1.2<br>
+Compatibility-only target: Minecraft 26.2<br>
+Java: 25
+
+Final deliverable artifacts and SHA-256:
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-36.jar` — 3,622,011 bytes — `928ca6ec4b47c621845506ff50ef25fdb22374df9bbc23cd7c14575a3fcf1869`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-36-sources.jar` — 3,099,291 bytes — `864262c8a46ad4669a5e01f2ce874b4ff6e7b8d0e70c68be86adf9acf5c1dfae`
+
+Alpha 36 fixes upgraded Bonzo's Mask activation detection. QCA now accepts both exact confirmed server messages—`Your Bonzo's Mask saved your life!` and `Your <U+E068> Bonzo's Mask saved your life!`—as the same Bonzo cooldown activation. The private-use upgraded-item glyph is preserved during normalization; unrelated or incorrect private-use glyphs still fail closed.
+
+Verified in this workspace:
+
+- Minecraft 26.1.2 independently ran 278 tests with 0 failures, 0 errors, and 0 skipped tests.
+- Minecraft 26.2 independently ran 278 tests with 0 failures, 0 errors, and 0 skipped tests as a compatibility check only; no 26.2 Alpha artifact is published or delivered.
+- Regression coverage confirms the ordinary and upgraded Bonzo messages share one 360-second cooldown and one two-second duplicate window, accept embedded Minecraft formatting codes, and reject the wrong private-use glyph or near-match text.
+- The packaged playable JAR declares `0.3.9-alpha.36+26.1.2` and contains the exact upgraded Bonzo server message.
+- The final playable and Sources JARs pass both JDK 25 `jar --validate` and `unzip -t`.
+- Archive inspection found no duplicate or conflicting class entry.
+- Alpha 36 is an unpublished Alpha build. These checks do not convert it into a Beta or Release and do not authorize a GitHub Release, tag, or Modrinth version publication.
+
+Outstanding live regression boundary:
+
+- The exact upgraded line was copied from the player's live Hypixel chat, but this local build was not independently launched in an authenticated Hypixel session. Install Alpha 36 and trigger the upgraded Bonzo's Mask once to confirm the title and cooldown HUD appear in the full live modpack.
+
+---
+
+# QCloudy_Addition 0.3.9 Alpha 35 validation
 
 Date: 2026-08-29<br>
 Deliverable Alpha target: Minecraft 26.1.2<br>

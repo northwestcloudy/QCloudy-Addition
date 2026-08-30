@@ -1,6 +1,6 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 35 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 36 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
 
 ## Quick links
 

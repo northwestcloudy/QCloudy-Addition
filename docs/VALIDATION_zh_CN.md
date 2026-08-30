@@ -1,4 +1,34 @@
-# QCloudy_Addition 0.3.9 Alpha 35 当前验证
+# QCloudy_Addition 0.3.9 Alpha 36 当前验证
+
+日期：2026-08-30<br>
+交付 Alpha 目标：Minecraft 26.1.2<br>
+仅兼容验证目标：Minecraft 26.2<br>
+Java：25
+
+最终交付产物与 SHA-256：
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-36.jar` — 3,622,011 字节 — `928ca6ec4b47c621845506ff50ef25fdb22374df9bbc23cd7c14575a3fcf1869`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-36-sources.jar` — 3,099,291 字节 — `864262c8a46ad4669a5e01f2ce874b4ff6e7b8d0e70c68be86adf9acf5c1dfae`
+
+Alpha 36 修复升级版 Bonzo's Mask 的触发检测。QCA 现在会把两条已经确认的精确服务器消息——`Your Bonzo's Mask saved your life!` 与 `Your <U+E068> Bonzo's Mask saved your life!`——识别为同一次 Bonzo 冷却能力。清理格式时会保留升级物品的私用区图标；无关或错误的私用区图标仍会安全拒绝。
+
+本工作区已验证：
+
+- Minecraft 26.1.2 独立运行 278 项测试，0 failure、0 error、0 skipped。
+- Minecraft 26.2 另行运行 278 项测试，0 failure、0 error、0 skipped；该目标只用于兼容验证，不发布也不交付 26.2 Alpha 产物。
+- 回归测试确认普通版与升级版 Bonzo 消息共用同一个 360 秒冷却和两秒重复窗口，能够接受嵌入的 Minecraft 格式代码，并拒绝错误私用区图标或近似文本。
+- 已打包的可运行 JAR 声明版本 `0.3.9-alpha.36+26.1.2`，并包含升级版 Bonzo 的精确服务器消息。
+- 最终可运行 JAR 与 Sources JAR 均通过 JDK 25 `jar --validate` 和 `unzip -t`。
+- 归档检查未发现重复或冲突 class 条目。
+- Alpha 36 是不公开发布的 Alpha 构建；以上检查不会把它变成 Beta 或 Release，也不授权创建 GitHub Release、Tag 或 Modrinth 版本。
+
+尚未覆盖的实服回归边界：
+
+- 升级版精确消息来自玩家在 Hypixel 实服聊天中直接复制的内容，但本地构建未在已登录的 Hypixel 会话中独立启动验证。请安装 Alpha 36，并让升级版 Bonzo's Mask 触发一次，确认完整模组环境中会显示中央提示与冷却 HUD。
+
+---
+
+# QCloudy_Addition 0.3.9 Alpha 35 验证
 
 日期：2026-08-29<br>
 交付 Alpha 目标：Minecraft 26.1.2<br>
