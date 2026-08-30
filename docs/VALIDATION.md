@@ -1,4 +1,36 @@
-# QCloudy_Addition 0.3.9 Alpha 36 current validation
+# QCloudy_Addition 0.3.9 Alpha 37 current validation
+
+Date: 2026-08-30<br>
+Deliverable Alpha target: Minecraft 26.1.2<br>
+Compatibility-only target: Minecraft 26.2<br>
+Java: 25
+
+Final deliverable artifacts and SHA-256:
+
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-37.jar` — 3,631,814 bytes — `cb8c923d4e2d333b5001dfec068ab6a4cd40c24afa81731f7847b725b0f7a765`
+- `release/QCloudy_Addition-0.3.9+26.1.2-Alpha-37-sources.jar` — 3,102,759 bytes — `30da6186f5effec7dde02865ad65959cc0f8c33e88f5835a8aacbd4c81a50215`
+
+Alpha 37 repairs friend-list synchronization for Party Auto Accept and makes QCA's settings scrollbars directly interactive. `/friend list` headers, structured friend rows, and footers may now arrive as separate chat components. Each row whose visible name, `/viewprofile` UUID action, and profile hover agree is usable immediately; only a complete ordered traversal may prune the authoritative cache. Independent streamed rows are additionally restricted to exact offline or location status lines, preventing interleaved public, guild, or party chat from entering the roster. The friend-cache schema is now 3, so older potentially empty or over-trusted caches require one fresh structured verification. The main settings catalog, feature settings, compatibility report, and party whitelist now share a browser-style scrollbar with thumb dragging, out-of-track capture, track page clicks, and a wider input target.
+
+Verified in this workspace:
+
+- Minecraft 26.1.2 independently ran 293 tests in 51 suites with 0 failures, 0 errors, and 0 skipped tests.
+- Minecraft 26.2 independently ran 293 tests in 51 suites with 0 failures, 0 errors, and 0 skipped tests as a compatibility check only; no 26.2 Alpha artifact is published or delivered.
+- Friend-roster regression coverage includes the supplied page-one names and online/offline status forms, streamed and aggregate components, immediate current-page authorization, normal/bold classification, ordered full-snapshot pruning, structured public/guild lookalike rejection, session reset, and schema-2 invalidation.
+- Scrollbar regression coverage includes proportional/minimum geometry, exact top/bottom mapping, grab-offset preservation, dragging beyond the track, track paging and end clamping, hidden-state inertness, wheel suppression while grabbed, post-release wheel recovery, and the main-catalog gutter.
+- The packaged playable JAR declares `0.3.9-alpha.37+26.1.2`, requires Java 25, targets Minecraft 26.1.2, and contains the compiled `VerticalScrollbar`, `FriendRoster`, and schema-3 store implementation.
+- The playable and Sources JARs are byte-identical to their target-specific `build/26.1.2/libs/` outputs and pass both JDK 25 `jar --validate` and `unzip -t`.
+- Archive inspection found 0 duplicate entries and no conflict-suffixed class entries in either deliverable.
+- Alpha 37 is an unpublished Alpha build. These checks do not convert it into a Beta or Release and do not authorize a GitHub Release, tag, or Modrinth version publication.
+
+Outstanding live regression boundary:
+
+- Automated components model Hypixel's structured click/hover rows, but this build was not independently launched in an authenticated Hypixel session. Run `/fl`, verify a visible normal and bold special friend can trigger the selected auto-accept mode, and browse every page once to confirm stale entries are pruned.
+- Drag each new scrollbar thumb, move the pointer outside the track while held, and click above/below the thumb in the full modpack. The first 180 ms opening animation retains the pre-existing visual/input scaling mismatch, so this check should also be repeated after the animation completes.
+
+---
+
+# QCloudy_Addition 0.3.9 Alpha 36 validation
 
 Date: 2026-08-30<br>
 Deliverable Alpha target: Minecraft 26.1.2<br>

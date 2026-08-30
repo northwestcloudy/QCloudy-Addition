@@ -22,6 +22,7 @@ final class PartyWhitelistScreen extends Screen {
     private final Screen parent;
     private final long openedAt = System.nanoTime();
     private final List<Hit> hits = new ArrayList<>();
+    private final VerticalScrollbar rowsScrollbar = new VerticalScrollbar();
     private EditorMode editorMode = EditorMode.NONE;
     private String editingOriginal = "";
     private String editorText = "";
@@ -45,6 +46,7 @@ final class PartyWhitelistScreen extends Screen {
 
     @Override
     protected void init() {
+        rowsScrollbar.cancelDrag();
         layout();
         nameBox = null;
         if (editorMode == EditorMode.NONE) return;
@@ -171,14 +173,9 @@ final class PartyWhitelistScreen extends Screen {
             }
         }
         graphics.disableScissor();
-        if (maxScroll > 0) {
-            int thumbHeight = Math.max(18, rowsHeight * rowsHeight / (rowsHeight + maxScroll));
-            int thumbY = rowsY + (rowsHeight - thumbHeight) * scroll / maxScroll;
-            graphics.fill(contentX + contentWidth - 2, rowsY, contentX + contentWidth,
-                    rowsY + rowsHeight, AcaUiTheme.CONTROL);
-            graphics.fill(contentX + contentWidth - 2, thumbY, contentX + contentWidth,
-                    thumbY + thumbHeight, AcaUiTheme.ACCENT);
-        }
+        rowsScrollbar.update(contentX + contentWidth - VerticalScrollbar.WIDTH,
+                rowsY, rowsHeight, maxScroll, scroll);
+        rowsScrollbar.draw(graphics, mouseX, mouseY, AcaUiTheme.ACCENT);
     }
 
     private void drawEntry(GuiGraphicsExtractor graphics, String name, int y, int mouseX, int mouseY) {
@@ -266,6 +263,12 @@ final class PartyWhitelistScreen extends Screen {
             onClose();
             return true;
         }
+        VerticalScrollbar.Interaction scrollbarClick = rowsScrollbar.mouseClicked(
+                click.button(), click.x(), click.y(), scroll);
+        if (scrollbarClick.consumed()) {
+            scroll = scrollbarClick.scroll();
+            return true;
+        }
         if (super.mouseClicked(click, doubled)) return true;
         for (int index = hits.size() - 1; index >= 0; index--) {
             Hit hit = hits.get(index);
@@ -274,6 +277,28 @@ final class PartyWhitelistScreen extends Screen {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+        VerticalScrollbar.Interaction scrollbarDrag = rowsScrollbar.mouseDragged(
+                click.button(), click.y(), scroll);
+        if (scrollbarDrag.consumed()) {
+            scroll = scrollbarDrag.scroll();
+            return true;
+        }
+        return super.mouseDragged(click, offsetX, offsetY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent click) {
+        VerticalScrollbar.Interaction scrollbarRelease = rowsScrollbar.mouseReleased(
+                click.button(), click.y(), scroll);
+        if (scrollbarRelease.consumed()) {
+            scroll = scrollbarRelease.scroll();
+            return true;
+        }
+        return super.mouseReleased(click);
     }
 
     private void activate(Hit hit) {
@@ -355,8 +380,15 @@ final class PartyWhitelistScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        if (AcaUiTheme.contains(mouseX, mouseY, contentX, rowsY, contentWidth, rowsHeight)) {
-            scroll = Math.clamp(scroll - (int) Math.round(vertical * 22), 0, maxScroll);
+        if (rowsScrollbar.dragging()) {
+            VerticalScrollbar.Interaction scrollbarWheel = rowsScrollbar.mouseScrolled(vertical, 22, scroll);
+            scroll = scrollbarWheel.scroll();
+            return true;
+        }
+        if (AcaUiTheme.contains(mouseX, mouseY, contentX, rowsY, contentWidth, rowsHeight)
+                || rowsScrollbar.contains(mouseX, mouseY)) {
+            VerticalScrollbar.Interaction scrollbarWheel = rowsScrollbar.mouseScrolled(vertical, 22, scroll);
+            if (scrollbarWheel.consumed()) scroll = scrollbarWheel.scroll();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);

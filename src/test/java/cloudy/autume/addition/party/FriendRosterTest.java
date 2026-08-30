@@ -57,12 +57,21 @@ final class FriendRosterTest {
                         Component.literal("Click here to view OtherName's profile"))));
         assertFalse(roster.observe(Component.literal("Friends\n").append(invalidProfile)));
         assertNull(roster.kindOf("WrongHover"));
+
+        Component mismatchedName = Component.literal("VisibleName").withStyle(style -> style
+                .withClickEvent(new ClickEvent.RunCommand("/viewprofile " + PROFILE_ID))
+                .withHoverEvent(new HoverEvent.ShowText(
+                        Component.literal("Click here to view OtherName's profile"))));
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 1)\n")
+                .append(mismatchedName)));
+        assertNull(roster.kindOf("OtherName"));
     }
 
     @Test
     void confirmedFriendAndBestFriendMessagesUpdateCachedClassification() {
         FriendRoster roster = new FriendRoster();
-        assertTrue(roster.observe(Component.literal("Friends (Page 1 of 1)")));
+        assertTrue(roster.observe(Component.literal(
+                "Friends (Page 1 of 1)\n-----------------------------------------------------")));
 
         assertTrue(roster.observe(Component.literal("You are now friends with [MVP+] NewFriend!")));
         assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("newfriend"));
@@ -93,7 +102,7 @@ final class FriendRosterTest {
     }
 
     @Test
-    void paginatedSnapshotIsUntrustedUntilEveryPageArrivesInOrder() {
+    void verifiedCurrentPageIsImmediatelyUsableButOnlyTheFullSnapshotPrunes() {
         FriendRoster roster = new FriendRoster();
         assertTrue(roster.observe(Component.literal("Friends (Page 1 of 1)\n")
                 .append(friendRow("FormerFriend", false, false))));
@@ -102,7 +111,7 @@ final class FriendRosterTest {
                 .append(friendRow("FirstPage", false, false))));
         assertFalse(roster.isKnown());
         assertNull(roster.kindOf("FormerFriend"));
-        assertNull(roster.kindOf("FirstPage"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("FirstPage"));
 
         assertTrue(roster.observe(Component.literal("Friends (Page 2 of 2)\n")
                 .append(friendRow("SecondPage", true, false))));
@@ -113,7 +122,7 @@ final class FriendRosterTest {
     }
 
     @Test
-    void partialOutOfOrderAndUnnumberedListsNeverBecomeAuthoritative() {
+    void outOfOrderPageCanProveItsRowsButCannotBecomeAuthoritative() {
         FriendRoster roster = new FriendRoster();
         assertTrue(roster.observe(Component.literal("Friends (Page 1 of 1)\n")
                 .append(friendRow("CachedFriend", false, false))));
@@ -122,12 +131,103 @@ final class FriendRosterTest {
                 .append(friendRow("OnlySecondPage", false, false))));
         assertFalse(roster.isKnown());
         assertNull(roster.kindOf("CachedFriend"));
-        assertNull(roster.kindOf("OnlySecondPage"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("OnlySecondPage"));
 
         assertFalse(roster.observe(Component.literal("Friends\n")
                 .append(friendRow("UnnumberedFriend", false, false))));
         assertFalse(roster.isKnown());
         assertNull(roster.kindOf("UnnumberedFriend"));
+        assertNull(roster.kindOf("OnlySecondPage"));
+    }
+
+    @Test
+    void streamedHeaderRowsAndFooterTrustEachStructuredRowAndPreserveBoldKind() {
+        FriendRoster roster = new FriendRoster();
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 3) >>")));
+        assertTrue(roster.observe(friendStatusRow("_Hoto_cocoa_", false,
+                " is in SkyBlock - Crimson Isle")));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("_hoto_cocoa_"));
+        assertTrue(roster.observe(friendStatusRow("TangXin_Vlog", true,
+                " is currently offline")));
+        assertEquals(FriendRoster.FriendKind.SPECIAL, roster.kindOf("tangxin_vlog"));
+        assertFalse(roster.observe(Component.literal("-----------------------------------------------------")));
+        assertFalse(roster.isKnown());
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 2 of 3) >>")));
+        assertTrue(roster.observe(friendStatusRow("EtzHaChayim", false,
+                " is in SkyBlock - Moonglade Marsh")));
+        assertFalse(roster.observe(Component.literal("-----------------------------------------------------")));
+        assertFalse(roster.observe(Component.literal("Friends (Page 3 of 3) >>")));
+        assertTrue(roster.observe(friendStatusRow("NIHTT", false,
+                " is in a Prototype Lobby")));
+        assertTrue(roster.observe(Component.literal("-----------------------------------------------------")));
+
+        assertTrue(roster.isKnown());
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("_Hoto_cocoa_"));
+        assertEquals(FriendRoster.FriendKind.SPECIAL, roster.kindOf("TangXin_Vlog"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("EtzHaChayim"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("NIHTT"));
+    }
+
+    @Test
+    void streamedCaptureAbortsSnapshotButKeepsProvenRowsAndRejectsPlainLookalikes() {
+        FriendRoster roster = new FriendRoster();
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+        assertTrue(roster.observe(friendStatusRow("ProvenFriend", false, " is currently offline")));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("ProvenFriend"));
+        assertFalse(roster.observe(Component.literal("unrelated chat interrupted the list")));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("ProvenFriend"));
+        assertFalse(roster.observe(Component.literal("FakeFriend is currently offline")));
+        assertNull(roster.kindOf("FakeFriend"));
+    }
+
+    @Test
+    void structuredGuildChatLookalikeAbortsStreamAndCannotPolluteRoster() {
+        FriendRoster roster = new FriendRoster();
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+
+        Component guildChat = Component.literal("Guild > ")
+                .append(friendRow("GuildMember", false, false))
+                .append(Component.literal(": is in SkyBlock - Hub"));
+        assertFalse(roster.observe(guildChat));
+        assertFalse(roster.isKnown());
+        assertNull(roster.kindOf("GuildMember"));
+        assertFalse(roster.serializedFriends().containsKey("GuildMember"));
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+        Component publicChat = Component.literal("[MVP+] ")
+                .append(friendRow("PublicPlayer", false, false))
+                .append(Component.literal(": is currently offline"));
+        assertFalse(roster.observe(publicChat));
+        assertNull(roster.kindOf("PublicPlayer"));
+        assertFalse(roster.serializedFriends().containsKey("PublicPlayer"));
+
+        // The invalid structured line ended the page transaction, so a later
+        // row cannot silently resume it without another valid /fl header.
+        assertFalse(roster.observe(friendStatusRow("LaterFriend", false,
+                " is currently offline")));
+        assertNull(roster.kindOf("LaterFriend"));
+    }
+
+    @Test
+    void streamedStatusRowsAreAnchoredBoundedAndSingleLine() {
+        FriendRoster roster = new FriendRoster();
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+        assertFalse(roster.observe(friendStatusRow("Prefixed", false,
+                ": is currently offline")));
+        assertNull(roster.kindOf("Prefixed"));
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+        assertFalse(roster.observe(friendStatusRow("Multiline", false,
+                " is in SkyBlock - Hub\nextra text")));
+        assertNull(roster.kindOf("Multiline"));
+
+        assertFalse(roster.observe(Component.literal("Friends (Page 1 of 2) >>")));
+        assertFalse(roster.observe(friendStatusRow("TooLong", false,
+                " is in " + "x".repeat(161))));
+        assertNull(roster.kindOf("TooLong"));
     }
 
     @Test
@@ -143,11 +243,11 @@ final class FriendRosterTest {
         assertFalse(roster.isKnown());
         assertNull(roster.kindOf("RemovedInSync"));
 
-        assertFalse(roster.observe(Component.literal("Friends (Page 2 of 2)\n")
+        assertTrue(roster.observe(Component.literal("Friends (Page 2 of 2)\n")
                 .append(friendRow("TailPageFriend", false, false))));
         assertFalse(roster.isKnown());
         assertNull(roster.kindOf("RemovedInSync"));
-        assertNull(roster.kindOf("TailPageFriend"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("TailPageFriend"));
         assertFalse(roster.serializedFriends().containsKey("RemovedInSync"));
     }
 
@@ -164,11 +264,12 @@ final class FriendRosterTest {
         assertFalse(roster.isKnown());
         assertEquals("SPECIAL", roster.serializedFriends().get("ChangedInSync"));
 
-        assertFalse(roster.observe(Component.literal("Friends (Page 2 of 2)\n")
+        assertTrue(roster.observe(Component.literal("Friends (Page 2 of 2)\n")
                 .append(friendRow("TailPageFriend", false, false))));
         assertFalse(roster.isKnown());
+        assertNull(roster.kindOf("ChangedInSync"));
         assertEquals("SPECIAL", roster.serializedFriends().get("ChangedInSync"));
-        assertFalse(roster.serializedFriends().containsKey("TailPageFriend"));
+        assertEquals(FriendRoster.FriendKind.NORMAL, roster.kindOf("TailPageFriend"));
     }
 
     @Test
@@ -188,5 +289,9 @@ final class FriendRosterTest {
                 .withClickEvent(new ClickEvent.RunCommand("/viewprofile " + PROFILE_ID))
                 .withHoverEvent(new HoverEvent.ShowText(
                         Component.literal("Click here to view " + name + "'s profile"))));
+    }
+
+    private static Component friendStatusRow(String name, boolean bold, String status) {
+        return Component.empty().append(friendRow(name, bold, false)).append(Component.literal(status));
     }
 }

@@ -49,7 +49,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## Release 更新提醒——下一 Beta/Release 起
 
-Release 0.3.9 早于此检查器。该检查器已存在于 Alpha 36 开发构建中，但 Alpha 的联网门控永久关闭；它会从下一次公开 Beta 或 Release 起首次生效。生效后，Release 更新提醒永久开启，不属于任何设置卡片。Alpha 构建绝不会访问更新地址；Beta 与 Release 构建会在第一次进入世界后异步检查，每个客户端进程最多向 QCloudy 稳定版 Release manifest 发送一次 HTTPS 请求。只有比本地基线更新、且包含当前 Minecraft 版本精确 JAR 的稳定 Release，才能触发一次 Toast 和一条本地聊天消息；Alpha 与 Beta 绝不会作为更新目标。消息只链接到 QCloudy 下载页与更新日志页。QCA 不会下载、安装、替换或启动模组文件。
+Release 0.3.9 早于此检查器。该检查器已存在于 Alpha 37 开发构建中，但 Alpha 的联网门控永久关闭；它会从下一次公开 Beta 或 Release 起首次生效。生效后，Release 更新提醒永久开启，不属于任何设置卡片。Alpha 构建绝不会访问更新地址；Beta 与 Release 构建会在第一次进入世界后异步检查，每个客户端进程最多向 QCloudy 稳定版 Release manifest 发送一次 HTTPS 请求。只有比本地基线更新、且包含当前 Minecraft 版本精确 JAR 的稳定 Release，才能触发一次 Toast 和一条本地聊天消息；Alpha 与 Beta 绝不会作为更新目标。消息只链接到 QCloudy 下载页与更新日志页。QCA 不会下载、安装、替换或启动模组文件。
 
 请求不发送 Minecraft 用户名、UUID、服务器地址、Profile、模组列表、玩法数据、遥测标识、Token 或 Cookie。普通 HTTPS 仍会让网站服务器看到连接 IP 与 `QCloudy_Addition/<版本>` HTTP User-Agent。网络或校验失败会静默停止，本次客户端进程内不会重试。
 

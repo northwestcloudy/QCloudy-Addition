@@ -19,7 +19,7 @@ public final class FriendRosterStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LoggerFactory.getLogger("QCloudy_Addition/Friends");
     private static final int MAX_ACCOUNTS = 32;
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
     private final Path file;
     private RosterFile data = new RosterFile();
     private final Map<String, FriendRoster> loaded = new LinkedHashMap<>();
@@ -40,8 +40,9 @@ public final class FriendRosterStore {
         try {
             RosterFile parsed = GSON.fromJson(Files.readString(file, StandardCharsets.UTF_8), RosterFile.class);
             if (parsed != null && parsed.accounts != null && parsed.schemaVersion <= SCHEMA_VERSION) {
-                // Version 1 could mark a single observed page as complete. Keep its names only as
-                // untrusted hints and require one proven-complete refresh before auto-accepting.
+                // Earlier schemas did not distinguish a complete roster from
+                // current-page proofs. Retain their names only as untrusted
+                // hints until a new structured refresh proves them again.
                 if (parsed.schemaVersion < SCHEMA_VERSION) {
                     for (AccountState state : parsed.accounts.values()) {
                         if (state != null) state.known = false;

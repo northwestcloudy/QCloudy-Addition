@@ -29,12 +29,14 @@ public final class ConfigScreen extends Screen {
     private static final int TOP_CONTROL_HEIGHT = 18;
     private static final int SEARCH_HORIZONTAL_PADDING = 5;
     private static final int SEARCH_NAVIGATION_GAP = 8;
+    static final int CONTENT_SCROLLBAR_GUTTER = VerticalScrollbar.WIDTH + 2;
     private static final int REPORT_ACCENT = 0xFFF2C14E;
 
     private final @Nullable Screen parent;
     private final long openedAt = System.nanoTime();
     private final List<Hit<UnifiedModIntegration.UnifiedFeature>> featureHits = new ArrayList<>();
     private final List<Hit<String>> groupHits = new ArrayList<>();
+    private final VerticalScrollbar contentScrollbar = new VerticalScrollbar();
     private @Nullable Hit<Boolean> compatibilityReportHit;
     private final GroupExpansionState groupExpansionState = new GroupExpansionState();
     private Category category = Category.GENERAL;
@@ -80,6 +82,7 @@ public final class ConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        contentScrollbar.cancelDrag();
         layoutWindow();
         int textY = searchFrameY + Math.max(0, (TOP_CONTROL_HEIGHT - font.lineHeight) / 2);
         searchBox = new EditBox(font, searchFrameX + SEARCH_HORIZONTAL_PADDING, textY,
@@ -94,6 +97,7 @@ public final class ConfigScreen extends Screen {
         searchBox.setResponder(value -> {
             query = value;
             scroll = 0;
+            contentScrollbar.cancelDrag();
         });
         addRenderableWidget(searchBox);
     }
@@ -213,7 +217,9 @@ public final class ConfigScreen extends Screen {
         graphics.enableScissor(contentX, contentY, contentX + contentWidth, contentY + contentHeight);
         drawFeatureCards(graphics, mouseX, mouseY);
         graphics.disableScissor();
-        if (maximumScroll > 0) drawScrollbar(graphics);
+        contentScrollbar.update(contentX + contentWidth - VerticalScrollbar.WIDTH,
+                contentY, contentHeight, maximumScroll, scroll);
+        contentScrollbar.draw(graphics, mouseX, mouseY, AcaUiTheme.ACCENT);
     }
 
     private void drawFeatureCards(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -223,8 +229,9 @@ public final class ConfigScreen extends Screen {
             maximumScroll = 0;
             return;
         }
+        int featureWidth = Math.max(1, contentWidth - CONTENT_SCROLLBAR_GUTTER);
         int columns = contentWidth >= 360 ? 2 : 1;
-        int cardWidth = Math.max(1, (contentWidth - 5 - CARD_GAP * (columns - 1)) / columns);
+        int cardWidth = Math.max(1, (featureWidth - CARD_GAP * (columns - 1)) / columns);
         int totalHeight = 0;
         for (GroupBlock block : blocks) {
             int itemCount = block.features().size() + (block.compatibilityReport() ? 1 : 0);
@@ -234,10 +241,10 @@ public final class ConfigScreen extends Screen {
         scroll = Math.clamp(scroll, 0, maximumScroll);
         int y = contentY - scroll;
         for (GroupBlock block : blocks) {
-            drawGroupHeader(graphics, block, contentX, y, Math.max(1, contentWidth - 5), mouseX, mouseY);
+            drawGroupHeader(graphics, block, contentX, y, featureWidth, mouseX, mouseY);
             if (intersectsContent(y, GROUP_HEADER_HEIGHT)) {
                 groupHits.add(new Hit<>(block.group(), contentX, y,
-                        Math.max(1, contentWidth - 5), GROUP_HEADER_HEIGHT));
+                        featureWidth, GROUP_HEADER_HEIGHT));
             }
             y += GROUP_HEADER_HEIGHT + 5;
             if (block.expanded()) {
@@ -374,15 +381,6 @@ public final class ConfigScreen extends Screen {
                 contentY + contentHeight / 2 - 5, AcaUiTheme.TEXT_MUTED);
     }
 
-    private void drawScrollbar(GuiGraphicsExtractor graphics) {
-        int barX = contentX + contentWidth - 3;
-        int thumbHeight = Math.max(20, contentHeight * contentHeight / (contentHeight + maximumScroll));
-        int travel = contentHeight - thumbHeight;
-        int thumbY = contentY + (maximumScroll == 0 ? 0 : travel * scroll / maximumScroll);
-        graphics.fill(barX, contentY, barX + 2, contentY + contentHeight, AcaUiTheme.CONTROL);
-        graphics.fill(barX, thumbY, barX + 2, thumbY + thumbHeight, AcaUiTheme.ACCENT);
-    }
-
     private boolean matches(String title, String description) {
         String normalized = query.trim().toLowerCase(Locale.ROOT);
         if (normalized.isEmpty()) return true;
@@ -392,6 +390,12 @@ public final class ConfigScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+        VerticalScrollbar.Interaction scrollbarClick = contentScrollbar.mouseClicked(
+                click.button(), click.x(), click.y(), scroll);
+        if (scrollbarClick.consumed()) {
+            scroll = scrollbarClick.scroll();
+            return true;
+        }
         if (opensCompatibilityReport(click.button()) && compatibilityReportHit != null
                 && compatibilityReportHit.contains(click.x(), click.y())) {
             MinecraftClientCompat.setScreen(minecraft, new IntegrationCompatibilityScreen(this));
@@ -424,6 +428,7 @@ public final class ConfigScreen extends Screen {
         if (AcaUiTheme.contains(mouseX, mouseY, navigationX, navigationY,
                 navigationTabWidth, TOP_CONTROL_HEIGHT)) {
             scroll = 0;
+            contentScrollbar.cancelDrag();
             return true;
         }
         int sidebarX = windowX + 8;
@@ -439,6 +444,7 @@ public final class ConfigScreen extends Screen {
                     && AcaUiTheme.contains(mouseX, mouseY, sidebarX, sidebarY, sideWidth, categoryButtonHeight)) {
                 category = value;
                 scroll = 0;
+                contentScrollbar.cancelDrag();
                 return true;
             }
             sidebarY += categorySlotHeight;
@@ -457,6 +463,7 @@ public final class ConfigScreen extends Screen {
             // Group ids are localized display strings, so discard the stale
             // names. Every group remains collapsed after the language change.
             groupExpansionState.clear();
+            contentScrollbar.cancelDrag();
             rebuildWidgets();
             return true;
         }
@@ -464,6 +471,7 @@ public final class ConfigScreen extends Screen {
         for (Hit<String> hit : groupHits) {
             if (!hit.contains(mouseX, mouseY)) continue;
             groupExpansionState.toggle(hit.value);
+            contentScrollbar.cancelDrag();
             scroll = Math.clamp(scroll, 0, maximumScroll);
             return true;
         }
@@ -495,6 +503,28 @@ public final class ConfigScreen extends Screen {
         return false;
     }
 
+    @Override
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+        VerticalScrollbar.Interaction scrollbarDrag = contentScrollbar.mouseDragged(
+                click.button(), click.y(), scroll);
+        if (scrollbarDrag.consumed()) {
+            scroll = scrollbarDrag.scroll();
+            return true;
+        }
+        return super.mouseDragged(click, offsetX, offsetY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent click) {
+        VerticalScrollbar.Interaction scrollbarRelease = contentScrollbar.mouseReleased(
+                click.button(), click.y(), scroll);
+        if (scrollbarRelease.consumed()) {
+            scroll = scrollbarRelease.scroll();
+            return true;
+        }
+        return super.mouseReleased(click);
+    }
+
     static boolean isIntegrationScanMaster(Feature feature) {
         return feature == Feature.UNIFIED_SETTINGS_EDITOR
                 || feature == Feature.UNIFIED_HUD_EDITOR;
@@ -515,6 +545,11 @@ public final class ConfigScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if (contentScrollbar.dragging()) {
+            VerticalScrollbar.Interaction scrollbarWheel = contentScrollbar.mouseScrolled(vertical, 24, scroll);
+            scroll = scrollbarWheel.scroll();
+            return true;
+        }
         int sidebarTop = windowY + 43;
         int sidebarBottom = windowY + windowHeight - 57;
         if (AcaUiTheme.contains(mouseX, mouseY, windowX + 1, sidebarTop,
@@ -523,8 +558,10 @@ public final class ConfigScreen extends Screen {
                     0, sidebarMaximumScroll);
             return true;
         }
-        if (AcaUiTheme.contains(mouseX, mouseY, contentX, contentY, contentWidth, contentHeight)) {
-            scroll = Math.clamp(scroll - (int) Math.round(vertical * 24), 0, maximumScroll);
+        if (AcaUiTheme.contains(mouseX, mouseY, contentX, contentY, contentWidth, contentHeight)
+                || contentScrollbar.contains(mouseX, mouseY)) {
+            VerticalScrollbar.Interaction scrollbarWheel = contentScrollbar.mouseScrolled(vertical, 24, scroll);
+            if (scrollbarWheel.consumed()) scroll = scrollbarWheel.scroll();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
@@ -558,6 +595,7 @@ public final class ConfigScreen extends Screen {
         if (!categories.contains(category)) {
             category = categories.getFirst();
             scroll = 0;
+            contentScrollbar.cancelDrag();
         }
         return categories;
     }

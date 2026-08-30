@@ -153,7 +153,7 @@ final class PartyAutoAcceptManagerTest {
     }
 
     @Test
-    void incompleteRefreshFailsClosedAndCompleteRefreshDropsFormerFriends() {
+    void incompleteRefreshTrustsOnlyCurrentRowsAndCompleteRefreshDropsFormerFriends() {
         Path cache = temporaryDirectory.resolve("friends.json");
         PartyAutoAcceptManager manager = new PartyAutoAcceptManager(new FriendRosterStore(cache));
         manager.load();
@@ -162,11 +162,13 @@ final class PartyAutoAcceptManagerTest {
                 ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 1_000L));
 
         observeFriendPage(manager, 1, 2, "FirstPage", false);
+        assertEquals("party accept FirstPage", invite(manager, "FirstPage",
+                ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 1_500L));
         manager.resetSession();
         assertNull(invite(manager, "FormerFriend",
                 ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 2_000L));
         observeFriendPage(manager, 2, 2, "StaleSecondPage", true);
-        assertNull(invite(manager, "StaleSecondPage",
+        assertEquals("party accept StaleSecondPage", invite(manager, "StaleSecondPage",
                 ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY, List.of(), 2_500L));
 
         PartyAutoAcceptManager reloaded = new PartyAutoAcceptManager(new FriendRosterStore(cache));
@@ -176,7 +178,7 @@ final class PartyAutoAcceptManagerTest {
 
         // A later page from an incomplete/previous traversal cannot finish the transaction.
         observeFriendPage(reloaded, 2, 2, "SecondPage", true);
-        assertNull(invite(reloaded, "SecondPage",
+        assertEquals("party accept SecondPage", invite(reloaded, "SecondPage",
                 ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY, List.of(), 4_000L));
 
         observeFriendPage(reloaded, 1, 2, "FirstPage", false);
@@ -186,15 +188,36 @@ final class PartyAutoAcceptManagerTest {
         assertEquals("party accept FirstPage", invite(reloaded, "FirstPage",
                 ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 6_000L));
         assertEquals("party accept SecondPage", invite(reloaded, "SecondPage",
-                ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY, List.of(), 7_000L));
+                ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY, List.of(), 10_000L));
     }
 
     @Test
-    void legacySinglePageCacheIsInvalidatedDuringSchemaMigration() throws Exception {
+    void streamedFriendListRowsCanImmediatelyAuthorizeAutoAccept() {
+        PartyAutoAcceptManager manager = manager();
+        manager.onMessage(Component.literal("Friends (Page 1 of 3) >>"), false, true, ACCOUNT,
+                false, ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 0L);
+        manager.onMessage(friendStatusRow("_Hoto_cocoa_", false,
+                        " is in SkyBlock - Crimson Isle"),
+                false, true, ACCOUNT, false,
+                ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 1L);
+        manager.onMessage(friendStatusRow("TangXin_Vlog", true, " is currently offline"),
+                false, true, ACCOUNT, false,
+                ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 2L);
+
+        assertEquals("party accept _Hoto_cocoa_", invite(manager, "_Hoto_cocoa_",
+                ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 1_000L));
+        assertEquals("party accept TangXin_Vlog", invite(manager, "TangXin_Vlog",
+                ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY, List.of(), 2_000L));
+        assertNull(invite(manager, "UnseenFriend",
+                ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 3_000L));
+    }
+
+    @Test
+    void preCurrentSchemaCacheIsInvalidatedDuringSchemaMigration() throws Exception {
         Path cache = temporaryDirectory.resolve("friends.json");
         Files.writeString(cache, """
                 {
-                  "schemaVersion": 1,
+                  "schemaVersion": 2,
                   "accounts": {
                     "7f79772a-f432-4725-833a-1945b180e567": {
                       "known": true,
@@ -258,5 +281,9 @@ final class PartyAutoAcceptManagerTest {
                 .withClickEvent(new ClickEvent.RunCommand("/viewprofile " + PROFILE_ID))
                 .withHoverEvent(new HoverEvent.ShowText(
                         Component.literal("Click here to view " + name + "'s profile"))));
+    }
+
+    private static Component friendStatusRow(String name, boolean bold, String status) {
+        return Component.empty().append(friendRow(name, bold)).append(Component.literal(status));
     }
 }

@@ -1,6 +1,6 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前开发构建为适配 Minecraft 26.1.2 的 Alpha 36；最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release 0.3.9。
+QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前开发构建为适配 Minecraft 26.1.2 的 Alpha 37；最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release 0.3.9。
 
 ## 快速入口
 

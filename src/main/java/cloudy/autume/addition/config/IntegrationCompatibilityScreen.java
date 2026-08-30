@@ -23,6 +23,7 @@ final class IntegrationCompatibilityScreen extends Screen {
 
     private final Screen parent;
     private final long openedAt = System.nanoTime();
+    private final VerticalScrollbar contentScrollbar = new VerticalScrollbar();
     private final List<UnifiedModIntegration.Provider> installedProviders;
     private final Map<UnifiedModIntegration.Provider,
             List<UnifiedModIntegration.CompatibilityGap>> gapsByProvider;
@@ -85,7 +86,9 @@ final class IntegrationCompatibilityScreen extends Screen {
             }
         }
         graphics.disableScissor();
-        if (maximumScroll > 0) drawScrollbar(graphics);
+        contentScrollbar.update(contentX + contentWidth + 2,
+                contentY, contentHeight, maximumScroll, scroll);
+        contentScrollbar.draw(graphics, mouseX, mouseY, REPORT_ACCENT);
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         UiAnimation.pop(graphics);
     }
@@ -193,14 +196,6 @@ final class IntegrationCompatibilityScreen extends Screen {
         }
     }
 
-    private void drawScrollbar(GuiGraphicsExtractor graphics) {
-        int x = contentX + contentWidth + 3;
-        int thumbHeight = Math.max(18, contentHeight * contentHeight / (contentHeight + maximumScroll));
-        int thumbY = contentY + (contentHeight - thumbHeight) * scroll / maximumScroll;
-        graphics.fill(x, contentY, x + 2, contentY + contentHeight, AcaUiTheme.CONTROL);
-        graphics.fill(x, thumbY, x + 2, thumbY + thumbHeight, REPORT_ACCENT);
-    }
-
     private void drawFittedText(GuiGraphicsExtractor graphics, Component text, int x, int y,
                                 int availableWidth, int color) {
         if (availableWidth <= 0) return;
@@ -224,13 +219,48 @@ final class IntegrationCompatibilityScreen extends Screen {
             onClose();
             return true;
         }
+        VerticalScrollbar.Interaction scrollbarClick = contentScrollbar.mouseClicked(
+                click.button(), click.x(), click.y(), scroll);
+        if (scrollbarClick.consumed()) {
+            scroll = scrollbarClick.scroll();
+            return true;
+        }
         return super.mouseClicked(click, doubled);
     }
 
     @Override
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+        VerticalScrollbar.Interaction scrollbarDrag = contentScrollbar.mouseDragged(
+                click.button(), click.y(), scroll);
+        if (scrollbarDrag.consumed()) {
+            scroll = scrollbarDrag.scroll();
+            return true;
+        }
+        return super.mouseDragged(click, offsetX, offsetY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent click) {
+        VerticalScrollbar.Interaction scrollbarRelease = contentScrollbar.mouseReleased(
+                click.button(), click.y(), scroll);
+        if (scrollbarRelease.consumed()) {
+            scroll = scrollbarRelease.scroll();
+            return true;
+        }
+        return super.mouseReleased(click);
+    }
+
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        if (AcaUiTheme.contains(mouseX, mouseY, contentX, contentY, contentWidth, contentHeight)) {
-            scroll = Math.clamp(scroll - (int) Math.round(vertical * 24), 0, maximumScroll);
+        if (contentScrollbar.dragging()) {
+            VerticalScrollbar.Interaction scrollbarWheel = contentScrollbar.mouseScrolled(vertical, 24, scroll);
+            scroll = scrollbarWheel.scroll();
+            return true;
+        }
+        if (AcaUiTheme.contains(mouseX, mouseY, contentX, contentY, contentWidth, contentHeight)
+                || contentScrollbar.contains(mouseX, mouseY)) {
+            VerticalScrollbar.Interaction scrollbarWheel = contentScrollbar.mouseScrolled(vertical, 24, scroll);
+            if (scrollbarWheel.consumed()) scroll = scrollbarWheel.scroll();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);

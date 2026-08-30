@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪 Minecraft 26.1.2 的当前 Alpha 36 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
+本文跟踪 Minecraft 26.1.2 的当前 Alpha 37 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -49,7 +49,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ### 1.2 永久开启的 Release 更新提醒
 
-这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Alpha 36 内嵌基线为 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
+这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Alpha 37 内嵌基线为 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
 
 `ReleaseUpdateChecker` 最多尝试向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`：连接超时五秒、请求超时十秒、重定向策略为 `NEVER`、只接受 HTTP 200、User-Agent 为 `QCloudy_Addition/<版本>`，响应上限为 128 KiB。`ReleaseManifest` 解析 schema 版本 1，并要求 `channel` 精确为 `Release`、`releaseSequence` 为大于零且高于内嵌基线的整数、版本为三段纯数字且 Tag 精确为 `v<版本>`，同时资产列表中必须只有一项与当前 Minecraft 完全匹配的可运行文件 `QCloudy_Addition-<版本>+<minecraft>-Release.jar`。该资产还必须包含小写 `sha256:<64 位十六进制>`，而且 HTTPS URL 的主机、仓库、精确 `v<版本>` Release Tag 与文件名都必须符合官方 `northwestcloudy/QCloudy-Addition` GitHub 资产路径；重复匹配直接判为无效。它不会选择第一个模糊匹配的 Release，也不会把 Alpha/Beta 后缀当成稳定版本比较。
 
@@ -71,7 +71,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - 本地 `qcloudy_addition.json` 保存配置。
 - 内置 `en_us.json`、`zh_cn.json` 翻译 QCA 自有文字。
 
-界面层让输入框、按钮、列表、详情视口与点击范围共同引用布局记录。Shard 结果和详情分别保存滚动状态，获取速度控件固定在详情栏底部；窄 Planner/Settings 会在碰撞前重排；Fusion Lines 在需要时使用高于视口的画布。设置行只有与可见裁剪区域相交时才会注册点击范围。
+界面层让输入框、按钮、列表、详情视口与点击范围共同引用布局记录。Shard 结果和详情分别保存滚动状态，获取速度控件固定在详情栏底部；窄 Planner/Settings 会在碰撞前重排；Fusion Lines 在需要时使用高于视口的画布。设置行只有与可见裁剪区域相交时才会注册点击范围。主功能目录、功能设置页、兼容性报告与组队白名单共用浏览器式纵向滚动条：抓住滑块时不会跳位，鼠标拖出轨道后仍保持捕获，点击轨道按一页移动，拖动滑块期间滚轮不会改变位置。
 
 ### 实现
 
@@ -349,7 +349,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - **成员名单与补全：**`PartyRosterTracker` 观察客户端可见的队伍成员名单，先按不区分大小写的精确名称解析玩家参数，再按唯一的不区分大小写前缀解析。前缀有歧义时不发送指令；未出现在已观察名单中的合法完整玩家名仍可使用。`!pt`/`!ptme` 把队长交给 Party Chat 发送者；`//pt`/`//ptme` 把队长交给本机玩家。同一解析器也给别名和玩家参数提供指令补全。
 - **快速组队指令：**父开关默认关闭。传送、All Invite、变更队长、踢出、坐标、晋升、Stream、地牢与 Kuudra 九个独立子开关默认开启。每个子项可分别选择只接受本机、其他队员或所有人的 Party Chat 触发。`!warp`/`!w` 与 `!allinvite`/`!all`/`!allinv` 分别使用共享的五秒与两秒动作冷却；其他已识别别名不额外增加冷却。只有父开关、子开关、触发人范围、解析、玩家名解析与冷却都允许时才发送指令。
 - **组队指令：**独立的本机 `//` 父开关和全部九个独立子开关默认开启。它复用相同解析器和指令映射，但由于来自本机输入，不使用触发人范围。已识别但格式错误的 `//` 指令会被消费并给出本地反馈；未知 `//` 不拦截，仍可交给其他客户端/服务器指令处理器。
-- **私信工具：**自动接受组队仍是独立的本地好友/白名单判定。私信组队申请默认关闭，只有收到精确允许关键词时发送 `party invite <发送者>`。快速私信 `!p` 默认关闭；本机 `//invited <玩家>`、`//invited by <玩家>`、`//i <玩家>` 发送 `msg <玩家> !p`。
+- **私信工具：**自动接受组队仍是独立的本地好友/白名单判定。按账号保存的好友缓存只接受结构化 `/friend list` 行，并要求可见玩家名、`/viewprofile` UUID 点击动作与资料悬浮名称互相一致。当前页中每一条已验证好友会立即可用；只有按顺序完整读取 `1..N` 页后，才会替换权威快照并清理已经不在好友表中的旧玩家。逐行消息还必须精确符合 `<名字> is currently offline` 或 `<名字> is in <地点>`，因此夹入的公屏、公会或组队聊天不会污染好友表。普通好友与粗体特殊好友继续分开记录，schema 3 之前的缓存会失效并要求重新结构化验证。私信组队申请默认关闭，只有收到精确允许关键词时发送 `party invite <发送者>`。快速私信 `!p` 默认关闭；本机 `//invited <玩家>`、`//invited by <玩家>`、`//i <玩家>` 发送 `msg <玩家> !p`。
 - **精确映射：**Warp → `party warp`；All Invite → `party settings allinvite`；变更队长 → `party transfer <玩家>`；踢出 → `party kick <玩家>`；坐标 → 使用本机方块坐标的 `pc x: <x>, y: <y>, z: <z>`；晋升 → `party promote <玩家>`；无参数 Stream → `stream`；Stream 后接任意纯十进制 `<n>` → `stream open <n>`；Stream 后接 `c`、`close` 或 `off` → `stream close`。`fe`/`f0` → `joininstance CATACOMBS_ENTRANCE`；`me`/`m0` → `joininstance MASTER_CATACOMBS_ENTRANCE`；`f1`–`f7` → `joininstance CATACOMBS_FLOOR_ONE` 至 `CATACOMBS_FLOOR_SEVEN`；`m1`–`m7` → `joininstance MASTER_CATACOMBS_FLOOR_ONE` 至 `MASTER_CATACOMBS_FLOOR_SEVEN`；`t1`–`t5` 依次 → `joininstance KUUDRA_NORMAL`、`KUUDRA_HOT`、`KUUDRA_BURNING`、`KUUDRA_FIERY`、`KUUDRA_INFERNAL`。
 - **会话边界：**消息指令去重和私信请求去重均为短暂的本地保护。客户端断线时成员名单、去重和冷却状态都会重置；不保存聊天历史。
 
