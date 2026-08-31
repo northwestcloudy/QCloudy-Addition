@@ -564,6 +564,7 @@
   "subtitles.qcloudy_addition.fishing_bite": "钓鱼上钩提示",
   "qcloudy_addition.modmenu.official_website": "官网",
   "qcloudy_addition.modmenu.downloads": "下载",
+  "qcloudy_addition.modmenu.source_code": "源代码",
   "update.release.toast.title": "QCA 正式版更新",
   "update.release.toast.body": "Release %s 已发布",
   "update.release.chat": "[QCA] 新的稳定版 Release %s 已发布。当前版本：%s。",

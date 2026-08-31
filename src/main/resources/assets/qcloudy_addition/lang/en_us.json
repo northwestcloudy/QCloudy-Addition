@@ -564,6 +564,7 @@
   "subtitles.qcloudy_addition.fishing_bite": "Fishing bite alert",
   "qcloudy_addition.modmenu.official_website": "Official Website",
   "qcloudy_addition.modmenu.downloads": "Downloads",
+  "qcloudy_addition.modmenu.source_code": "Source Code",
   "update.release.toast.title": "QCA Release Update",
   "update.release.toast.body": "Release %s is available",
   "update.release.chat": "[QCA] Stable Release %s is available. Current version: %s.",

@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前开发构建为适配 Minecraft 26.1.2 的 Alpha 37；最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release 0.3.9。
+QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前公开测试版本为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.4.9；最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [当前 0.3.9 Release 更新日志](CHANGELOG_zh_CN.md)
+- [当前 0.4.9 Beta 更新日志](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -119,7 +119,7 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 
 ## 安装
 
-1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2，或 Minecraft 26.2 与 Fabric API 0.154.2+26.2；Release 0.3.9 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
+1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2，或 Minecraft 26.2 与 Fabric API 0.154.2+26.2；Beta 0.4.9 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
 2. 将文件名末尾与当前 Minecraft 版本完全一致的 `QCloudy_Addition-*.jar` 放入实例 `mods` 文件夹；Mod Menu 为可选依赖。
 3. 启动游戏后按 `O` 或输入任一本地设置命令进行配置。
 
@@ -139,7 +139,7 @@ Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确
 
 Modrinth 中文发布描述：[docs/MODRINTH_DESCRIPTION_zh_CN.md](docs/MODRINTH_DESCRIPTION_zh_CN.md)
 
-当前 0.3.9 Release 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
+当前 0.4.9 Beta 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
 
 发布检查清单：[docs/PUBLISHING_CHECKLIST_zh_CN.md](docs/PUBLISHING_CHECKLIST_zh_CN.md)
 

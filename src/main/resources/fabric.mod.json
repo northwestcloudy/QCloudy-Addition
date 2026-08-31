@@ -41,7 +41,8 @@
     "modmenu": {
       "links": {
         "qcloudy_addition.modmenu.official_website": "https://qcloudy.net/",
-        "qcloudy_addition.modmenu.downloads": "https://qcloudy.net/download/"
+        "qcloudy_addition.modmenu.downloads": "https://qcloudy.net/download/",
+        "qcloudy_addition.modmenu.source_code": "https://github.com/northwestcloudy/QCloudy-Addition"
       }
     }
   }

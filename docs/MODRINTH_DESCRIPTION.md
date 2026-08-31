@@ -4,7 +4,7 @@
 
 QCloudy_Addition combines readable maps, content-aware HUDs, fishing and hunting alerts, pet information, Century Cake timers, deployable expiry warnings, and a complete offline Attribute Shard guide and planner in one function-first interface.
 
-> **Latest stable version: Release 0.3.9 for Minecraft 26.1.2 and 26.2.** Download the JAR that exactly matches your Minecraft version. Java 25 and Fabric API are required.
+> **Current public test: Beta 0.4.9 for Minecraft 26.1.2 and 26.2. Latest stable: Release 0.3.9.** Download the JAR that exactly matches your Minecraft version. Java 25 and Fabric API are required.
 
 ## Experimental unified editors
 
@@ -40,16 +40,16 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 | Minecraft | Required Fabric API | Playable file |
 |---|---|---|
-| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-0.3.9+26.1.2-Release.jar` |
-| 26.2 | matching 26.2 Fabric API build | `QCloudy_Addition-0.3.9+26.2-Release.jar` |
+| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-0.4.9+26.1.2-Beta.jar` |
+| 26.2 | matching 26.2 Fabric API build | `QCloudy_Addition-0.4.9+26.2-Beta.jar` |
 
 Also required: Fabric Loader 0.19.3 or newer and Java 25. Mod Menu is optional. Put exactly one playable JAR in the instance's `mods` folder; do not install a `-sources.jar` as the mod.
 
 Open QCA with `O`, Mod Menu, `/qca`, or `/qc`. `/qca`, `/qc`, `/qshard`, `/cake`, and `/centurycakeeffect` are local client commands.
 
-## Release update notice — next Beta/Release
+## Release update notice
 
-Release 0.3.9 predates this checker. The checker is present but network-disabled in the Alpha 37 development build and will first become active in the next published Beta or Release. Once active, the Release update notice is always enabled and is not a settings card. Alpha builds never contact the update endpoint. Beta and Release builds make at most one asynchronous HTTPS request per client process to QCloudy's stable Release manifest after the first world join. Only a newer stable Release with an exact JAR for the running Minecraft version can trigger one toast and one local chat message; Alpha and Beta builds are never offered as update targets. The message links to QCloudy's download and changelog pages. QCA does not download, install, replace, or launch a mod file.
+Beta 0.4.9 is the first published build containing this checker. The Release update notice is always enabled and is not a settings card. Alpha builds never contact the update endpoint. Beta and Release builds make at most one asynchronous HTTPS request per client process to QCloudy's stable Release manifest after the first world join. Only a newer stable Release with an exact JAR for the running Minecraft version can trigger one toast and one local chat message; Alpha and Beta builds are never offered as update targets. The message links to QCloudy's download and changelog pages. QCA does not download, install, replace, or launch a mod file.
 
 The request sends no Minecraft username, UUID, server address, profile, mod list, gameplay data, telemetry identifier, token, or cookie. Normal HTTPS still exposes the connecting IP address and `QCloudy_Addition/<version>` HTTP User-Agent to the website server. Network or validation failure is silent and is not retried during that client process.
 

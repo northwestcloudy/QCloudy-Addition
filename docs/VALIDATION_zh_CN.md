@@ -1,3 +1,36 @@
+# QCloudy_Addition 0.4.9 Beta 双目标验证
+
+日期：2026-08-31
+
+## 范围
+
+Beta 0.4.9 将完整 Alpha 37 实现晋级为公开测试版本，只额外修改发布通道/版本文档，并补上此前遗漏的 Mod Menu“源代码”链接。它包含稳定版 Release 0.3.9 之后完成的全部玩家可见变化。
+
+## 最终产物
+
+- `release/QCloudy_Addition-0.4.9+26.1.2-Beta.jar` — 3,631,854 字节 — `650fdda670bd4ea25b5c149385462d7212aa443569daefeedcc3334427fae5c3`
+- `release/QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar` — 3,102,799 字节 — `628ab0a832556511d060f334031e7db6660ed5dfc8565e35848ca064cb6c0a5f`
+- `release/QCloudy_Addition-0.4.9+26.2-Beta.jar` — 3,631,848 字节 — `10c3752a6b1197518706ae60d32cffa9e64b10417c3ef5da1f7c501f2df380d8`
+- `release/QCloudy_Addition-0.4.9+26.2-Beta-sources.jar` — 3,102,785 字节 — `5777abdb213853f280674b778f657e04901fbd88f548070c2498f6e1e3afb3e9`
+
+## 已完成验证
+
+- Java `25.0.4` 分别为 Minecraft 26.1.2 与 26.2 完成 `clean test build prepareRelease`。
+- 每个目标均完成 293 项测试，0 失败、0 错误、0 跳过。
+- 四个精确 Beta 归档的 `jar --validate` 与 `unzip -t` 全部通过。
+- 两个可运行 JAR 的 class major version 均为 69，声明 `environment: client`、Java 25、Fabric Loader 0.19.3+、精确 Minecraft 目标及对应 Fabric API 依赖。
+- 展开元数据版本为 `0.4.9-beta+26.1.2` 与 `0.4.9-beta+26.2`。
+- 打包发布元数据声明通道 `Beta`、核心版本 `0.4.9`、精确 Minecraft 目标与稳定 Release 基线序号 `1`。
+- 打包启动器元数据包含官网、源代码与问题反馈；Mod Menu 包含官网、下载和源代码三个链接。
+- 定向敏感操作扫描只发现已记录的玩家输入 `/th`、`/helia` 载荷，以及共用且受门控的组队/私信指令发送器；Beta 晋级没有新增移动、点击、战斗、物品使用、数据包或遥测路径。
+- 构建前源码与文档差异通过 `git diff --check`。
+
+## 仍需手动验证的边界
+
+- 本次审计不代表已经重新登录 Hypixel 实测升级版 Bonzo 消息、完整 `/friend list` 翻页、好友自动接受或实服组队指令。
+- 本次没有重新完成 HMCL“官方页面”视觉确认、Mod Menu 三链接实机确认、完整提供方整合包或所有 GUI Scale/操作系统/材质包组合。
+- Beta 是公开测试预发布，不是稳定 Release，也不代表 Hypixel 官方背书。
+
 # QCloudy_Addition 0.3.9 Alpha 37 当前验证
 
 日期：2026-08-30<br>

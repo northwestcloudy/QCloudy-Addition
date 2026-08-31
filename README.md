@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current development build is Alpha 37 for Minecraft 26.1.2; the latest stable release remains 0.3.9 for Minecraft 26.1.2 and 26.2.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current public testing build is Beta 0.4.9 for Minecraft 26.1.2 and 26.2; the latest stable release remains 0.3.9.
 
 ## Quick links
 
 - [Feature list](docs/FEATURES.md)
 - [Implementation notes](docs/IMPLEMENTATION.md)
 - [Modrinth description](docs/MODRINTH_DESCRIPTION.md)
-- [Current 0.3.9 Release changelog](CHANGELOG.md)
+- [Current 0.4.9 Beta changelog](CHANGELOG.md)
 - [Version and artifact naming](docs/VERSIONING.md)
 - [Validation](docs/VALIDATION.md)
 - [Compliance](docs/COMPLIANCE.md)
@@ -124,7 +124,7 @@ Inventory and menu tools include the Attribute Shard Fusion Guide, item timestam
 
 ## Installation
 
-1. Install Minecraft 26.1.2 with Fabric API 0.155.2+26.1.2, or Minecraft 26.2 with Fabric API 0.154.2+26.2. Release 0.3.9 requires Fabric Loader 0.19.3 or newer and Java 25.
+1. Install Minecraft 26.1.2 with Fabric API 0.155.2+26.1.2, or Minecraft 26.2 with Fabric API 0.154.2+26.2. Beta 0.4.9 requires Fabric Loader 0.19.3 or newer and Java 25.
 2. Put the `QCloudy_Addition-*.jar` whose filename ends in your exact Minecraft version in the instance's `mods` folder. Mod Menu is optional.
 3. Start the game and press `O` or type one of the local settings commands to configure the mod.
 
@@ -146,7 +146,7 @@ Implementation and data flow: [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
 
 Modrinth-ready description: [docs/MODRINTH_DESCRIPTION.md](docs/MODRINTH_DESCRIPTION.md)
 
-Current 0.3.9 Release changes: [CHANGELOG.md](CHANGELOG.md)
+Current 0.4.9 Beta changes: [CHANGELOG.md](CHANGELOG.md)
 
 Publication checklist: [docs/PUBLISHING_CHECKLIST.md](docs/PUBLISHING_CHECKLIST.md)
 

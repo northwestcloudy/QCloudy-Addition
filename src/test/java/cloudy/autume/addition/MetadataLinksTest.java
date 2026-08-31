@@ -40,6 +40,8 @@ final class MetadataLinksTest {
                 links.get("qcloudy_addition.modmenu.official_website").getAsString());
         assertEquals("https://qcloudy.net/download/",
                 links.get("qcloudy_addition.modmenu.downloads").getAsString());
-        assertEquals(2, links.size());
+        assertEquals("https://github.com/northwestcloudy/QCloudy-Addition",
+                links.get("qcloudy_addition.modmenu.source_code").getAsString());
+        assertEquals(3, links.size());
     }
 }

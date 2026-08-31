@@ -26,8 +26,8 @@ final class ReleaseBuildInfoTest {
     @Test
     void processedBuildResourceContainsConcreteMetadata() throws Exception {
         ReleaseBuildInfo build = ReleaseBuildInfo.load();
-        assertTrue(build.channel().matches("Alpha|Beta|Release"));
-        assertEquals("0.3.9", build.version());
+        assertEquals("Beta", build.channel());
+        assertEquals("0.4.9", build.version());
         assertTrue(Set.of("26.1.2", "26.2").contains(build.minecraftVersion()));
         assertEquals(1, build.releaseBaselineSequence());
     }

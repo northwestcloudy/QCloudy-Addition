@@ -2,6 +2,47 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.4.9-beta] - 2026-08-31
+
+Public Beta for Minecraft 26.1.2 and 26.2. This entry contains every player-facing change completed since stable Release 0.3.9.
+
+### Added
+
+- Added exact death-save detection for Spirit Mask, Bonzo's Mask, and Phoenix, with an optional centre-screen alert and three independently positioned cooldown HUDs. The master alert and all three HUDs default to off. Spirit Mask shows up to 30 seconds, Bonzo's Mask up to 360 seconds, and Phoenix Rekindle an exact 60-second cooldown.
+- Added opt-in Party Auto Accept for normal friends, special friends, and a separate 16-player whitelist. Friend data is learned from the player's explicitly opened `/friend list` pages.
+- Added opt-in private-message party requests for exact `!p`, `!party`, and `!invite` messages, plus opt-in local `//invited`, `//invited by`, and `//i` helpers.
+- Added opt-in Fast Party Commands for recognised `!` aliases received specifically in Party Chat. Public and Guild Chat cannot trigger them. The parent switch defaults off, all nine child groups default on, and each group can allow only self, only other party members, or everyone.
+- Added default-on local double-slash Party Commands covering Warp, All Invite, transfer, kick, coordinates, promote, Stream, Dungeons, and Kuudra. Unknown `//` input is not intercepted.
+- Added command and player-name completion. Full valid names and unique observed party-member prefixes are accepted; ambiguous or invalid prefixes fail without sending a command. Party Chat `!pt`/`!ptme` transfers to the sender, while local `//pt`/`//ptme` transfers to the local player.
+- Added five-second Warp and two-second All Invite cooldowns. Stream open accepts any decimal player limit, while `c`, `close`, and `off` close the stream.
+- Added an always-on, stable-Release-only update notice. Beta and Release builds check at most once per client process after the first world join. Only a newer, Minecraft-compatible, strictly validated Release can produce one toast and one local clickable message; Alpha builds make no request, and QCA never downloads or installs a JAR.
+- Added standard homepage, source, and issue metadata for launchers/HMCL, plus Website, Downloads, and Source Code links for Mod Menu.
+
+### Fixed and improved
+
+- Fixed the upgraded Bonzo's Mask message `Your  Bonzo's Mask saved your life!` not starting the Bonzo cooldown. Standard and upgraded masks now share one cooldown and duplicate guard.
+- Fixed multi-page `/friend list` synchronisation so recognised friends can actually trigger Party Auto Accept. Valid friends on the current page become available immediately; stale entries are removed only after every page is read in order, and public, Guild, or Party Chat lookalikes are rejected.
+- Fixed the General settings catalog sometimes being unable to scroll to the bottom.
+- Supported Mods now starts collapsed like every other subgroup.
+- Added browser-style draggable scrollbars to the feature catalog, feature settings, compatibility report, and party whitelist, including track paging, wider hit areas, and continued dragging outside the track.
+- Features without a real HUD no longer expose misleading HUD appearance controls, and cards without editable settings no longer open empty settings pages.
+- Removed the obsolete “yield duplicate inventory features to Firmament” setting. Item timestamps and cursor memory now follow their own QCA switches even when Firmament is installed.
+- Removed obsolete empty groups, unused translations, dead configuration fields, and the retired inventory feature gate.
+- Chat remains a subgroup under General rather than a separate left-side category.
+
+### Compatibility and build
+
+- Beta 0.4.9 remains a standalone, client-only Fabric mod. It builds separately for Minecraft 26.1.2 and 26.2, requires Java 25 and Fabric Loader 0.19.3+, and requires the matching Fabric API.
+- The stable update baseline remains Release 0.3.9 sequence 1. Publishing this Beta does not replace or increment the stable Release manifest.
+- Unified Settings Editor and Unified HUD Editor remain experimental, default-off concept tests. Back up provider configuration and verify writes in provider-native editors.
+
+### Beta artifacts
+
+- `QCloudy_Addition-0.4.9+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.4.9+26.2-Beta.jar`
+- `QCloudy_Addition-0.4.9+26.2-Beta-sources.jar`
+
 ## [0.3.9] - 2026-08-25
 
 Stable Release for Minecraft 26.1.2 and 26.2. This entry consolidates every public change completed after the previous stable Release 2.5.3; the individual Alpha and Beta entries remain below as the detailed development history.

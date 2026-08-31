@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪 Minecraft 26.1.2 的当前 Alpha 37 开发版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为适配 Minecraft 26.1.2 与 26.2 的 Release `0.3.9`。
+本文跟踪适配 Minecraft 26.1.2 与 26.2 的当前 Beta `0.4.9` 公开测试版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -49,7 +49,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ### 1.2 永久开启的 Release 更新提醒
 
-这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Alpha 37 内嵌基线为 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
+这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Beta 0.4.9 内嵌当前已发布稳定版基线 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
 
 `ReleaseUpdateChecker` 最多尝试向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`：连接超时五秒、请求超时十秒、重定向策略为 `NEVER`、只接受 HTTP 200、User-Agent 为 `QCloudy_Addition/<版本>`，响应上限为 128 KiB。`ReleaseManifest` 解析 schema 版本 1，并要求 `channel` 精确为 `Release`、`releaseSequence` 为大于零且高于内嵌基线的整数、版本为三段纯数字且 Tag 精确为 `v<版本>`，同时资产列表中必须只有一项与当前 Minecraft 完全匹配的可运行文件 `QCloudy_Addition-<版本>+<minecraft>-Release.jar`。该资产还必须包含小写 `sha256:<64 位十六进制>`，而且 HTTPS URL 的主机、仓库、精确 `v<版本>` Release Tag 与文件名都必须符合官方 `northwestcloudy/QCloudy-Addition` GitHub 资产路径；重复匹配直接判为无效。它不会选择第一个模糊匹配的 Release，也不会把 Alpha/Beta 后缀当成稳定版本比较。
 
