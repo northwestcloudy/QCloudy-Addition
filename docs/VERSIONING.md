@@ -17,7 +17,7 @@ QCloudy_Addition separates the core mod version, Minecraft target, release chann
 
 ```properties
 release_channel=Beta
-mod_version=0.4.9
+mod_version=0.3.10
 alpha_iteration=37
 ```
 

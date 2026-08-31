@@ -1,4 +1,4 @@
-# QCloudy_Addition 0.4.9 Beta
+# QCloudy_Addition 0.3.10 Beta
 
 适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 公开 Beta，包含稳定版 Release 0.3.9 之后完成的全部变化。
 

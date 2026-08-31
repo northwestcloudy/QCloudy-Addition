@@ -1,4 +1,4 @@
-# QCloudy_Addition 0.4.9 Beta
+# QCloudy_Addition 0.3.10 Beta
 
 Public client-only Fabric Beta for Minecraft 26.1.2 and 26.2, containing all completed changes since stable Release 0.3.9.
 

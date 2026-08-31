@@ -1,4 +1,4 @@
-# QCloudy_Addition 0.4.9 Beta
+# QCloudy_Addition 0.3.10 Beta
 
 适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 公开 Beta。本版本包含稳定版 Release 0.3.9 以来完成的全部变化。
 
@@ -10,7 +10,7 @@
 - 加入默认关闭的好友/白名单组队邀请自动接受、精确私信组队申请及本地快捷私信。
 - 加入处理 Party Chat `!` 别名的快速组队指令，以及默认开启的本地双斜杠组队指令，覆盖 Warp、All Invite、转移队长、踢人、坐标、晋升、Stream、地牢与 Kuudra。
 - 加入完整别名、触发者范围、冷却、任意十进制 Stream 人数，以及完整玩家名或唯一前缀补全。
-- 加入只追踪稳定 Release 的更新提醒。Beta 0.4.9 可以提示更新的兼容稳定版，但不会下载、安装或替换 JAR。
+- 加入只追踪稳定 Release 的更新提醒。Beta 0.3.10 可以提示更新的兼容稳定版，但不会下载、安装或替换 JAR。
 - 补齐启动器/HMCL 的官网、源代码与问题反馈元数据，并在 Mod Menu 中加入官网、下载与源代码链接。
 
 ## 修复与界面改进
@@ -32,10 +32,10 @@
 
 ## 文件
 
-- `QCloudy_Addition-0.4.9+26.1.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta-sources.jar`
 
 只安装一个与 Minecraft 版本匹配的可运行 JAR；不要把 `-sources.jar` 放进 `mods` 文件夹。
 

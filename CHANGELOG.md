@@ -2,7 +2,7 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
-## [0.4.9-beta] - 2026-08-31
+## [0.3.10-beta] - 2026-08-31
 
 Public Beta for Minecraft 26.1.2 and 26.2. This entry contains every player-facing change completed since stable Release 0.3.9.
 
@@ -32,16 +32,16 @@ Public Beta for Minecraft 26.1.2 and 26.2. This entry contains every player-faci
 
 ### Compatibility and build
 
-- Beta 0.4.9 remains a standalone, client-only Fabric mod. It builds separately for Minecraft 26.1.2 and 26.2, requires Java 25 and Fabric Loader 0.19.3+, and requires the matching Fabric API.
+- Beta 0.3.10 remains a standalone, client-only Fabric mod. It builds separately for Minecraft 26.1.2 and 26.2, requires Java 25 and Fabric Loader 0.19.3+, and requires the matching Fabric API.
 - The stable update baseline remains Release 0.3.9 sequence 1. Publishing this Beta does not replace or increment the stable Release manifest.
 - Unified Settings Editor and Unified HUD Editor remain experimental, default-off concept tests. Back up provider configuration and verify writes in provider-native editors.
 
 ### Beta artifacts
 
-- `QCloudy_Addition-0.4.9+26.1.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta-sources.jar`
 
 ## [0.3.9] - 2026-08-25
 

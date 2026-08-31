@@ -17,7 +17,7 @@ QCloudy_Addition 将模组核心版本、Minecraft 目标版本、发布通道�
 
 ```properties
 release_channel=Beta
-mod_version=0.4.9
+mod_version=0.3.10
 alpha_iteration=37
 ```
 

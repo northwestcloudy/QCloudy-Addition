@@ -1,6 +1,6 @@
 # 更新日志
 
-## [0.4.9-beta] - 2026-08-31
+## [0.3.10-beta] - 2026-08-31
 
 适用于 Minecraft 26.1.2 与 26.2 的公开 Beta。本条目包含稳定版 Release 0.3.9 之后完成的全部玩家可见变化。
 
@@ -30,16 +30,16 @@
 
 ### 兼容与构建
 
-- Beta 0.4.9 仍是可独立运行的纯客户端 Fabric 模组，分别构建 Minecraft 26.1.2 与 26.2；需要 Java 25、Fabric Loader 0.19.3+ 及对应 Fabric API。
+- Beta 0.3.10 仍是可独立运行的纯客户端 Fabric 模组，分别构建 Minecraft 26.1.2 与 26.2；需要 Java 25、Fabric Loader 0.19.3+ 及对应 Fabric API。
 - 稳定更新基线仍为 Release 0.3.9 的序号 1。发布本 Beta 不会替换或增加稳定 Release manifest 的序号。
 - 统一设置编辑与统一 HUD 编辑仍是默认关闭的实验性概念测试；请备份提供方配置，并在提供方原生编辑器中核对写入。
 
 ### Beta 文件
 
-- `QCloudy_Addition-0.4.9+26.1.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta-sources.jar`
 
 ## [0.3.9] - 2026-08-25
 

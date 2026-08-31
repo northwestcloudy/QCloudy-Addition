@@ -1,17 +1,17 @@
-# QCloudy_Addition 0.4.9 Beta dual-target validation
+# QCloudy_Addition 0.3.10 Beta dual-target validation
 
 Date: 2026-08-31
 
 ## Scope
 
-Beta 0.4.9 promotes the complete Alpha 37 implementation for public testing and adds only release-channel/version documentation plus the previously missing Mod Menu Source Code link. It contains every completed player-facing change since stable Release 0.3.9.
+Beta 0.3.10 promotes the complete Alpha 37 implementation for public testing and adds only release-channel/version documentation plus the previously missing Mod Menu Source Code link. It contains every completed player-facing change since stable Release 0.3.9.
 
 ## Final artifacts
 
-- `release/QCloudy_Addition-0.4.9+26.1.2-Beta.jar` — 3,631,854 bytes — `650fdda670bd4ea25b5c149385462d7212aa443569daefeedcc3334427fae5c3`
-- `release/QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar` — 3,102,799 bytes — `628ab0a832556511d060f334031e7db6660ed5dfc8565e35848ca064cb6c0a5f`
-- `release/QCloudy_Addition-0.4.9+26.2-Beta.jar` — 3,631,848 bytes — `10c3752a6b1197518706ae60d32cffa9e64b10417c3ef5da1f7c501f2df380d8`
-- `release/QCloudy_Addition-0.4.9+26.2-Beta-sources.jar` — 3,102,785 bytes — `5777abdb213853f280674b778f657e04901fbd88f548070c2498f6e1e3afb3e9`
+- `release/QCloudy_Addition-0.3.10+26.1.2-Beta.jar` — 3,631,856 bytes — `61f9ddd64905d4d64e75183c035d8de018e762a81e20aa9691e42da7811c9733`
+- `release/QCloudy_Addition-0.3.10+26.1.2-Beta-sources.jar` — 3,102,801 bytes — `161bfe36ea4253d18d141736d441be1274fabdb9a38165852004508e8c719ded`
+- `release/QCloudy_Addition-0.3.10+26.2-Beta.jar` — 3,631,850 bytes — `47cdd80e3599f8eb587a3e7825e230f7b210edc250d00cfe8ab49cd364528f18`
+- `release/QCloudy_Addition-0.3.10+26.2-Beta-sources.jar` — 3,102,787 bytes — `f9c0537ff92b686b502f229fe4c5b878032455351911eae3ffc0b5859c87cd2f`
 
 ## Completed verification
 
@@ -19,8 +19,8 @@ Beta 0.4.9 promotes the complete Alpha 37 implementation for public testing and 
 - Each target completed 293 tests with 0 failures, 0 errors, and 0 skipped tests.
 - `jar --validate` and `unzip -t` passed for all four exact Beta archives.
 - Both playable JARs use class major version 69, declare `environment: client`, Java 25, Fabric Loader 0.19.3+, the exact Minecraft target, and the matching Fabric API dependency.
-- Expanded metadata versions are `0.4.9-beta+26.1.2` and `0.4.9-beta+26.2`.
-- Packaged release metadata declares channel `Beta`, core version `0.4.9`, the exact Minecraft target, and stable Release baseline sequence `1`.
+- Expanded metadata versions are `0.3.10-beta+26.1.2` and `0.3.10-beta+26.2`.
+- Packaged release metadata declares channel `Beta`, core version `0.3.10`, the exact Minecraft target, and stable Release baseline sequence `1`.
 - Packaged launcher metadata contains homepage, sources, and issues. Mod Menu contains Website, Downloads, and Source Code links.
 - The targeted sensitive-operation scan found only the documented user-entered `/th` and `/helia` payloads plus the shared gated party/private-message command dispatcher. No new movement, click, combat, item-use, packet, or telemetry path was added for the Beta promotion.
 - Source and documentation diffs passed `git diff --check` before the build.

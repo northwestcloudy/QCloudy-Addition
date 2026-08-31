@@ -1,4 +1,4 @@
-# QCloudy_Addition 0.4.9 Beta
+# QCloudy_Addition 0.3.10 Beta
 
 Public client-only Fabric Beta for Minecraft 26.1.2 and 26.2. This release contains every completed change since stable Release 0.3.9.
 
@@ -10,7 +10,7 @@ Public client-only Fabric Beta for Minecraft 26.1.2 and 26.2. This release conta
 - Added opt-in friend/whitelist Party Auto Accept, exact private-message party requests, and local private-message helpers.
 - Added Fast Party Commands for supported Party Chat `!` aliases and default-on local double-slash Party Commands for Warp, All Invite, transfer, kick, coordinates, promote, Stream, Dungeons, and Kuudra.
 - Added exact command aliases, sender controls, cooldowns, arbitrary decimal Stream limits, and full-name or unique-prefix player completion.
-- Added a stable-Release-only update notice. Beta 0.4.9 can notify about a newer compatible stable Release, but never downloads, installs, or replaces a JAR.
+- Added a stable-Release-only update notice. Beta 0.3.10 can notify about a newer compatible stable Release, but never downloads, installs, or replaces a JAR.
 - Added launcher/HMCL homepage, source and issue metadata, plus Website, Downloads and Source Code links in Mod Menu.
 
 ## Fixes and interface improvements
@@ -32,10 +32,10 @@ Public client-only Fabric Beta for Minecraft 26.1.2 and 26.2. This release conta
 
 ## Files
 
-- `QCloudy_Addition-0.4.9+26.1.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.1.2-Beta-sources.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta.jar`
-- `QCloudy_Addition-0.4.9+26.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.10+26.2-Beta-sources.jar`
 
 Install exactly one playable JAR matching your Minecraft version. Do not install a `-sources.jar` as the mod.
 
