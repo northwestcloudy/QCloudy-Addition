@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能说明
 
-## 统一设置与 HUD 控制——0.3.10-alpha1 开发快照
+## 统一设置与 HUD 控制——0.3.10-alpha2 开发快照
 
 > 当前源码包含尚未公开的 Alpha 工作；当前公开测试版仍为 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
@@ -211,12 +211,14 @@ Epic 名称使用 Minecraft 深紫色 `§5`，不再使用亮紫/粉色 `§d`；
 
 ### 11.1 本地入口与分类
 
-`//pv`、`//pv <玩家名或 UUID>`、`/qpv`、`/qpv <玩家名或 UUID>` 打开同一个只读 QCA 界面；不填写目标时使用本机 Minecraft 玩家。普通 `/pv` 根节点刻意保留给其他模组。界面内可以切换 SkyBlock Profile；两条滚动条都支持滚轮、点击轨道以及直接拖动滑块。本功能不放设置卡片，本版本也不包含 Dungeon 或自动组队档案查询。
+`//pv`、`//pv <玩家名或 UUID>`、`/qpv`、`/qpv <玩家名或 UUID>` 打开同一个只读 QCA 界面；不填写目标时使用本机 Minecraft 玩家。普通 `/pv` 根节点刻意保留给其他模组。固定顶部栏可以切换 SkyBlock Profile；有明确 Minecraft 物品可表达的分类优先用图标导航，指标卡、进度条、语义分组与按槽位排列的物品网格代替原来的键值文字堆。本功能不放设置卡片，本版本也不包含 Dungeon 或自动组队档案查询。
 
-界面按概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle/Kuudra/Dojo/Trophy Fish、Rift、其他/Farming、Museum、Garden、市场/净值整理转换后的响应。私密、缺失、部分数据、旧缓存和服务故障都会明确显示。对市场/净值而言，完整来源表示所需快照均已发布，部分来源仍可显示可用价格但至少一个组成已过时或缺失；无法估值的物品保持 `unknown`，绝不变成 0。物品 NBT 在服务器端解码并限制大小，界面绝不会把原始 Base64 当作档案内容打印出来。
+界面按概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle/Kuudra/Dojo/Trophy Fish、Rift、其他/Farming、Museum、Garden、市场/净值整理转换后的响应。私密、缺失、部分、截断、旧缓存和服务故障都会明确显示。已解码物品容器使用可视化槽位网格；内部 ID、原始时间戳、投影限制标记、NBT Base64 与任意 JSON 递归都不作为正式界面。服务端给每个分类独立投影预算，因此大型背包不会再耗尽 Skills、Minion 或后续分类的容量。
 
 ### 11.2 缓存与市场规则
 
 模组只连接 `https://api.qcloudy.net`：禁止跳转、连接超时五秒、请求超时十五秒、响应上限 4 MiB，并固定 HTTPS 主机；模组中没有 Hypixel API Key。后端持有应用 Key，只开放固定转换路由，不是通用 Hypixel 代理。玩家名到 UUID 缓存 72 小时，不再额外延长技术旧缓存；无效名称负缓存 15 分钟；`/v2/player` 与完整 `/v2/skyblock/profiles` 新鲜期为一小时，技术故障旧缓存最多 24 小时；Museum 为六小时，Garden 为十二小时，两者旧缓存上限均为 24 小时。成功返回私密/缺失时会替换旧快照，不会用旧数据掩盖新的隐私状态。模组进程内缓存最多十分钟，并且绝不会超过服务器给出的时间边界。
 
-服务器大约每 60 秒收集一次 Bazaar、每两分钟收集一次完整且版本一致的 active AH、每 30 秒读取一次 ended auctions。只有全部页面与最终 page 0 都属于同一源版本时，AH 周期才会原子发布。成交样本去重并大约保留 30 天；采集器中断超过端点 60 秒覆盖窗口会标记 coverage gap。估值优先真实成交价，样本不足时才回退到稳健的低价 BIN 列表；没有样本就是未知，不是 0。打开档案界面不会启动或加速市场采集，只读取服务器已经发布的快照。
+服务器大约每 60 秒收集一次 Bazaar、每两分钟收集一次完整且版本一致的 active AH、每 30 秒读取一次 ended auctions。只有全部页面与最终 page 0 都属于同一源版本时，AH 周期才会原子发布。Tooltip 请求有数量与响应边界，会在客户端合并重复请求并最多缓存 60 秒；悬停目标改变或关闭界面时会取消已经过时的工作。它只读取服务器已经发布的快照，不会启动或加速采集。
+
+AH Tooltip 固定按以下顺序排版：可选 `NPC Sell Price`、clean/base variant 当前最低白板挂单的 `Low. BIN Price`、clean LBIN 历史时间加权的 `3 Day Avg. Price`、手中实际 variant 的 `Item NW Value`。三日均价必须先拥有连续 72 小时有效 clean LBIN 覆盖；新部署最初 72 小时不会显示这一行，而且它不是 ended-auction 成交中位数。BZ Tooltip 固定为可选 `NPC Sell Price`、立即卖出可获得金币的 `BZ Sell Price`、立即买入要支付金币的 `BZ Buy Price`。界面不添加通用价格标题或分隔线；缺失、无效、不适用或不安全的行直接省略，不显示为 0。数量大于一时先显示整组总价，灰色括号中显示单件价格；数量为一时不加括号。Coins 使用带千位逗号的完整数字，不缩写成 K/M；橙色标签与青色数值使用实际测量的两列对齐，不靠空格填充。

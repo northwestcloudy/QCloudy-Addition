@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源，以及完整的“玩家档案浏览”一节，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源，以及完整的“玩家档案浏览”一节，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha2` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
@@ -26,7 +26,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### 玩家档案浏览
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 源码快照；玩家档案浏览不包含在公开 Beta 0.3.10 中。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha2` 源码快照；玩家档案浏览不包含在公开 Beta 0.3.10 中。
 
 - `//pv [玩家名或 UUID]` 与 `/qpv [玩家名或 UUID]` 打开 QCA 风格只读 SkyBlock 档案界面；不填写参数时使用本机玩家。普通 `/pv` 保留给其他模组。
 - 可切换该玩家的可见 Profile，并查看非 Dungeon 的概览、装备、饰品、宠物、背包/Storage、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle、Rift、其他/Farming、Museum、Garden、市场/净值分类。

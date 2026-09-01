@@ -3,11 +3,11 @@ package cloudy.autume.addition.profile.ui;
 /** Pure geometry for the responsive profile viewer. */
 public final class ProfileViewerLayout {
     static final int HEADER_HEIGHT = 32;
-    static final int IDENTITY_HEIGHT = 48;
+    static final int IDENTITY_HEIGHT = 64;
     static final int OUTER_MARGIN = 10;
     static final int INNER_GAP = 8;
     static final int SIDEBAR_MINIMUM = 104;
-    static final int SIDEBAR_MAXIMUM = 154;
+    static final int SIDEBAR_MAXIMUM = 176;
 
     private ProfileViewerLayout() {
     }
@@ -26,7 +26,7 @@ public final class ProfileViewerLayout {
         int identityHeight = Math.min(IDENTITY_HEIGHT, Math.max(0, windowHeight - headerHeight));
         int bodyY = windowY + headerHeight + identityHeight;
         int bodyHeight = Math.max(0, windowY + windowHeight - bodyY);
-        int requestedSidebar = windowWidth < 430 ? Math.max(48, windowWidth / 3) : windowWidth / 5;
+        int requestedSidebar = windowWidth < 430 ? Math.max(52, windowWidth / 3) : windowWidth / 5;
         int minimumContent = Math.min(90, Math.max(1, windowWidth / 2));
         int maximumSidebar = Math.max(0,
                 Math.min(SIDEBAR_MAXIMUM, windowWidth - INNER_GAP - minimumContent));

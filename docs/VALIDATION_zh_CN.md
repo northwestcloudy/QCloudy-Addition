@@ -1,3 +1,39 @@
+# QCloudy_Addition 0.3.10-alpha2 图形化档案与 Tooltip 价格验证
+
+日期：2026-09-02<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha2` 将临时的递归键值表玩家档案页替换为 QCA 语义图形界面，并为 PV 中已解码物品的悬浮信息加入按数量计算的 BZ/AH 价格行。它仍是只读、纯客户端功能，只能通过 `//pv [玩家名或 UUID]` 或 `/qpv [玩家名或 UUID]` 打开，Dungeon 档案仍不在本次范围内。这是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release 与更新检查基线仍为 0.3.9。
+
+## 交付产物
+
+- `release/QCloudy_Addition-0.3.10-alpha2+26.1.2.jar` — 3,829,241 字节 — `ea13eab232746ac3c6e39ebad2144e7fb55a515121e611f74e81ca018c920813`
+- `release/QCloudy_Addition-0.3.10-alpha2+26.1.2-sources.jar` — 3,173,162 字节 — `e1891e908b2fe718065d7c107e3dd075b72784142287c2448a01ea7786693a9c`
+- `release/QCloudy_API-1.1.0+QCA-0.3.10-alpha2.zip` — 62,250 字节 — `5c5b7f0204a713cfd0a820af6e6f9687771b41de6a67ba47c6fbc70f3af37343`
+
+## 已完成验证
+
+- `tools/build_all_versions.sh` 已为 Minecraft 26.1.2 完成 `clean test build prepareRelease`；Alpha 通道保护确认没有生成 Minecraft 26.2 产物。
+- Mod 完成 64 个测试套件、345 项测试，0 failure、0 error；后端完成 61 项测试，OpenAPI 已重新生成并包含 9 条固定路由。
+- 两个 JAR 与 `build/26.1.2/libs/` 对应输出逐字节相同，均为 0 个重复条目，并通过 JDK 25 `jar --validate` 与 `unzip -t`；编译 class major version 为 69。
+- 可运行 JAR 精确声明 `0.3.10-alpha2+26.1.2`、`environment: client`、Java 25、Fabric Loader 0.19.3+、Minecraft 26.1.2 及匹配的 Fabric API 依赖。
+- 后端压缩包通过 `unzip -t`，解压根层直接是 `app/`/`deploy/`，且不含 `.env`、API Key、SQLite 数据、测试、fixture、Python 字节码或缓存目录。
+- 回归覆盖语义卡片/进度条而非原始 JSON 树、真实背包槽位、物品 ID/variant/数量悬浮身份、分类内投影限制提示、AH/BZ 精确行序与名称、可选值省略、完整千位分隔 Coins、总价加单价后缀、像素测量列对齐、严格响应回显校验、60 秒 Tooltip 缓存、请求合并与取消隔离。
+- 后端覆盖仅白板/base variant 的 Low BIN、实际 variant 的 Item NW Value、NPC/BZ 总价、持久化 clean-LBIN 历史、连续 72 小时时间加权均价、coverage gap 拒绝、有界批量请求、分类独立投影预算，以及缺失/非正价格安全不显示。
+- 源码/文档空白检查、后端包卫生、Fabric 元数据、OpenAPI 重生成与“没有 26.2 Alpha 产物”检查全部通过。
+
+## 部署与手动验证边界
+
+- 新的 `POST /v1/market/tooltip-prices` 契约必须部署随附的 QCloudy API 1.1.0 并重启服务；只安装客户端 JAR 无法得到新的悬浮价格行。
+- `3 Day Avg. Price` 会在服务端取得一段连续有效的 72 小时 clean-LBIN 窗口前保持不显示；采集 coverage gap 会开始新的有效窗口，不会展示误导性均价。
+- 本地验证没有声称已经完成已登录 Hypixel 的游戏内视觉实测、所有 GUI Scale/材质包、所有私密档案组合或 API 1.1.0 实际部署。语义界面与请求路径已通过编译和回归测试，但最终视觉间距及真实账号数据仍需安装 Alpha 后实机检查。
+- `0.3.10-alpha2` 不是 GitHub Release、Tag、Modrinth 版本或稳定更新目标。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha1 档案与市场验证
 
 日期：2026-09-01<br>

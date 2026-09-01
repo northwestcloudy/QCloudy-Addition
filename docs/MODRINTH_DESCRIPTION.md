@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab, and the complete Player Profile Viewer section, belong to the unpublished `0.3.10-alpha1` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab, and the complete Player Profile Viewer section, belong to the unpublished `0.3.10-alpha2` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
@@ -26,7 +26,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Player Profile Viewer
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha1` Minecraft 26.1.2 source snapshot. Player Profile Viewer is not included in public Beta 0.3.10.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha2` Minecraft 26.1.2 source snapshot. Player Profile Viewer is not included in public Beta 0.3.10.
 
 - `//pv [player or UUID]` and `/qpv [player or UUID]` open a read-only QCA-styled SkyBlock profile screen; no argument means the local player. Ordinary `/pv` remains available to other mods.
 - Select between the player's visible profiles and inspect non-Dungeon Overview, Gear, Accessories, Pets, inventories/storage, Skills, Slayer, Mining, Minions, Bestiary, Collections, Crimson Isle, Rift, Misc/Farming, Museum, Garden, and Market/Net Worth sections.

@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha2` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [更新日志（当前源码 0.3.10-alpha1；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
+- [更新日志（当前源码 0.3.10-alpha2；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -42,7 +42,7 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 通用
 
 - **手动重连**：在连接失败和断线界面加入一个原版尺寸的“重新连接”按钮。正常连接尝试开始时就记录目标，所以首次加入失败后也能使用。只有玩家点击按钮才会重新连接；没有倒计时、循环、重试计数、命令或自动加入。
-- **玩家档案浏览**：本地 `//pv [玩家名或 UUID]` 与 `/qpv [玩家名或 UUID]` 打开 QCA 风格只读 SkyBlock 档案界面；省略目标时使用本机玩家。界面可切换 Profile，并通过两条可拖动滚动条查看概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle、Rift、其他/Farming、Museum、Garden 与市场/净值。QCA 不注册普通 `/pv`，本版本也不包含 Dungeon/组队档案查询。市场数据区分完整、部分与旧缓存；无法可靠估值的物品保持未知，绝不按 0 处理。打开 PV 只读取服务已经发布的市场快照，不会启动采集器。
+- **玩家档案浏览**：本地 `//pv [玩家名或 UUID]` 与 `/qpv [玩家名或 UUID]` 打开 QCA 风格只读图形化 SkyBlock 档案界面；省略目标时使用本机玩家。固定身份/Profile 栏、图标导航、指标卡、进度条、语义分组与按槽位排列的物品网格用于查看概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle、Rift、其他/Farming、Museum、Garden 与市场/净值，不再把 JSON 键值树当正式界面。AH 物品的 Tooltip 固定按“可选 `NPC Sell Price` → clean/base 当前挂单 `Low. BIN Price` → 72 小时 clean LBIN 时间加权 `3 Day Avg. Price` → 手中实际 variant 的 `Item NW Value`”排列；BZ 物品固定按“可选 `NPC Sell Price` → 立即卖出可得的 `BZ Sell Price` → 立即买入要付的 `BZ Buy Price`”排列，并且不加通用价格标题。缺失行直接省略，Coins 使用带千位逗号的完整数字而不是 K/M 缩写；数量大于一时先显示整组总价，再显示 `(单件价格 each)`，单件物品不加括号。QCA 不注册普通 `/pv`，本版本也不包含 Dungeon/组队档案查询，打开 PV 不会启动市场采集器。新部署必须连续积累满 72 小时 clean LBIN 样本后才会显示三日均价。
 
 档案界面只连接固定的 `https://api.qcloudy.net`；模组不包含 Hypixel API Key，也不直接访问需要认证的 Hypixel 档案端点。服务端对玩家名/UUID 缓存 72 小时，不再额外延长技术旧缓存；player 和全部 SkyBlock profiles 使用 1 小时新鲜期与最多 24 小时技术旧缓存；Museum 为 6 小时，Garden 为 12 小时。客户端进程缓存最多 10 分钟，且绝不会延长服务端时间边界。成功得到私密或缺失状态时会替换旧快照，不会用旧数据掩盖新的隐私状态。
 
@@ -129,11 +129,11 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 
 ## 从源码构建
 
-安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。脚本会按 `gradle.properties` 中选择的通道构建：Alpha 会测试并生成 Minecraft 26.1.2 的可运行 JAR 与 Sources JAR；Beta 与 Release 会测试并在 `release/` 生成 Minecraft 26.1.2 和 26.2 的两组文件。项目已包含固定为 Gradle 9.6.1 的 Wrapper 与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据由本地 NEU item-repo 快照离线生成并直接打包进 QCA；玩法、Shard、Wiki、图标与价格数据仍全部使用本地/离线来源，QCA 自己唯一的运行时网页请求是上面说明的有限 Release manifest 检查。QCA 不需要 Firmament。
+安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。脚本会按 `gradle.properties` 中选择的通道构建：Alpha 会测试并生成 Minecraft 26.1.2 的可运行 JAR 与 Sources JAR；Beta 与 Release 会测试并在 `release/` 生成 Minecraft 26.1.2 和 26.2 的两组文件。项目已包含固定为 Gradle 9.6.1 的 Wrapper 与 Fabric Loom 1.17.17；参考模组不是构建或运行依赖。宠物 Profile 元数据、Shard 配方、Wiki 摘要、图标与速率基线会离线生成并写入 QCA 资源；玩家主动打开 PV 或 Shard Planner 时才使用上文披露的有界 `https://api.qcloudy.net` 路径，独立的 Release 更新检查使用固定 QCloudy 官网地址。QCA 不需要 Firmament。
 
 ## 安全边界
 
-发布版不包含 `sendChat`、Hypixel Mod API 订阅、WebSocket、遥测、运行时 Shard 数据请求、宏、自动移动或区块请求代码。QCA 自己唯一的 HTTP 路径是永久开启、每进程最多一次的 Release manifest 检查；Alpha 会在安排请求前直接返回，并且该检查无权下载或安装更新。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。文档列出的可选组队/聊天工具还可以在各自总开关、子开关、发送者范围、解析和冷却条件全部满足后发送对应服务器指令；它们不会模拟点击、移动玩家或使用物品。
+发布版不包含 Hypixel Mod API 订阅、WebSocket、遥测、宏、自动移动或区块请求代码。QCA 自身网页访问只限固定、有界的 HTTPS 路径：玩家主动使用的 PV/Shard Planner 从 `api.qcloudy.net` 读取，以及 Beta/Release 每进程最多一次的 Release manifest 检查。更新检查无权下载或安装文件，Alpha 在安排该检查前直接返回。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。文档列出的可选组队/聊天工具还可以在各自总开关、子开关、发送者范围、解析和冷却条件全部满足后发送对应服务器指令；它们不会模拟点击、移动玩家或使用物品。
 
 Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确列出的功能也不代表获得许可。使用前请阅读 [docs/COMPLIANCE_zh_CN.md](docs/COMPLIANCE_zh_CN.md) 和最新的 [Hypixel Allowed Modifications 说明](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications)。
 

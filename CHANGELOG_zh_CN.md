@@ -1,5 +1,29 @@
 # 更新日志
 
+## [0.3.10-alpha2] - 2026-09-02
+
+仅适用于 Minecraft 26.1.2 的未公开 Alpha 开发构建。当前公开测试版仍为 Beta 0.3.10，稳定版与游戏内更新检查基线仍为 Release 0.3.9。
+
+### 新增
+
+- 将临时的键值表式玩家档案页替换为真正的 QCA 图形界面：固定身份/Profile 栏、图标式分类导航、概览指标卡、技能进度、语义统计分组，以及按真实槽位排列的物品网格。UUID、Profile ID、Epoch 时间、`extraAttributes` 与通用 JSON 树不再作为正式展示内容。
+- 加入只在 QCA PV 内显示的物品价格 Tooltip，并由单个有界批量接口提供数据。BZ 物品显示可选 NPC Sell Price、BZ Sell Price、BZ Buy Price；AH 物品显示可选 NPC Sell Price、白板 Low. BIN Price、连续三日均价，以及当前实际变体的 Item NW Value。
+- 加入数量感知价格排版。堆叠物品先显示总价，再以 `(… each)` 显示单价；单件物品不显示括号。标签列与价格列按实际像素分别测宽，不使用空格强行对齐比例字体。
+- 加入持久化白板 LBIN 历史表。三日价格是连续采集满 72 小时后按时间加权的白板 Lowest BIN，不是已结束拍卖成交中位数；首次部署后的完整 72 小时窗口形成前保持不显示。
+
+### 修正与加固
+
+- 白板 Low BIN 只匹配完全未修改的基础物品，不会借用更便宜的升级、附魔、Reforge、皮肤、宝石或其他变体挂单；Item NW Value 则单独估算当前物品的明确实际变体，绝不会用白板 LBIN 替代。
+- BZ 名称严格按玩家动作解释：BZ Sell 是立即卖出后收到的 Coins，BZ Buy 是立即购买时支付的 Coins。缺失或不安全的价格保持不显示，不会伪装成 0。
+- 各档案章节改用相互独立的有界投影额度，前面的超大章节不能再吃光完整响应并把 Skills、Slayer、Collections 等后续章节静默替换成 `<node-limit>`；被截断的章节会显示局部警告，并把快照标为部分数据。
+- Overview 与 Misc 只保留用于展示的 SkyBlock 字段，删除无关的完整 Hypixel 玩家原始数据，并把现代 Minion、Glacite 与 Trophy Fish 字段归回对应章节。
+- Tooltip 请求支持去重、有界缓存，以及在关闭页面或切换选择时取消；响应使用严格解析。该功能只存在于 QCA 玩家档案页，不会注入 Minecraft 的全部物品 Tooltip。
+
+### 范围
+
+- Dungeon 档案分析仍按计划暂缓。
+- `0.3.10-alpha2` 仅为 Minecraft 26.1.2 生成 Alpha 文件，不是 GitHub/Modrinth 发布目标，也不会被稳定 Release 更新检查器追踪。
+
 ## [0.3.10-alpha1] - 2026-09-01
 
 仅适用于 Minecraft 26.1.2 的未公开 Alpha 开发构建。当前公开测试版仍为 Beta 0.3.10，稳定版与游戏内更新检查基线仍为 Release 0.3.9。

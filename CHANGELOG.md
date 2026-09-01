@@ -2,6 +2,30 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha2] - 2026-09-02
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Added
+
+- Replaced the provisional key/value Profile Viewer with a visual QCA interface: a persistent identity/profile bar, icon-led section navigation, overview metric cards, skill progress, semantic statistic groups, and real slot-based item grids. Raw UUIDs, profile IDs, epoch values, `extraAttributes`, and generic JSON trees are no longer the normal presentation.
+- Added PV-only item price tooltips backed by one bounded batch endpoint. Bazaar items show optional NPC Sell Price, BZ Sell Price, and BZ Buy Price; Auction House items show optional NPC Sell Price, clean Low. BIN Price, continuous 3 Day Avg. Price, and actual-variant Item NW Value.
+- Added quantity-aware tooltip pricing. Stacks show the total first and the per-item value in `(… each)`; single items omit the parenthetical. Labels and values are rendered as measured columns rather than space-padded proportional text.
+- Added a persistent clean-LBIN history table. The three-day price is the time-weighted clean Lowest BIN over a continuously observed 72-hour window, never a completed-auction median; it remains unavailable until the first complete window has been collected.
+
+### Corrected and hardened
+
+- Clean Low BIN now matches only the unmodified base-item variant and cannot borrow a cheaper upgraded, enchanted, reforged, skinned, gemmed, or otherwise modified listing. Item NW Value separately prices the held item's explicit variant and never substitutes clean LBIN.
+- Bazaar wording follows the player's action: BZ Sell is coins received by selling immediately and BZ Buy is coins paid to buy immediately. Missing or unsafe values stay absent instead of displaying zero.
+- Profile sections now receive independent bounded projection budgets, so large early sections cannot consume the complete response and silently replace Skills, Slayer, Collections, or later sections with `<node-limit>`. Truncated sections carry a local warning and make the snapshot partial.
+- Reduced Overview and Misc to display-relevant SkyBlock fields, removed unrelated raw Hypixel-player dumps, and restored modern Minion, Glacite, and Trophy Fish fields to their intended sections.
+- Tooltip requests are deduplicated, cached for a bounded period, cancellable when the screen closes or selection changes, strictly parsed, and confined to the QCA Profile Viewer rather than injected into every Minecraft tooltip.
+
+### Scope
+
+- Dungeon profile inspection remains intentionally deferred.
+- `0.3.10-alpha2` is an Alpha artifact for Minecraft 26.1.2 only. It is not a GitHub/Modrinth publication target and is ignored by the stable-Release update checker.
+
 ## [0.3.10-alpha1] - 2026-09-01
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

@@ -1,3 +1,39 @@
+# QCloudy_Addition 0.3.10-alpha2 visual profile and tooltip-price validation
+
+Date: 2026-09-02<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha2` replaces the provisional recursive key/value Profile Viewer with a semantic graphical QCA screen and adds quantity-aware Bazaar/Auction House price rows to decoded PV item hovers. It remains read-only and client-only, opens only through `//pv [player or UUID]` or `/qpv [player or UUID]`, and still excludes Dungeon profile inspection. This is an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Deliverables
+
+- `release/QCloudy_Addition-0.3.10-alpha2+26.1.2.jar` — 3,829,241 bytes — `ea13eab232746ac3c6e39ebad2144e7fb55a515121e611f74e81ca018c920813`
+- `release/QCloudy_Addition-0.3.10-alpha2+26.1.2-sources.jar` — 3,173,162 bytes — `e1891e908b2fe718065d7c107e3dd075b72784142287c2448a01ea7786693a9c`
+- `release/QCloudy_API-1.1.0+QCA-0.3.10-alpha2.zip` — 62,250 bytes — `5c5b7f0204a713cfd0a820af6e6f9687771b41de6a67ba47c6fbc70f3af37343`
+
+## Completed verification
+
+- `tools/build_all_versions.sh` completed `clean test build prepareRelease` for Minecraft 26.1.2. The Alpha-channel guard produced no Minecraft 26.2 artifact.
+- The Mod completed 64 suites and 345 tests with 0 failures and 0 errors. The backend completed 61 tests; OpenAPI was regenerated and contains 9 fixed routes.
+- Both JARs are byte-identical to their target-specific `build/26.1.2/libs/` outputs, contain 0 duplicate entries, and pass JDK 25 `jar --validate` plus `unzip -t`. Compiled classes use Java major version 69.
+- The playable JAR declares exact version `0.3.10-alpha2+26.1.2`, `environment: client`, Java 25, Fabric Loader 0.19.3+, Minecraft 26.1.2, and the matching Fabric API dependency.
+- The backend archive passes `unzip -t`, begins directly at `app/`/`deploy/`, and contains no `.env`, API key, SQLite data, tests, fixture data, Python bytecode, or cache directory.
+- Regression coverage verifies semantic cards/progress instead of raw JSON trees, real inventory slot preservation, item ID/variant/count hover identity, local projection-limit notices, exact AH/BZ row ordering and wording, optional-value omission, full comma-grouped Coin formatting, quantity totals plus per-unit suffixes, measured pixel columns, strict response echo validation, 60-second tooltip caching, request coalescing, and cancellation isolation.
+- Backend coverage verifies clean/base-only Low BIN, actual-variant Item NW Value, NPC/Bazaar totals, persistent clean-LBIN history, continuous 72-hour time-weighted averaging, coverage-gap rejection, bounded request batches, independent section projection budgets, and fail-closed missing/non-positive prices.
+- Source/document whitespace checks, backend archive hygiene, Fabric metadata inspection, OpenAPI regeneration, and the absence of a 26.2 Alpha artifact passed.
+
+## Deployment and manual-validation boundary
+
+- The new `POST /v1/market/tooltip-prices` contract requires deploying the supplied QCloudy API 1.1.0 package and restarting the service; installing only the client JAR cannot provide the new hover-price rows.
+- `3 Day Avg. Price` intentionally remains absent until the server has accumulated one continuous valid 72-hour clean-LBIN window. A collector coverage gap starts a new valid window instead of displaying a misleading average.
+- This local validation did not claim an authenticated Hypixel in-game visual pass, every GUI scale/resource pack, every private-profile combination, or live deployment of API 1.1.0. The semantic UI and request paths are covered by compilation and regression tests, but final visual spacing and real account data still require an in-game Alpha pass.
+- `0.3.10-alpha2` is not a GitHub Release, tag, Modrinth version, or stable update target.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha1 profile and market validation
 
 Date: 2026-09-01<br>

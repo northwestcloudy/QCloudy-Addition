@@ -1,6 +1,7 @@
 package cloudy.autume.addition.network;
 
 import cloudy.autume.addition.profile.ShardBazaarSide;
+import cloudy.autume.addition.profile.market.MarketTooltipRequestItem;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
@@ -63,6 +64,41 @@ final class QcaApiClientTest {
         assertEquals("/v1/market/bazaar/shards", transport.request.uri().getPath());
         assertEquals("side=instant_sell", transport.request.uri().getRawQuery());
         assertEquals("GET", transport.request.method());
+    }
+
+    @Test
+    void marketTooltipRequestUsesTheFrozenBoundedPostContract() {
+        String body = QcaApiClient.marketTooltipRequestBody(List.of(
+                new MarketTooltipRequestItem("slot-1",
+                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
+                                "hyperion", "upgrade=10", 2)),
+                new MarketTooltipRequestItem("slot-2",
+                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
+                                "ENCHANTED_DIAMOND", null, 1))));
+        CapturingClient transport = new CapturingClient();
+        QcaApiClient client = new QcaApiClient(transport, "QCA-Test/1", 1024);
+
+        HttpRequest request = client.buildMarketTooltipPricesRequest(List.of(
+                new MarketTooltipRequestItem("slot-1",
+                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
+                                "HYPERION", "upgrade=10", 2))));
+
+        assertEquals("POST", request.method());
+        assertEquals("/v1/market/tooltip-prices", request.uri().getPath());
+        assertEquals("application/json",
+                request.headers().firstValue("Content-Type").orElseThrow());
+        assertEquals("{\"items\":[{\"requestId\":\"slot-1\",\"itemId\":\"HYPERION\","
+                        + "\"variantKey\":\"upgrade=10\",\"quantity\":2},"
+                        + "{\"requestId\":\"slot-2\",\"itemId\":\"ENCHANTED_DIAMOND\","
+                        + "\"quantity\":1}]}", body);
+        assertThrows(IllegalArgumentException.class,
+                () -> QcaApiClient.marketTooltipRequestBody(List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> QcaApiClient.marketTooltipRequestBody(List.of(
+                        new MarketTooltipRequestItem("same",
+                                new cloudy.autume.addition.profile.market.MarketTooltipQuery("A", null, 1)),
+                        new MarketTooltipRequestItem("same",
+                                new cloudy.autume.addition.profile.market.MarketTooltipQuery("B", null, 1)))));
     }
 
     @Test

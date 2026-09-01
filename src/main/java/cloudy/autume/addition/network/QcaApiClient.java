@@ -1,6 +1,7 @@
 package cloudy.autume.addition.network;
 
 import cloudy.autume.addition.profile.ShardBazaarSide;
+import cloudy.autume.addition.profile.market.MarketTooltipRequestItem;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,9 +13,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +29,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class QcaApiClient {
     public static final URI BASE_URI = URI.create("https://api.qcloudy.net/");
     public static final int MAX_PROFILE_RESPONSE_BYTES = 4 * 1024 * 1024;
+    public static final int MAX_MARKET_TOOLTIP_ITEMS = 256;
+    public static final int MAX_MARKET_TOOLTIP_REQUEST_BYTES = 128 * 1024;
     public static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
     public static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
@@ -78,12 +83,23 @@ public final class QcaApiClient {
         return send(buildGet("v1/market/bazaar/shards?side=" + side.wireName()));
     }
 
+    public CompletableFuture<Response> fetchMarketTooltipPrices(
+            List<MarketTooltipRequestItem> items) {
+        return send(buildMarketTooltipPricesRequest(items));
+    }
+
     public HttpRequest buildProfileRequest(String target, String profileId) {
         String path = "v1/pv/" + encodeSegment(target, "target");
         if (profileId != null && !profileId.isBlank()) {
             path += "?profileId=" + encodeQuery(profileId);
         }
         return buildGet(path);
+    }
+
+    public HttpRequest buildMarketTooltipPricesRequest(
+            List<MarketTooltipRequestItem> items) {
+        String body = marketTooltipRequestBody(items);
+        return buildPost("v1/market/tooltip-prices", body);
     }
 
     private HttpRequest buildGet(String relativePath) {
@@ -94,6 +110,81 @@ public final class QcaApiClient {
                 .header("User-Agent", userAgent)
                 .GET()
                 .build();
+    }
+
+    private HttpRequest buildPost(String relativePath, String jsonBody) {
+        byte[] bytes = jsonBody.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length > MAX_MARKET_TOOLTIP_REQUEST_BYTES) {
+            throw new IllegalArgumentException("QCA API request body is too large");
+        }
+        URI uri = checkedUri(BASE_URI.resolve(relativePath));
+        return HttpRequest.newBuilder(uri)
+                .timeout(REQUEST_TIMEOUT)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header("User-Agent", userAgent)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
+                .build();
+    }
+
+    static String marketTooltipRequestBody(List<MarketTooltipRequestItem> items) {
+        if (items == null || items.isEmpty() || items.size() > MAX_MARKET_TOOLTIP_ITEMS) {
+            throw new IllegalArgumentException("Invalid market tooltip item count");
+        }
+        Set<String> requestIds = new LinkedHashSet<>();
+        Set<MarketTooltipRequestItem> uniqueItems = new LinkedHashSet<>();
+        for (MarketTooltipRequestItem item : items) {
+            MarketTooltipRequestItem checked = Objects.requireNonNull(item, "item");
+            if (!requestIds.add(checked.requestId())) {
+                throw new IllegalArgumentException("Duplicate market tooltip requestId");
+            }
+            uniqueItems.add(checked);
+        }
+
+        StringBuilder json = new StringBuilder(64 + uniqueItems.size() * 96);
+        json.append("{\"items\":[");
+        int index = 0;
+        for (MarketTooltipRequestItem item : uniqueItems) {
+            if (index++ > 0) json.append(',');
+            json.append('{');
+            jsonString(json, "requestId").append(':');
+            jsonString(json, item.requestId()).append(',');
+            jsonString(json, "itemId").append(':');
+            jsonString(json, item.query().key().itemId());
+            if (item.query().key().variantKey() != null) {
+                json.append(',');
+                jsonString(json, "variantKey").append(':');
+                jsonString(json, item.query().key().variantKey());
+            }
+            json.append(',');
+            jsonString(json, "quantity").append(':').append(item.query().quantity());
+            json.append('}');
+        }
+        return json.append("]}").toString();
+    }
+
+    private static StringBuilder jsonString(StringBuilder output, String value) {
+        output.append('"');
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            switch (character) {
+                case '"' -> output.append("\\\"");
+                case '\\' -> output.append("\\\\");
+                case '\b' -> output.append("\\b");
+                case '\f' -> output.append("\\f");
+                case '\n' -> output.append("\\n");
+                case '\r' -> output.append("\\r");
+                case '\t' -> output.append("\\t");
+                default -> {
+                    if (character < 0x20) {
+                        output.append(String.format(Locale.ROOT, "\\u%04x", (int) character));
+                    } else {
+                        output.append(character);
+                    }
+                }
+            }
+        }
+        return output.append('"');
     }
 
     private CompletableFuture<Response> send(HttpRequest request) {
