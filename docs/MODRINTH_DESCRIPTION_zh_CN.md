@@ -14,13 +14,23 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源，以及完整的“玩家档案浏览”一节，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 源码快照，不包含在公开 Beta 0.3.10 中。
+
 ### Attribute Shard Lab
 
 - 离线收录 320 个 Bazaar Shard，并提供逐 ID 图标、品质色与语义游戏颜色。
 - 详情包括效果、家族、Skill、生物种类、自然获取方法、捕捉/击杀要求、已审核的掉率信息，以及是否只能通过 Fusion 获得。
 - 有序 Recipes 与 Uses、反向关系、可点击跳转、Special Fusion 数量、Chameleon 机制与候选路线。
 - 多步 Fusion Tree、Materials Only 汇总、可编辑每小时获取速度、Ironman 规划、可拖动 Fusion Lines，以及按 Profile 保存的 Hunting Box 仓库。
-- 价格路线只读取可选兼容提供方已经存在于客户端的价格缓存。QCA 运行时不会请求 Bazaar、Wiki 或价格服务器；没有合适提供方时，价格模式会明确不可用，离线规划仍正常工作。
+- 价格路线读取 QCloudy 有界市场快照；打开 Planner 并加载价格时会进行一次有界异步 HTTPS 读取。获取成本使用立即买入，清算价值使用立即卖出；缺失价格保持未知。Ironman 与离线规划不依赖该服务。
+
+### 玩家档案浏览
+
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 源码快照；玩家档案浏览不包含在公开 Beta 0.3.10 中。
+
+- `//pv [玩家名或 UUID]` 与 `/qpv [玩家名或 UUID]` 打开 QCA 风格只读 SkyBlock 档案界面；不填写参数时使用本机玩家。普通 `/pv` 保留给其他模组。
+- 可切换该玩家的可见 Profile，并查看非 Dungeon 的概览、装备、饰品、宠物、背包/Storage、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle、Rift、其他/Farming、Museum、Garden、市场/净值分类。
+- 私密、缺失、部分数据和旧缓存都会明确标记。完整市场来源表示所需已发布组成均可用；部分数据仍可保留可用价格，而无法估值的物品保持未知，绝不变成 0。PV 只读取已发布市场快照，不会启动采集器。物品 NBT 在服务端转换，模组中没有 Hypixel API Key。
 
 ### HUD、宠物与计时
 
@@ -55,7 +65,7 @@ Beta 0.3.10 是首个公开包含此检查器的版本。Release 更新提醒永
 
 ## 纯客户端边界
 
-QCA 只读取客户端已经收到的 Tab/计分板/聊天/标题文字、已打开菜单、本地背包、已加载实体与方块。它不会自动移动、点击、战斗、钓鱼、捕捉、Fusion 或循环重连；也没有遥测、自动下载/安装更新器、隐藏区块请求或运行时 Hypixel API 依赖。QCA 自己唯一的运行时网页请求是上面已披露的有限稳定版 Release manifest 检查。
+QCA 读取客户端已经收到的 Tab/计分板/聊天/标题文字、已打开菜单、本地背包、已加载实体/方块，以及玩家打开相应 QCA 界面时明确发出的只读档案/市场查询。它不会自动移动、点击、战斗、钓鱼、捕捉、Fusion 或循环重连；也没有遥测、自动下载/安装更新器或隐藏区块请求。模组中没有 Hypixel API Key，也不会直接请求需要认证的 Hypixel Profile 路由；只使用固定的 `https://api.qcloudy.net` 转换数据源（禁止跳转、限制响应大小）和上面披露的稳定版 Release manifest。档案请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent 和被查询玩家/Profile，但不会发送 Minecraft 会话凭据、服务器地址、模组列表、聊天、坐标、Cookie 或遥测标识。
 
 永久可用的本地 `/th` 与 `/helia` 只会在玩家输入这些快捷命令时发送 `warp torrhus` 与 `chapter torrhus`；Century Cake 续效果操作只会在玩家点击对应聊天操作时发送 `visit northwestcloudy`。另外，玩家单独开启的组队/聊天工具可以在各自总开关、子开关、发送者范围、精确解析、玩家解析与冷却门控全部允许后，发送文档列出的 Party、私信、Stream、坐标、地牢与 Kuudra 指令。这些工具不会模拟点击、移动玩家或使用物品。
 

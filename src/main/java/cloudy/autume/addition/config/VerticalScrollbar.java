@@ -7,22 +7,22 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  * Geometry and input mapping live here so every screen gets the same grab,
  * page-click and clamping behaviour.
  */
-final class VerticalScrollbar {
-    static final int WIDTH = 7;
-    static final int MINIMUM_THUMB_HEIGHT = 20;
-    static final int PAGE_OVERLAP = 24;
+public final class VerticalScrollbar {
+    public static final int WIDTH = 7;
+    public static final int MINIMUM_THUMB_HEIGHT = 20;
+    public static final int PAGE_OVERLAP = 24;
 
     private Geometry geometry = Geometry.hidden();
     private boolean dragging;
     private double grabOffsetY;
 
-    void update(int trackX, int trackY, int trackHeight, int maximumScroll, int scroll) {
+    public void update(int trackX, int trackY, int trackHeight, int maximumScroll, int scroll) {
         Geometry next = calculateGeometry(trackX, trackY, trackHeight, maximumScroll, scroll);
         if (dragging && !geometry.sameLayout(next)) cancelDrag();
         geometry = next;
     }
 
-    void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accentColor) {
+    public void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accentColor) {
         if (!geometry.visible()) return;
         boolean hovered = geometry.containsTrack(mouseX, mouseY);
         boolean active = hovered || dragging;
@@ -37,7 +37,7 @@ final class VerticalScrollbar {
         }
     }
 
-    Interaction mouseClicked(int button, double mouseX, double mouseY, int currentScroll) {
+    public Interaction mouseClicked(int button, double mouseX, double mouseY, int currentScroll) {
         if (button != 0 || !geometry.containsTrack(mouseX, mouseY)) {
             return Interaction.notConsumed(currentScroll);
         }
@@ -52,14 +52,14 @@ final class VerticalScrollbar {
         return Interaction.consumed(geometry.clampScroll(target));
     }
 
-    Interaction mouseDragged(int button, double mouseY, int currentScroll) {
+    public Interaction mouseDragged(int button, double mouseY, int currentScroll) {
         if (button != 0 || !dragging || !geometry.visible()) {
             return Interaction.notConsumed(currentScroll);
         }
         return Interaction.consumed(geometry.scrollForThumbTop(mouseY - grabOffsetY));
     }
 
-    Interaction mouseReleased(int button, double mouseY, int currentScroll) {
+    public Interaction mouseReleased(int button, double mouseY, int currentScroll) {
         if (button != 0 || !dragging || !geometry.visible()) {
             return Interaction.notConsumed(currentScroll);
         }
@@ -68,7 +68,7 @@ final class VerticalScrollbar {
         return Interaction.consumed(target);
     }
 
-    Interaction mouseScrolled(double vertical, int step, int currentScroll) {
+    public Interaction mouseScrolled(double vertical, int step, int currentScroll) {
         if (!geometry.visible()) return Interaction.notConsumed(currentScroll);
         int clamped = geometry.clampScroll(currentScroll);
         // The grab offset is tied to the current thumb. Moving scroll by wheel
@@ -78,21 +78,21 @@ final class VerticalScrollbar {
         return Interaction.consumed(geometry.clampScroll(target));
     }
 
-    boolean contains(double mouseX, double mouseY) {
+    public boolean contains(double mouseX, double mouseY) {
         return geometry.containsTrack(mouseX, mouseY);
     }
 
-    boolean dragging() {
+    public boolean dragging() {
         return dragging;
     }
 
-    void cancelDrag() {
+    public void cancelDrag() {
         dragging = false;
         grabOffsetY = 0.0;
     }
 
-    static Geometry calculateGeometry(int trackX, int trackY, int trackHeight,
-                                      int maximumScroll, int scroll) {
+    public static Geometry calculateGeometry(int trackX, int trackY, int trackHeight,
+                                             int maximumScroll, int scroll) {
         int safeHeight = Math.max(0, trackHeight);
         int safeMaximum = Math.max(0, maximumScroll);
         if (safeHeight == 0 || safeMaximum == 0) {
@@ -109,7 +109,7 @@ final class VerticalScrollbar {
         return new Geometry(trackX, trackY, WIDTH, safeHeight, thumbHeight, thumbY, safeMaximum);
     }
 
-    record Interaction(boolean consumed, int scroll) {
+    public record Interaction(boolean consumed, int scroll) {
         static Interaction consumed(int scroll) {
             return new Interaction(true, scroll);
         }
@@ -119,46 +119,46 @@ final class VerticalScrollbar {
         }
     }
 
-    record Geometry(int trackX, int trackY, int trackWidth, int trackHeight,
-                    int thumbHeight, int thumbY, int maximumScroll) {
+    public record Geometry(int trackX, int trackY, int trackWidth, int trackHeight,
+                           int thumbHeight, int thumbY, int maximumScroll) {
         static Geometry hidden() {
             return new Geometry(0, 0, WIDTH, 0, 0, 0, 0);
         }
 
-        boolean visible() {
+        public boolean visible() {
             return trackHeight > 0 && maximumScroll > 0 && thumbHeight > 0;
         }
 
-        int trackRight() {
+        public int trackRight() {
             return trackX + trackWidth;
         }
 
-        int trackBottom() {
+        public int trackBottom() {
             return trackY + trackHeight;
         }
 
-        int thumbBottom() {
+        public int thumbBottom() {
             return thumbY + thumbHeight;
         }
 
-        int travel() {
+        public int travel() {
             return Math.max(0, trackHeight - thumbHeight);
         }
 
-        boolean containsTrack(double mouseX, double mouseY) {
+        public boolean containsTrack(double mouseX, double mouseY) {
             return visible() && mouseX >= trackX && mouseX < trackRight()
                     && mouseY >= trackY && mouseY < trackBottom();
         }
 
-        boolean containsThumb(double mouseX, double mouseY) {
+        public boolean containsThumb(double mouseX, double mouseY) {
             return containsTrack(mouseX, mouseY) && mouseY >= thumbY && mouseY < thumbBottom();
         }
 
-        int clampScroll(int scroll) {
+        public int clampScroll(int scroll) {
             return Math.clamp(scroll, 0, maximumScroll);
         }
 
-        int scrollForThumbTop(double requestedThumbTop) {
+        public int scrollForThumbTop(double requestedThumbTop) {
             if (!visible() || travel() == 0) return 0;
             double clampedTop = Math.clamp(requestedThumbTop, trackY, trackY + travel());
             return clampScroll((int) Math.round((clampedTop - trackY)

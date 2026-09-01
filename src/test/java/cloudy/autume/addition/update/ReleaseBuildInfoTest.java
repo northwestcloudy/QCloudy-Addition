@@ -2,8 +2,6 @@ package cloudy.autume.addition.update;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,9 +24,9 @@ final class ReleaseBuildInfoTest {
     @Test
     void processedBuildResourceContainsConcreteMetadata() throws Exception {
         ReleaseBuildInfo build = ReleaseBuildInfo.load();
-        assertEquals("Beta", build.channel());
+        assertEquals("Alpha", build.channel());
         assertEquals("0.3.10", build.version());
-        assertTrue(Set.of("26.1.2", "26.2").contains(build.minecraftVersion()));
+        assertEquals("26.1.2", build.minecraftVersion());
         assertEquals(1, build.releaseBaselineSequence());
     }
 }

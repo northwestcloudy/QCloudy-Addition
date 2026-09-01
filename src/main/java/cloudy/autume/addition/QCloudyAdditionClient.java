@@ -23,6 +23,7 @@ import cloudy.autume.addition.party.FriendRosterStore;
 import cloudy.autume.addition.party.PartyAutoAcceptManager;
 import cloudy.autume.addition.party.PartyCommandEngine;
 import cloudy.autume.addition.party.PrivatePartyRequestCommands;
+import cloudy.autume.addition.profile.ProfileCommands;
 import cloudy.autume.addition.tracker.LocationTracker;
 import cloudy.autume.addition.tracker.HotmSlotTracker;
 import cloudy.autume.addition.tracker.PetTracker;
@@ -201,6 +202,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             registerCenturyCakeCommand(dispatcher, "cake");
             registerCenturyCakeCommand(dispatcher, "centurycakeeffect");
             registerPartyClientCommands(dispatcher);
+            ProfileCommands.register(dispatcher);
         });
 
         LOGGER.info("QCloudy_Addition initialized in client-side mode");

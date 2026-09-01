@@ -12,10 +12,12 @@ build_target() {
         -Ptarget_build_dir="build/$build_suffix"
 }
 
-release_channel="$(sed -n 's/^release_channel=//p' gradle.properties | head -n 1)"
+release_channel="$({ sed -n 's/^release_channel=//p' gradle.properties | head -n 1; } \
+    | tr -d '[:space:]' \
+    | tr '[:upper:]' '[:lower:]')"
 
 build_target "26.1.2" "26.1.2"
-if [[ "$release_channel" != "Alpha" && "$release_channel" != "alpha" ]]; then
+if [[ "$release_channel" != "alpha" ]]; then
     build_target "26.2" "26.2"
     echo "Built Minecraft 26.1.2 and 26.2 in release/."
 else

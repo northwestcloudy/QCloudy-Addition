@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪适配 Minecraft 26.1.2 与 26.2 的当前 Beta `0.3.10` 公开测试版本，逐项说明每个公开功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha1` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -394,7 +394,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - **用途：**在保留原 Guide 作为精确直接配方参考的前提下，为目标 Shard/数量生成有深度限制、能阻止循环的多步路线。
 - **路线引擎：**`ShardFusionPlanner` 对目录全部 Shard 与有序产物配方进行有限深度动态松弛。路线可以终止于直接狩猎速率、可选 Bazaar 购买、已观察仓库数量，或继续 Fusion。选中路线会展开为不可变 Tree，并提供候选方案、Fusion 次数、预计成本/时间及狩猎/购买/仓库材料表。展开过程有循环、深度、算术和节点数保护。Materials Only 只改变显示，不改变计算。
 - **速率与 Kraken：**`shard_rates.json` 是从已审核 SkyShards 速率数据转换的版本化离线基线，并被强制要求与 320 个目录 ID 一一对应；玩家保存的本地单 Shard 速率优先覆盖。Hunter Fortune 只缩放正狩猎速率。Kraken 可用 Kuudra Tier、通关秒数、coins/hour 机会成本、钥匙成本、对应 Tier 倍率及 25 秒停顿推导速率。本地 Crocodile 等级控制 2–20% Pure Reptile 期望倍率，但整数材料仍按保守需求显示。
-- **价格：**`ShardPriceService` 不含 HTTP 客户端。运行时先检查 Skyblocker 是否加载，再反射解析其公开静态 `de.hysky.skyblocker.utils.ItemUtils.getItemPrice(String, boolean)`。QCA 只复制 Skyblocker 现有客户端缓存返回值，形成不可变本地快照；方法缺失、链接失败、条目缺失或畸形值都会安全变为不可用。没有 Skyblocker 编译/运行硬依赖。SkyHanni 与 Firmament 当前没有稳定公开跨模组 Bazaar API，因此 QCA 不读取其私有字段；没有兼容提供者时 Cheapest 禁用，非价格功能保持独立。
+- **价格：**`ShardPriceService` 异步委托给 `ShardBazaarService`，后者只接受固定 `QcaApiClient` 来源的 schema-v1 Shard 响应。`instant_buy` 对应 Hypixel Bazaar `quick_status.buyPrice`，`instant_sell` 对应 `quick_status.sellPrice`。价格必须为有限正数，产品 ID 必须是长度受限的 `SHARD_*`；本地结果最多缓存十分钟且不能越过服务端元数据。此路径不再反射 SkyHanni/Skyblocker/Firmament，也没有硬依赖。缺失、过期、畸形或不可用价格会安全关闭；Ironman 和只按速率的规划保持独立。
 - **仓库：**`ShardWarehouseManager` 每秒最多检查一次当前显示、客户端已经收到的容器。标题必须精确为 `Hunting Box` 或 `(当前页/总页数) Hunting Box`；每个 Shard 必须能解析到目录 ID/名称与精确 `Owned: N Shards` lore。只更新当前可见页面；零个识别条目的过渡帧会被忽略。页面按当前本地 Profile 与 Shard ID 合并，并通过临时文件替换保存到 `config/qcloudy_addition_shard_warehouse.json`。QCA 不发送 `/hb`、不请求另一页、不点击槽位、不读取隐藏背包。
 - **界面与保存：**`ShardPlanningScreen` 提供 Plan、Recipes、Shards、Fusion Lines、Warehouse 与 Settings。直接配方可分别输入输入/输出筛选；Fusion 图节点位置可本地拖动；模式、目标、数量、自定义速率、图节点、价格侧选择、Kuudra 参数与 Materials Only 通过 QCA 配置持久化。Planner 只能显示资料，无法执行任何路线步骤。
 
@@ -405,6 +405,18 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - 配置先写临时文件，再尽可能原子替换。
 
 QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程账号数据或重连地址。
+
+## 玩家档案浏览与 QCloudy 市场服务
+
+`ProfileCommands` 注册 Brigadier 字面量 `/pv`，对应玩家输入的 `//pv`，并注册普通客户端字面量 `qpv`；它绝不占用普通 `/pv`。两个根节点各自接受一个可选的单个 `StringArgumentType.word()` 玩家名/UUID 参数；省略时读取本机游戏 Profile 名称。命令只在客户端线程构造 `ProfileViewerScreen`，不会调用 `sendCommand` 或 `sendChat`。
+
+`QcaApiClient` 是固定路由 Java HTTP 客户端。其固定数据来源为普通 443 端口的 `https://api.qcloudy.net/`；禁止跳转，连接/请求超时分别为五秒/十五秒，每个响应在 UTF-8 解析前用流式读取限制为 4 MiB。任意 URL、用户信息、fragment、改变后的响应 URI、非 HTTPS 与其他端口都会被拒绝。`ProfileJsonParser` 只接受 schema 1，限制字符串与 Profile 数量，忽略可向后兼容的未知分类，并且没有 Dungeon 枚举。`ProfileService` 先在本地校验名称/UUID，用单调递增 generation 取消被新请求替代的工作，解析有界错误信封，并只把成功快照保存到进程内 `SessionProfileCache`。本地条目在相关服务端最早时间边界到期，并且绝不超过十分钟。
+
+主 `/v1/pv/{target}` 响应包含身份、可选择的 Profile 描述、独立数据源元数据与非 Dungeon 分类。Museum/Garden 使用补充固定端点，使六小时/十二小时缓存与完整 Profile 一小时缓存保持独立；补充端点失败时，已经加载的主快照仍可使用。服务端 NBT 解码只输出有界物品摘要，不把 Base64 发给界面；其他/Farming 与尚未分类字段也使用同一有界投影预算。Museum 会先验证成员关系，并且只返回被查询 UUID 对应的 member。`ProfileViewerScreen` 使用 QCA surface/card、明确 loading/error/private/missing/partial/stale 状态、Profile 选择器，以及两条可以直接拖动的 sidebar/content `VerticalScrollbar`。
+
+可部署 FastAPI 服务位于 `backend/qcloudy-api`。`Settings` 只从服务器环境读取 `QCA_HYPIXEL_API_KEY`。`HypixelUpstream` 只暴露命名方法而非通用代理，并且只给 player/profiles/Museum/Garden 请求附加 `API-Key`；Bazaar、active/ended auctions、公开资源和 Mojang 名称解析均不带 Key。`CacheStore` 优先 Redis、故障时回退进程内存，支持请求合并、仅技术故障使用旧缓存，以及分布式采集锁。成功返回的 private/missing 是新的缓存值，因此会替换旧可见数据。
+
+`MarketManager` 每 60 秒刷新 Bazaar、每 120 秒刷新 active AH、每 30 秒读取 ended auctions、每六小时检查静态资源；公开 item resources 使用 14 天技术缓存。active AH 依次读取 page 0、有限并发的其余页面与最终 page 0 源版本检查；任何页面缺失或漂移都会拒绝整个周期，因此只原子发布一致快照。物品身份由有界 NBT 解析与稳定 variant fingerprint 得出；active BIN 同时提供最低 BIN 与最低最多五个 listing 的中位数。ended auctions 以 auction ID 在 SQLite 去重，约保留 30 天；采集器错过官方 60 秒窗口会记录 coverage gap。完整市场来源拥有全部所需已发布组成；`partial` 会在至少一个组成已过时或不可用时保留仍可使用的值。价格优先真实成交中位数，再回退稳健 listing；没有有效样本时为 `UNKNOWN`，绝不是 0。打开 PV 或 Planner 只读取已发布快照，不启动或加速采集器。
 Release 检查状态和已经确认的远端结果只保存在本次进程内；不会持久化更新响应、提醒历史、用户名、UUID 或服务器地址。
 
 ## 14. 完整对外操作清单
@@ -414,6 +426,10 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 | `/qca`、`/qc` | 打开本地QCA设置 | 无服务器载荷 |
 | `/qshard [英文查询]` | 打开本地离线 Shard Fusion Guide 并预填搜索 | 无服务器载荷 |
 | `/cake`、`/centurycakeeffect` | 打开本地 Century Cake 效果/计时界面 | 无服务器载荷 |
+| 玩家输入 `//pv [玩家名或 UUID]` 或 `/qpv [玩家名或 UUID]` | 打开只读界面；没有可用进程缓存时，向固定 `api.qcloudy.net` 发出一次有界档案主请求 | 无 Minecraft 服务器载荷；玩家明确触发 |
+| 玩家切换 SkyBlock Profile 或重试 PV | 发出对应的有界档案主请求，并受进程缓存与请求 generation 取消机制约束 | 无 Minecraft 服务器载荷；玩家明确触发 |
+| 玩家在 PV 中打开尚未缓存的 Museum 或 Garden | 向对应固定补充端点发出一次有界 HTTPS 请求；失败不影响已加载的主快照 | 无 Minecraft 服务器载荷；玩家明确触发 |
+| 玩家打开 Shard Planner 并加载价格快照 | 从固定 `api.qcloudy.net` 发出一次有界异步 Shard 价格 HTTPS 读取；不会启动市场采集器 | 无 Minecraft 服务器载荷；玩家明确触发 |
 | 玩家输入 `/th` | `sendCommand("warp torrhus")` | 否 |
 | 玩家输入 `/helia` | `sendCommand("chapter torrhus")` | 否 |
 | 玩家点击带下划线的 Century Cake 续效果文字 | 通过 Minecraft 聊天 `RUN_COMMAND` 点击事件执行 `sendCommand("visit northwestcloudy")` | 否 |

@@ -2,6 +2,30 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha1] - 2026-09-01
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Added
+
+- Added the read-only QCA Player Profile Viewer, opened with `//pv [player or UUID]` or `/qpv [player or UUID]`; omitting the target uses the local player. QCA deliberately does not register ordinary `/pv`.
+- Added profile switching and bounded non-Dungeon sections for overview, gear, accessories, pets, inventories/storage, skills, Slayer, mining, minions, bestiary, collections, Crimson Isle, Rift, miscellaneous/farming, Museum, Garden, and Market/Net Worth.
+- Added the deployable `api.qcloudy.net` backend for cached, transformed Hypixel profile and market data. The API key remains server-side; Museum is scoped to the requested member and raw item Base64/NBT is never sent to the mod.
+- Added independent Bazaar, atomic active-AH, and deduplicated completed-sale collectors. Unknown prices remain unknown instead of becoming zero, and incomplete estimates are labelled as lower bounds.
+
+### Changed
+
+- Shard Planner prices now use QCloudy's bounded Bazaar snapshot instead of another mod's private client cache. Opening the planner performs one bounded asynchronous snapshot request; ordinary inventory actions still do not trigger networking.
+- Added cached layout, visible-row-only drawing, cancellable HTTP requests, draggable side/content scrollbars, and lazy Museum/Garden requests to the profile screen.
+- Added server-side authenticated-request budgets and 429 backoff, source-completeness checks, per-unit AH stack pricing, derived net-worth caching, and privacy-preserving deployment defaults with access logs disabled.
+- Market publication now rejects regressed AH snapshots and duplicate ended generations, records collection gaps, batches sale statistics into fixed set-based queries, and fails closed for sparse, ambiguous, incomplete, or low-confidence prices. A complete estimate requires continuous seven-day ended-auction coverage plus complete Bazaar, AH, purse, bank, holdings, decoding, and high-confidence pricing inputs.
+- Bounded caches now use the agreed freshness windows: player-name UUID mappings 72 hours, complete SkyBlock profiles 1 hour, Museum 6 hours, Garden 12 hours, Bazaar 60 seconds, active AH 120 seconds, and ended-auction polling 30 seconds.
+
+### Scope
+
+- Dungeon party profile inspection is intentionally not included in this build.
+- `0.3.10-alpha1` is not a GitHub/Modrinth publication target and is ignored by the stable-Release update checker.
+
 ## [0.3.10-beta] - 2026-08-31
 
 Public Beta for Minecraft 26.1.2 and 26.2. This entry contains every player-facing change completed since stable Release 0.3.9.

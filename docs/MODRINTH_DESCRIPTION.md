@@ -14,13 +14,23 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab, and the complete Player Profile Viewer section, belong to the unpublished `0.3.10-alpha1` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+
 ### Attribute Shard Lab
 
 - Offline catalog for all 320 Bazaar-listed Attribute Shards, with per-ID icons, rarity and semantic game colours.
 - Details include effect, family, skill, mob type, natural acquisition, capture/kill requirements, reviewed drop information, and Fusion-only status.
 - Ordered Recipes and Uses pages, reverse relationships, clickable navigation, Special Fusion yields, Chameleon behavior, and alternative routes.
 - Multi-step Fusion Tree, Materials Only totals, editable Shards/hour rates, Ironman planning, draggable Fusion Lines, and a per-profile Hunting Box warehouse.
-- Bazaar-aware routes use only an optional compatible provider's existing client cache. QCA never contacts Bazaar, the Wiki, or a pricing server at runtime; price modes become unavailable when no suitable provider exists.
+- Bazaar-aware routes use QCloudy's bounded market snapshot. Opening the Planner performs one bounded asynchronous HTTPS read when prices are loaded. Acquisition cost uses instant-buy and liquidation uses instant-sell; unavailable prices remain unknown. Ironman and offline planning continue without the service.
+
+### Player Profile Viewer
+
+> **Development preview:** this section describes the unpublished `0.3.10-alpha1` Minecraft 26.1.2 source snapshot. Player Profile Viewer is not included in public Beta 0.3.10.
+
+- `//pv [player or UUID]` and `/qpv [player or UUID]` open a read-only QCA-styled SkyBlock profile screen; no argument means the local player. Ordinary `/pv` remains available to other mods.
+- Select between the player's visible profiles and inspect non-Dungeon Overview, Gear, Accessories, Pets, inventories/storage, Skills, Slayer, Mining, Minions, Bestiary, Collections, Crimson Isle, Rift, Misc/Farming, Museum, Garden, and Market/Net Worth sections.
+- Private, missing, partial, and stale states are labelled. A complete market source has all required published components; partial data can retain usable prices, while an unpriced item remains unknown rather than zero. PV reads published market snapshots and never starts a collector. Raw item NBT is transformed server-side; the mod contains no Hypixel API key.
 
 ### HUDs, pets, and timers
 
@@ -55,7 +65,7 @@ The request sends no Minecraft username, UUID, server address, profile, mod list
 
 ## Client-only boundary
 
-QCA reads information already delivered to the client: received Tab/scoreboard/chat/title text, open menus, local inventory, loaded entities, and already-loaded blocks. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, automatic downloader/updater, hidden chunk request, or runtime Hypixel API dependency. Its only QCA-owned runtime web request is the bounded stable Release-manifest check disclosed above.
+QCA reads information already delivered to the client plus explicit, read-only profile/market queries made only when the player opens the corresponding QCA view. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, automatic downloader/updater, or hidden chunk request. The mod has no Hypixel API key and never directly calls authenticated Hypixel profile routes. It uses only the fixed `https://api.qcloudy.net` transformed-data origin (no redirects, bounded response) and the stable Release-manifest request disclosed above. A profile request reveals the connecting IP, QCA User-Agent, and requested player/profile to QCloudy's server, but sends no Minecraft session credential, server address, mod list, chat, coordinates, cookie, or telemetry identifier.
 
 The always-available local `/th` and `/helia` shortcuts send `warp torrhus` and `chapter torrhus` only when the player enters those shortcuts; the Century Cake renewal action sends `visit northwestcloudy` only when its chat action is clicked. Separately enabled party/chat tools can send their documented Party, private-message, Stream, coordinate, Dungeon, and Kuudra command payloads only after their own master/child switches, sender scope, exact parser, player resolution, and cooldown gates permit them. These tools never simulate a click, move the player, or use an item.
 

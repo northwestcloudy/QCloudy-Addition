@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "lastUpdated": 1700000000000,
+  "products": {
+    "SHARD_TEST": {
+      "product_id": "SHARD_TEST",
+      "quick_status": {
+        "buyPrice": 125.5,
+        "sellPrice": 100.25,
+        "buyVolume": 500,
+        "sellVolume": 400
+      }
+    }
+  }
+}

@@ -1,24 +1,33 @@
 package cloudy.autume.addition.inventory;
 
+import cloudy.autume.addition.QCloudyAdditionClient;
+import cloudy.autume.addition.network.QcaApiClient;
+import cloudy.autume.addition.profile.ShardBazaarLoadResult;
+import cloudy.autume.addition.profile.ShardBazaarService;
+import cloudy.autume.addition.profile.ShardBazaarSide;
+import cloudy.autume.addition.profile.ShardBazaarSnapshot;
 import net.fabricmc.loader.api.FabricLoader;
 
-import java.lang.reflect.Method;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
 
 /**
- * Optional, dependency-free bridge to Bazaar data already cached by another
- * client mod. QCloudy never performs a price HTTP request of its own.
+ * Bounded bridge from the Shard Planner to QCloudy's transformed Bazaar
+ * snapshot. Network work is initiated by the planner's existing background
+ * future; this class never contacts Hypixel directly and never reads another
+ * mod's private price structures.
  */
 public final class ShardPriceService {
-    private static final String SKYBLOCKER_CLASS = "de.hysky.skyblocker.utils.ItemUtils";
-    private static final ShardPriceService INSTANCE = new ShardPriceService();
+    private static final ShardPriceService INSTANCE = new ShardPriceService(
+            new ShardBazaarService(QcaApiClient.createDefault(userAgent()), Clock.systemUTC()));
 
-    private volatile Bridge bridge;
+    private final ShardBazaarService bazaarService;
+    private volatile Availability availability = Availability.NOT_LOADED;
+    private volatile String sourceName = "QCloudy market snapshot (not loaded)";
 
-    private ShardPriceService() {
+    ShardPriceService(ShardBazaarService bazaarService) {
+        this.bazaarService = java.util.Objects.requireNonNull(bazaarService, "bazaarService");
     }
 
     public static ShardPriceService instance() {
@@ -26,66 +35,58 @@ public final class ShardPriceService {
     }
 
     public Availability availability() {
-        return bridge().availability();
+        return availability;
     }
 
     public String sourceName() {
-        return bridge().sourceName();
+        return sourceName;
     }
 
+    /**
+     * Returns catalog Shard IDs mapped to positive Bazaar values. The boolean
+     * keeps its historical UI meaning: true is instant-buy/acquisition cost;
+     * false is instant-sell/liquidation value.
+     */
     public Map<String, Double> snapshot(boolean instantBuy) {
-        Bridge current = bridge();
-        if (!current.availability().available()) return Map.of();
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (ShardFusionCatalog.Shard shard : ShardFusionCatalog.instance().shards()) {
-            double price = current.price(shard.bazaarId(), instantBuy);
-            if (Double.isFinite(price) && price > 0.0) result.put(shard.id(), price);
+        ShardBazaarSide side = instantBuy
+                ? ShardBazaarSide.INSTANT_BUY : ShardBazaarSide.INSTANT_SELL;
+        try {
+            ShardBazaarLoadResult result = bazaarService.load(side).join();
+            ShardBazaarSnapshot snapshot = result.snapshot();
+            Map<String, Double> prices = new LinkedHashMap<>();
+            for (ShardFusionCatalog.Shard shard : ShardFusionCatalog.instance().shards()) {
+                snapshot.price(shard.bazaarId()).ifPresent(price -> prices.put(shard.id(), price));
+            }
+            availability = prices.isEmpty() ? Availability.NO_DATA : Availability.AVAILABLE;
+            String cacheLabel = result.fromSessionCache() ? " · client cache" : "";
+            String staleLabel = snapshot.stale() ? " · stale" : "";
+            sourceName = "QCloudy " + snapshot.source() + cacheLabel + staleLabel;
+            return Map.copyOf(prices);
+        } catch (RuntimeException exception) {
+            availability = Availability.UNAVAILABLE;
+            sourceName = "QCloudy market snapshot (unavailable)";
+            QCloudyAdditionClient.LOGGER.warn("Could not load the QCloudy Shard price snapshot", exception);
+            return Map.of();
         }
-        return Map.copyOf(result);
     }
 
-    /** Re-probes after a resource reload or optional-mod update. */
+    /** Clears only the bounded in-process price cache. */
     public void reset() {
-        bridge = null;
+        bazaarService.clearSessionCache();
+        availability = Availability.NOT_LOADED;
+        sourceName = "QCloudy market snapshot (not loaded)";
     }
 
-    private Bridge bridge() {
-        Bridge current = bridge;
-        if (current != null) return current;
-        synchronized (this) {
-            current = bridge;
-            if (current == null) {
-                current = detect();
-                bridge = current;
-            }
-            return current;
-        }
-    }
-
-    private static Bridge detect() {
-        FabricLoader loader = FabricLoader.getInstance();
-        if (loader.isModLoaded("skyblocker")) {
-            try {
-                Class<?> type = Class.forName(SKYBLOCKER_CLASS, false,
-                        Thread.currentThread().getContextClassLoader());
-                Method method = type.getMethod("getItemPrice", String.class, boolean.class);
-                return new SkyblockerBridge(method);
-            } catch (ReflectiveOperationException | LinkageError exception) {
-                return new UnavailableBridge(Availability.INCOMPATIBLE,
-                        "Skyblocker (incompatible price API)");
-            }
-        }
-        if (loader.isModLoaded("skyhanni") || loader.isModLoaded("firmament")) {
-            // These mods currently keep their Bazaar structures internal. Using
-            // private implementation fields would silently break across updates.
-            return new UnavailableBridge(Availability.NO_STABLE_API,
-                    "SkyHanni/Firmament (no stable public price API)");
-        }
-        return new UnavailableBridge(Availability.NO_PROVIDER, "None");
+    private static String userAgent() {
+        String version = FabricLoader.getInstance()
+                .getModContainer(QCloudyAdditionClient.MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("unknown");
+        return ("QCloudy_Addition/" + version).replaceAll("[^A-Za-z0-9._+/-]", "_");
     }
 
     public enum Availability {
-        AVAILABLE(true), NO_PROVIDER(false), NO_STABLE_API(false), INCOMPATIBLE(false), NO_DATA(false);
+        AVAILABLE(true), NOT_LOADED(false), NO_DATA(false), UNAVAILABLE(false);
 
         private final boolean available;
 
@@ -95,54 +96,6 @@ public final class ShardPriceService {
 
         public boolean available() {
             return available;
-        }
-    }
-
-    private interface Bridge {
-        Availability availability();
-
-        String sourceName();
-
-        double price(String bazaarId, boolean instantBuy);
-    }
-
-    private record UnavailableBridge(Availability availability, String sourceName) implements Bridge {
-        @Override
-        public double price(String bazaarId, boolean instantBuy) {
-            return Double.NaN;
-        }
-    }
-
-    private static final class SkyblockerBridge implements Bridge {
-        private final Method method;
-
-        private SkyblockerBridge(Method method) {
-            this.method = method;
-        }
-
-        @Override
-        public Availability availability() {
-            return Availability.AVAILABLE;
-        }
-
-        @Override
-        public String sourceName() {
-            return "Skyblocker client cache";
-        }
-
-        @Override
-        public double price(String bazaarId, boolean instantBuy) {
-            try {
-                Object value = method.invoke(null, bazaarId, instantBuy);
-                if (value instanceof OptionalDouble optional) return optional.orElse(Double.NaN);
-                if (value instanceof Optional<?> optional && optional.orElse(null) instanceof Number number) {
-                    return number.doubleValue();
-                }
-                if (value instanceof Number number) return number.doubleValue();
-            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
-                // A single malformed/missing price must not disable Ironman mode.
-            }
-            return Double.NaN;
         }
     }
 }

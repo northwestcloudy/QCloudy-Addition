@@ -35,15 +35,15 @@ if (!(releaseBaselineSequenceText ==~ /[1-9][0-9]*/)) {
 }
 def releaseBaselineSequence = Long.parseLong(releaseBaselineSequenceText)
 
-def channelArtifactSuffix = releaseChannelKey == 'alpha'
-        ? "Alpha-${alphaIteration}"
-        : releaseChannel
-version = "${versionCore}+${targetMinecraftVersion}-${channelArtifactSuffix}"
+def artifactVersion = releaseChannelKey == 'alpha'
+        ? "${versionCore}-alpha${alphaIteration}+${targetMinecraftVersion}"
+        : "${versionCore}+${targetMinecraftVersion}-${releaseChannel}"
+version = artifactVersion
 group = project.maven_group
 
 def expandedVersion = version.toString()
 def metadataVersion = releaseChannelKey == 'alpha'
-        ? "${versionCore}-alpha.${alphaIteration}+${targetMinecraftVersion}"
+        ? "${versionCore}-alpha${alphaIteration}+${targetMinecraftVersion}"
         : releaseChannelKey == 'beta'
         ? "${versionCore}-beta+${targetMinecraftVersion}"
         : "${versionCore}+${targetMinecraftVersion}"

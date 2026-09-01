@@ -1,3 +1,40 @@
+# QCloudy_Addition 0.3.10-alpha1 profile and market validation
+
+Date: 2026-09-01<br>
+Deliverable target: Minecraft 26.1.2<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha1` adds the QCA-hosted read-only Player Profile Viewer and Bazaar/Auction House data path. It intentionally excludes Dungeon party profile inspection. The viewer is opened only through `//pv [player or UUID]` or `/qpv [player or UUID]`; QCA does not register ordinary `/pv`. This Alpha was built and tested only for Minecraft 26.1.2 and remains unpublished: public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Deliverables
+
+- `release/QCloudy_Addition-0.3.10-alpha1+26.1.2.jar` — 3,737,569 bytes — `6c2c53d80a2c2ec7a0cf09dd3150aa3b0cc5183fdd00342f3cac0d085aff4fa2`
+- `release/QCloudy_Addition-0.3.10-alpha1+26.1.2-sources.jar` — 3,142,983 bytes — `fa1c8f051cc45f5a1c68c82038e2003c90d71e4c505aec4efc6baea4c58d33f9`
+- `release/QCloudy_API-1.0.0+QCA-0.3.10-alpha1.zip` — 56,597 bytes — `6df7c1f69ec9abd02e7fa3442f373c5c3845ea6f1048c79a1a487cdd9d4cfb41`
+
+## Completed verification
+
+- Minecraft 26.1.2 completed 59 suites and 331 tests with 0 failures, 0 errors, and 0 skipped tests. Minecraft 26.2 was not built or tested for this Alpha.
+- The backend completed 56 tests, Python compilation, OpenAPI regeneration, and validation of all 8 documented routes.
+- Both JARs passed `jar --validate` and `unzip -t`; the backend archive passed `unzip -t`, starts directly at `app/`/`deploy/`, and contains no `.env`, API key, SQLite database, test fixture, bytecode, or cache directory.
+- The playable JAR declares the exact version `0.3.10-alpha1+26.1.2`, client-only environment, Java 25, Fabric Loader 0.19.3+, Minecraft 26.1.2, and its exact Fabric API dependency. Packaged release metadata remains Alpha with stable Release baseline sequence 1.
+- Command registration, profile switching, 17 non-Dungeon sections, lazy Museum/Garden loading, cancellable bounded HTTP, draggable profile scrollbars, and the Shard Planner's QCA Bazaar snapshot path are covered by source and regression checks.
+- Market regressions cover AH snapshot rollback prevention, ended-generation gaps, deduplication, stack unit pricing, bounded collectors, set-based sales queries, unknown/low-confidence fail-closed behavior, and the complete-estimate gate.
+- Cache policy is bounded at 72 hours for player-name UUID mappings, 1 hour for complete SkyBlock profiles, 6 hours for Museum, 12 hours for Garden, 60 seconds for Bazaar, 120 seconds for active AH, and 30 seconds for ended-auction polling.
+- Source and documentation whitespace checks passed.
+
+## Deployment and manual-validation boundary
+
+- At validation time, `https://api.qcloudy.net/health` returned `{"status":"ok"}`, while `/openapi.json` returned 404. Therefore the newly packaged backend has not yet been deployed; installing only the JAR will show the service-unavailable state for profile/market data.
+- Public deployment requires a reviewed Hypixel Production application/key. The key belongs only in `/etc/qcloudy-api.env`; it is never packaged into or returned to the client.
+- A new deployment needs seven continuous days of ended-auction collection before a net-worth estimate can be marked complete. Until then, or when any source is private/incomplete/low-confidence, QCA deliberately shows a partial lower bound or unknown value.
+- No authenticated Hypixel session, live Production key, in-game visual pass, complete provider modpack, every GUI scale, or every private-profile combination was independently exercised in this local validation.
+- `0.3.10-alpha1` is not a GitHub Release, tag, Modrinth version, or stable update target.
+
+---
+
 # QCloudy_Addition 0.3.10 Beta dual-target validation
 
 Date: 2026-08-31

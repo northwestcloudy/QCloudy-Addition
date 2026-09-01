@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "page": 0,
+  "totalPages": 2,
+  "totalAuctions": 2,
+  "lastUpdated": 1700000000000,
+  "auctions": [
+    {
+      "uuid": "fixture-auction-0",
+      "bin": true,
+      "starting_bid": 1000,
+      "item_name": "Test Blade",
+      "tier": "RARE"
+    }
+  ]
+}

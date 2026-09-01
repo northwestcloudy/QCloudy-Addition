@@ -1,6 +1,8 @@
 # QCloudy_Addition feature specification
 
-## Unified settings and HUD control — Beta 0.3.10 (experimental concept test)
+## Unified settings and HUD control — 0.3.10-alpha1 development snapshot
+
+> This source tree contains unpublished Alpha work. The current public test remains Beta 0.3.10, and Release 0.3.9 remains the latest stable build.
 
 > **Caution:** Unified Settings Editor and Unified HUD Editor are concept tests, remain disabled by default, and are not yet stable. Provider updates may invalidate recognised paths. Back up provider configuration, use these editors cautiously, and verify writes in the provider-native editor.
 
@@ -177,7 +179,7 @@ Epic names use Minecraft's dark-purple `§5` instead of light-purple `§d`. Rari
 
 **Cost models:** Fastest uses the bundled baseline Shards-per-hour table or the player's local per-Shard override. Hunter Fortune, local handling time, and Pure Reptile expectation are considered. Kraken can instead use Kuudra tier, estimated clear time, coins/hour, key opportunity cost, and downtime. Normal Fastest may compare hunting time against price/coins-hour time; Normal Cheapest uses prices directly. Ironman never uses Bazaar. Guaranteed integer material requirements remain visible even where Pure Reptile can improve the expected route cost.
 
-**Optional prices:** QCA has no Bazaar downloader and no required price mod. If a compatible Skyblocker is present, QCA reflectively calls only its public `ItemUtils.getItemPrice(String, boolean)` method and copies the already-cached result. This creates no compile/runtime dependency. SkyHanni and Firmament currently do not provide a stable public cross-mod price API, so QCA deliberately does not read their private fields. With no compatible price provider, the UI marks Cheapest as unavailable and all offline, Ironman, rate, recipe, detail, line, and warehouse functions remain available.
+**Market prices:** QCA reads its own transformed, bounded snapshot from `api.qcloudy.net`; no other client mod is required and QCA does not inspect SkyHanni, Skyblocker, or Firmament internals. Opening the Planner performs one bounded asynchronous HTTPS read when it loads prices. Bazaar acquisition cost uses `buyPrice` (instant buy), while liquidation/net-worth uses `sellPrice` (instant sell). The server refreshes Bazaar every 60 seconds and permits a labelled technical stale fallback for at most ten minutes. A complete source has every required published component; `partial` means one or more market components are stale or unavailable while some usable values remain. An item without a defensible price is `unknown`, and unknown/malformed/non-positive values are omitted rather than changed to zero. Ironman still never uses Bazaar, and all offline, rate, recipe, detail, line, and warehouse functions remain available when the service is unavailable.
 
 **Warehouse:** when—and only when—the player physically opens a received menu titled `(page/total) Hunting Box` or `Hunting Box`, QCA reads visible Shard item IDs and exact `Owned: N Shards` lore, then saves that observed page for the current local profile. It never sends `/hb`, changes page, clicks a slot, or infers an unseen page. A transition/empty frame cannot erase a prior snapshot. The planner can subtract saved quantities from the chosen route; the warehouse screen shows when that profile was last observed and allows a local clear.
 
@@ -206,3 +208,17 @@ Broad numeric ranges use draggable sliders: HUD opacity and scale, cursor-memory
 **Purpose:** let players change intrusive teleport sounds without forcing the tools to be silent.
 
 **What it does:** the master feature and both teleport types default to original audio. Instant Transmission and Etherwarp can independently switch from the received original sound to one of six local Minecraft presets: Chorus Teleport, Enderman Teleport, Amethyst Chime, Experience Orb, End Portal Fill, or Shulker Teleport. Each custom sound has its own 0–100% volume slider at the 64% default; pitch is not altered. QCA replaces only a recognized nearby sound while the local player is holding `ASPECT_OF_THE_END` or `ASPECT_OF_THE_VOID`; it does not change packets, item use, cooldown, distance, or movement. Version-3 muting settings migrate to original audio.
+
+## 11. Player Profile Viewer and market snapshots
+
+### 11.1 Local entry points and visible sections
+
+`//pv`, `//pv <player or UUID>`, `/qpv`, and `/qpv <player or UUID>` open the same read-only QCA screen. Omitting the target uses the local Minecraft player; the ordinary `/pv` root is intentionally left untouched for compatibility. The selected SkyBlock profile can be changed inside the screen. The two scrollbars support wheel, track click, and direct thumb dragging. The viewer has no settings card and no Dungeon/automatic party-profile component.
+
+The screen organises the transformed response into Overview, Gear, Accessories, Pets, Inventory/Ender Chest/Storage/Wardrobe/Vault, Skills, Slayer, Mining, Minions, Bestiary, Collections, Crimson Isle/Kuudra/Dojo/Trophy Fish, Rift, Miscellaneous/Farming, Museum, Garden, and Market/Net Worth. Private, absent, partial, stale, and service-failure states are shown explicitly. For Market/Net Worth, a complete source has all required published snapshots, a partial source can still expose usable prices while one component is stale or missing, and an unpriced item remains `unknown` rather than zero. Encoded NBT is decoded and bounded on the server; raw Base64 is never rendered as profile content.
+
+### 11.2 Cache and market rules
+
+The mod connects only to `https://api.qcloudy.net` with redirects disabled, a five-second connection timeout, fifteen-second request timeout, four-MiB response limit, fixed HTTPS origin, and no Hypixel API key. The backend holds the application key and exposes only fixed transformed routes; it is not a generic Hypixel proxy. Name-to-UUID entries are fresh for 72 hours with no longer stale extension and a 15-minute negative cache. `/v2/player` and the complete `/v2/skyblock/profiles` response are fresh for one hour with stale fallback capped at 24 hours. Museum is fresh for six hours and Garden for twelve hours; both have a 24-hour technical stale ceiling. A successful private/missing response replaces older data instead of resurrecting it as stale. The mod's in-process cache is at most ten minutes and is always capped by server-provided freshness metadata.
+
+The server collects Bazaar approximately every 60 seconds, a complete version-consistent active-AH cycle approximately every two minutes, and ended auctions every 30 seconds. An AH cycle publishes atomically only if every page and the final page-zero check share one source version. Ended-auction samples are deduplicated and kept for roughly 30 days; a collector outage longer than the endpoint's 60-second coverage window is marked as a coverage gap. Real completed sales are preferred for valuation, robust low-BIN listings are the fallback, and no sample means unknown rather than zero. Opening the viewer never starts or accelerates a collection cycle; it reads only already-published snapshots.

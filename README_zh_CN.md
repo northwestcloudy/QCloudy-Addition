@@ -1,16 +1,17 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是适用于 Minecraft 26.1.2 与 26.2 的纯客户端 Fabric 模组。它专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前公开测试版本为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10；最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha1` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [当前 0.3.10 Beta 更新日志](CHANGELOG_zh_CN.md)
+- [更新日志（当前源码 0.3.10-alpha1；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
+- [档案与市场隐私说明](docs/PRIVACY_zh_CN.md)
 
 默认语言为英文。按 `O`（可在“控制 → 按键绑定 → QCloudy_Addition”中改键）或输入 `/qca`、`/qc` 可打开客户端设置，并随时切换为简体中文。只有名称未被其他客户端命令占用时才会注册对应别名；这些命令只打开本地界面，不会发送给 Hypixel。
 
@@ -41,6 +42,9 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 通用
 
 - **手动重连**：在连接失败和断线界面加入一个原版尺寸的“重新连接”按钮。正常连接尝试开始时就记录目标，所以首次加入失败后也能使用。只有玩家点击按钮才会重新连接；没有倒计时、循环、重试计数、命令或自动加入。
+- **玩家档案浏览**：本地 `//pv [玩家名或 UUID]` 与 `/qpv [玩家名或 UUID]` 打开 QCA 风格只读 SkyBlock 档案界面；省略目标时使用本机玩家。界面可切换 Profile，并通过两条可拖动滚动条查看概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle、Rift、其他/Farming、Museum、Garden 与市场/净值。QCA 不注册普通 `/pv`，本版本也不包含 Dungeon/组队档案查询。市场数据区分完整、部分与旧缓存；无法可靠估值的物品保持未知，绝不按 0 处理。打开 PV 只读取服务已经发布的市场快照，不会启动采集器。
+
+档案界面只连接固定的 `https://api.qcloudy.net`；模组不包含 Hypixel API Key，也不直接访问需要认证的 Hypixel 档案端点。服务端对玩家名/UUID 缓存 72 小时，不再额外延长技术旧缓存；player 和全部 SkyBlock profiles 使用 1 小时新鲜期与最多 24 小时技术旧缓存；Museum 为 6 小时，Garden 为 12 小时。客户端进程缓存最多 10 分钟，且绝不会延长服务端时间边界。成功得到私密或缺失状态时会替换旧快照，不会用旧数据掩盖新的隐私状态。
 
 ### 地图
 
@@ -94,7 +98,7 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 物品与菜单
 
 - **Attribute Shard Fusion Guide**：受 JEI 信息结构启发、完全离线的 320 种当前 Bazaar Shard 浏览器。可按原始英文名称、Shard ID、属性/效果、品质、分类、家族、Skill、生物类型或获取文字搜索。**详细信息**显示 Wiki 已记录的完整效果和所有自然/Fusion 获取方式；**合成来源**显示能产出目标 Shard 的全部有序输入组合，其中也包括 Queen Bee 这类同时拥有自然来源的 Shard；**可合成内容**显示所选 Shard 能继续合成什么。配方卡保留输入顺序，显示数量、可选输出、普通/特殊产量和 Pure Reptile。Epic 使用 Minecraft 深紫色（`§5`），品质、属性、分类、生物类型与获取方式使用对应游戏语义颜色；鼠标悬停于可点击 Shard 文字时，文字会变深并添加下划线。目录与专属图标在发布前离线生成并随模组打包；客户端已经收到的原生 `ItemStack` 仍优先用于材质包显示。本地 `/qshard [英文查询]` 只打开本地界面，不发送聊天或服务器命令。QCA 运行时不访问 Wiki/API/图标服务，也不会自动执行 Fusion。
-- **Shard Planner**：完整保留原 Guide，新增目标数量、完整多步 Fusion Tree、候选路线、Materials Only 汇总、输入/输出独立筛选、可编辑每小时获取速度、Shard 详情、可拖动 Fusion Lines，以及本地保存的 Hunting Box 仓库。Ironman 只使用狩猎速率；Normal 的“最快”可以比较狩猎与购买时间，“最便宜”必须存在兼容的可选 Skyblocker 客户端价格缓存。QCA 自己绝不下载 Bazaar 价格；SkyHanni/Firmament 当前没有稳定公开的跨模组价格 API，因此不会作为价格提供者。没有价格提供者时，价格路线会明确不可用，其余全部离线/速率功能仍正常工作。
+- **Shard Planner**：完整保留原 Guide，新增目标数量、完整多步 Fusion Tree、候选路线、Materials Only 汇总、输入/输出独立筛选、可编辑每小时获取速度、Shard 详情、可拖动 Fusion Lines，以及本地保存的 Hunting Box 仓库。Ironman 只使用狩猎速率；Normal 的“最快”可以比较狩猎与购买时间，“最便宜”读取 QCloudy 自己的有界市场快照。只有打开 Planner 并加载价格时才会进行一次有界异步 HTTPS 读取；获取成本使用 Bazaar 立即买入价，出售/净值使用立即卖出价。服务端大约每分钟更新 Bazaar，技术故障时最多提供十分钟且明确标注的旧快照。不需要安装价格模组；不可用价格保持未知，全部离线与按速率功能仍可使用。
 
 ### 聊天
 

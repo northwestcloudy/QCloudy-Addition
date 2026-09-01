@@ -1,3 +1,40 @@
+# QCloudy_Addition 0.3.10-alpha1 档案与市场验证
+
+日期：2026-09-01<br>
+交付目标：Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha1` 加入由 QCA 后端提供数据的只读玩家档案查看器，以及 Bazaar/Auction House 数据链路；本轮明确不包含 Dungeon 组队档案分析。查看器只能通过 `//pv [玩家名或 UUID]` 或 `/qpv [玩家名或 UUID]` 打开，QCA 不注册普通 `/pv`。本 Alpha 只为 Minecraft 26.1.2 构建和测试，且不公开发布；当前公开 Beta 仍为 0.3.10，稳定 Release 与更新检查基线仍为 0.3.9。
+
+## 交付文件
+
+- `release/QCloudy_Addition-0.3.10-alpha1+26.1.2.jar` — 3,737,569 字节 — `6c2c53d80a2c2ec7a0cf09dd3150aa3b0cc5183fdd00342f3cac0d085aff4fa2`
+- `release/QCloudy_Addition-0.3.10-alpha1+26.1.2-sources.jar` — 3,142,983 字节 — `fa1c8f051cc45f5a1c68c82038e2003c90d71e4c505aec4efc6baea4c58d33f9`
+- `release/QCloudy_API-1.0.0+QCA-0.3.10-alpha1.zip` — 56,597 字节 — `6df7c1f69ec9abd02e7fa3442f373c5c3845ea6f1048c79a1a487cdd9d4cfb41`
+
+## 已完成验证
+
+- Minecraft 26.1.2 完成 59 个测试套件、331 项测试，0 failure、0 error、0 skipped；本 Alpha 没有构建或测试 Minecraft 26.2。
+- 后端完成 56 项测试、Python 编译检查、OpenAPI 重新生成以及全部 8 条文档路由校验。
+- 两个 JAR 均通过 `jar --validate` 与 `unzip -t`；后端压缩包通过 `unzip -t`，解压根层直接是 `app/`/`deploy/`，且不含 `.env`、API Key、SQLite 数据库、测试 fixture、字节码或缓存目录。
+- 可运行 JAR 声明精确版本 `0.3.10-alpha1+26.1.2`、纯客户端环境、Java 25、Fabric Loader 0.19.3+、Minecraft 26.1.2 及精确 Fabric API 依赖；打包发布元数据仍为 Alpha，稳定 Release 基线序号仍为 1。
+- 命令注册、Profile 切换、17 个非 Dungeon 分类、Museum/Garden 按需加载、可取消的有界 HTTP、可拖动档案滚动条，以及 Shard Planner 的 QCA Bazaar 快照路径均完成源码与回归检查。
+- 市场回归覆盖 AH 快照防倒退、ended generation 断档、去重、堆叠单位价格、有界采集器、集合式成交统计、未知/低置信度安全拒绝与完整估值门槛。
+- 缓存策略为：玩家名到 UUID 72 小时、SkyBlock 全部档案 1 小时、Museum 6 小时、Garden 12 小时、Bazaar 60 秒、活跃 AH 120 秒、ended 拍卖轮询 30 秒。
+- 源码与文档空白检查通过。
+
+## 部署与手动验证边界
+
+- 验证时 `https://api.qcloudy.net/health` 返回 `{"status":"ok"}`，但 `/openapi.json` 返回 404，因此新后端尚未部署；只安装客户端 JAR 时，档案/市场数据会进入“服务不可用”状态。
+- 公开部署需要已审核的 Hypixel Production 应用/Key；Key 只能写入服务器 `/etc/qcloudy-api.env`，不会进入客户端或由接口返回。
+- 新部署需要连续采集七天 ended 拍卖，净值才可能标记为完整；此前或任何来源私有、不完整、低置信度时，QCA 会明确显示部分下界或未知。
+- 本地验证没有独立完成已登录 Hypixel、真实 Production Key、游戏内视觉检查、完整模组整合包、所有 GUI Scale 或所有私有档案组合。
+- `0.3.10-alpha1` 不是 GitHub Release、Tag、Modrinth 版本或稳定更新目标。
+
+---
+
 # QCloudy_Addition 0.3.10 Beta 双目标验证
 
 日期：2026-08-31

@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "lastUpdated": 1700000060000,
+  "auctions": [
+    {
+      "auction_id": "fixture-ended-1",
+      "buyer": "cccccccccccccccccccccccccccccccc",
+      "price": 1100,
+      "timestamp": 1700000050000,
+      "bin": true,
+      "item_name": "Test Blade",
+      "tier": "RARE"
+    }
+  ]
+}
