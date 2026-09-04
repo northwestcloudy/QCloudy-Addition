@@ -135,6 +135,7 @@ def find_compound(value: Any, key: str) -> dict[str, Any] | None:
 
 
 _MINECRAFT_FORMATTING = re.compile(r"\u00a7[0-9A-FK-ORa-fk-or]")
+_UNSAFE_LEGACY_CODES = re.compile(r"\u00a7(?![0-9A-FK-ORa-fk-or])")
 
 
 def _bounded_json(value: Any, *, depth: int = 0) -> Any:
@@ -169,6 +170,21 @@ def _display_text(value: Any) -> str | None:
     except ValueError:
         pass
     return _MINECRAFT_FORMATTING.sub("", value)[:256]
+
+
+def _legacy_text(value: Any, maximum: int) -> str | None:
+    """Retain only vanilla legacy formatting codes for a native item tooltip."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        component = json.loads(value)
+        if isinstance(component, dict) and isinstance(component.get("text"), str):
+            value = component["text"]
+    except ValueError:
+        pass
+    value = value.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+    value = _UNSAFE_LEGACY_CODES.sub("", value)
+    return value[:maximum]
 
 
 def _rarity_from_item(item: dict[str, Any]) -> str | None:
@@ -239,6 +255,19 @@ def summarize_inventory_nbt(encoded: str, *, max_items: int = 256) -> list[dict[
                 "count": max(1, min(count, 2_147_483_647)),
                 "itemId": str(item_id)[:128] if item_id is not None else None,
                 "displayName": _display_text(display.get("Name")),
+                "formattedName": _legacy_text(display.get("Name"), 256),
+                "lore": [
+                    line
+                    for line in (
+                        _legacy_text(raw_line, 512)
+                        for raw_line in (
+                            display.get("Lore", [])
+                            if isinstance(display.get("Lore"), list)
+                            else []
+                        )[:80]
+                    )
+                    if line is not None
+                ],
                 "rarity": _rarity_from_item(raw_item),
                 "extraAttributes": _bounded_json(extra),
             }

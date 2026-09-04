@@ -347,7 +347,7 @@ async def test_market_source_requires_bazaar_and_auction_snapshots(app_client) -
     app, _ = app_client
     market = app.state.services.market
     await market.collect_bazaar()
-    source = await market.profile_source()
+    source = await market.source_metadata()
     assert source["status"] == "error"
     assert source["coverageComplete"] is False
     assert "auctions:missing" in source["sourceVersion"]
@@ -373,14 +373,14 @@ async def test_market_source_requires_continuous_ended_coverage(app_client) -> N
     await market.collect_bazaar()
     await market.collect_auctions()
 
-    incomplete = await market.profile_source()
+    incomplete = await market.source_metadata()
     assert incomplete["status"] == "fresh"
     assert incomplete["endedCoverageComplete"] is False
     assert incomplete["coverageComplete"] is False
     assert incomplete["confidence"] == "low"
 
     await _mark_seven_day_ended_coverage_complete(app)
-    complete = await market.profile_source()
+    complete = await market.source_metadata()
     assert complete["status"] == "fresh"
     assert complete["endedCoverageComplete"] is True
     assert complete["coverageComplete"] is True
@@ -388,7 +388,7 @@ async def test_market_source_requires_continuous_ended_coverage(app_client) -> N
 
 
 @pytest.mark.asyncio
-async def test_profile_source_reads_small_metadata_instead_of_full_snapshots(
+async def test_market_source_reads_small_metadata_instead_of_full_snapshots(
     app_client, monkeypatch
 ) -> None:
     app, _ = app_client
@@ -404,7 +404,7 @@ async def test_profile_source_reads_small_metadata_instead_of_full_snapshots(
         return await original_get_json(key)
 
     monkeypatch.setattr(market.cache, "get_json", observed)
-    await market.profile_source()
+    await market.source_metadata()
     assert market.BAZAAR_META_KEY in requested_keys
     assert market.AUCTIONS_META_KEY in requested_keys
     assert market.BAZAAR_KEY not in requested_keys
@@ -421,7 +421,7 @@ async def test_orphaned_metadata_does_not_claim_snapshot_availability(
     await market.collect_auctions()
     await market.cache.delete(market.AUCTIONS_KEY)
 
-    source = await market.profile_source()
+    source = await market.source_metadata()
     assert source["status"] == "error"
     assert source["coverageComplete"] is False
     assert "auctions:missing" in source["sourceVersion"]
@@ -474,250 +474,3 @@ async def test_snapshot_publication_fails_closed_if_metadata_evicts_the_payload(
         )
     assert await market.cache.get_json("metadata") is None
     assert await market.cache.get_json("snapshot") is None
-
-
-@pytest.mark.asyncio
-async def test_portfolio_completeness_requires_balances_projection_and_confidence(
-    app_client
-) -> None:
-    app, _ = app_client
-    market = app.state.services.market
-    await market.collect_bazaar()
-    await market.collect_auctions()
-    await _mark_seven_day_ended_coverage_complete(app)
-    sections = {
-        "overview": {
-            "payload": {
-                "currencies": {"coin_purse": 50.0},
-                "profile": {"banking": {"balance": 150.0}},
-            }
-        },
-        "inventory": {
-            "payload": {
-                "inv_contents": {
-                    "decodeStatus": "decoded",
-                    "items": [
-                        {"itemId": "SHARD_TEST", "variantKey": None, "count": 2}
-                    ],
-                }
-            }
-        },
-        "pets": {"payload": {"pets": []}},
-    }
-
-    complete, source = await market.portfolio(sections)
-    assert source["coverageComplete"] is True
-    assert complete["coinBalances"]["complete"] is True
-    assert complete["perItem"][0]["confidence"] == "high"
-    assert complete["estimateComplete"] is True
-
-    missing_bank = {
-        **sections,
-        "overview": {
-            "payload": {
-                "currencies": {"coin_purse": 50.0},
-                "profile": {},
-            }
-        },
-    }
-    balance_incomplete, _ = await market.portfolio(missing_bank)
-    assert balance_incomplete["coinBalances"]["complete"] is False
-    assert balance_incomplete["estimateComplete"] is False
-
-    projection_incomplete, _ = await market.portfolio(
-        sections, holdings_projection_complete=False
-    )
-    assert projection_incomplete["truncated"] is True
-    assert projection_incomplete["estimateComplete"] is False
-
-    missing_inventory = {key: value for key, value in sections.items() if key != "inventory"}
-    holdings_incomplete, _ = await market.portfolio(missing_inventory)
-    assert holdings_incomplete["truncated"] is True
-    assert holdings_incomplete["estimateComplete"] is False
-
-
-@pytest.mark.asyncio
-async def test_derived_portfolio_cache_cannot_hide_a_new_coverage_gap(
-    app_client
-) -> None:
-    app, _ = app_client
-    market = app.state.services.market
-    await market.collect_bazaar()
-    await market.collect_auctions()
-    await _mark_seven_day_ended_coverage_complete(app)
-    sections = {
-        "overview": {
-            "payload": {
-                "currencies": {"coin_purse": 50.0},
-                "profile": {"banking": {"balance": 150.0}},
-            }
-        },
-        "inventory": {
-            "status": "available",
-            "payload": {
-                "inv_contents": {
-                    "decodeStatus": "decoded",
-                    "items": [
-                        {"itemId": "SHARD_TEST", "variantKey": None, "count": 2}
-                    ],
-                }
-            },
-        },
-        "pets": {"payload": {"pets": []}},
-    }
-    before, before_source = await market.portfolio(sections)
-    assert before_source["coverageComplete"] is True
-    assert before["estimateComplete"] is True
-
-    now_ms = int(time.time() * 1000)
-    await app.state.services.storage.record_coverage_gap(
-        now_ms - 1_000, now_ms, "test newly observed gap"
-    )
-    after, after_source = await market.portfolio(sections)
-    assert after_source["coverageComplete"] is False
-    assert after["estimateComplete"] is False
-
-
-@pytest.mark.asyncio
-async def test_pet_valuation_fails_closed_when_level_cannot_be_reproduced(
-    app_client, monkeypatch
-) -> None:
-    app, _ = app_client
-    market = app.state.services.market
-    await market.collect_bazaar()
-    await market.collect_auctions()
-    await _mark_seven_day_ended_coverage_complete(app)
-
-    async def pricing_must_not_run(_requests):
-        raise AssertionError("unreliable pet variants must never be priced")
-
-    monkeypatch.setattr(market, "prices", pricing_must_not_run)
-    sections = {
-        "overview": {
-            "payload": {
-                "currencies": {"coin_purse": 50.0},
-                "profile": {"banking": {"balance": 150.0}},
-            }
-        },
-        "inventory": {
-            "payload": {
-                "inv_contents": {
-                    "decodeStatus": "decoded",
-                    "items": [{"itemId": "PET", "variantKey": None, "count": 1}],
-                }
-            }
-        },
-        "pets": {
-            "payload": {
-                "pets": [
-                    {"type": "GOLDEN_DRAGON", "tier": "LEGENDARY", "exp": 1_000}
-                ]
-            }
-        },
-    }
-    payload, _ = await market.portfolio(sections)
-    assert {item["kind"] for item in payload["perItem"]} == {"item", "pet"}
-    assert all(
-        item["unpriceableReason"] == "pet_level_unresolved"
-        for item in payload["perItem"]
-    )
-    assert all(item["unitPrice"] is None for item in payload["perItem"])
-    assert all(item["confidence"] == "unknown" for item in payload["perItem"])
-    assert payload["unknownItems"] == 2
-    assert payload["estimateComplete"] is False
-
-
-def test_portfolio_uses_recent_sale_before_robust_listing() -> None:
-    unit, method = MarketManager._choose_unit_price(
-        {
-            "sales24h": {
-                "median": 950.0,
-                "sampleCount": 5,
-                "coverageComplete": True,
-            },
-            "sales7d": {
-                "median": 975.0,
-                "sampleCount": 5,
-                "coverageComplete": True,
-            },
-            "auction": {
-                "robustListingPrice": 1000.0,
-                "listingCount": 3,
-                "parseQuality": "exact",
-            },
-        }
-    )
-    assert (unit, method) == (950.0, "recent_sale_24h")
-
-    fallback = MarketManager._choose_unit_price(
-        {
-            "sales24h": {
-                "median": 950.0,
-                "sampleCount": 1,
-                "coverageComplete": False,
-            },
-            "sales7d": {
-                "median": 975.0,
-                "sampleCount": 4,
-                "coverageComplete": True,
-            },
-            "auction": {
-                "robustListingPrice": 1000.0,
-                "listingCount": 3,
-                "parseQuality": "exact",
-            },
-        }
-    )
-    assert fallback == (1000.0, "ah_robust_listing")
-
-    unknown = MarketManager._choose_unit_price(
-        {
-            "sales24h": {
-                "median": 950.0,
-                "sampleCount": 1,
-                "coverageComplete": False,
-            },
-            "sales7d": {
-                "median": 975.0,
-                "sampleCount": 4,
-                "coverageComplete": True,
-            },
-            "auction": {
-                "robustListingPrice": 1000.0,
-                "listingCount": 2,
-                "parseQuality": "exact",
-            },
-        }
-    )
-    assert unknown == (None, None)
-
-
-@pytest.mark.asyncio
-async def test_portfolio_does_not_count_unknown_items_as_zero(app_client) -> None:
-    app, _ = app_client
-    market = app.state.services.market
-    await market.collect_bazaar()
-    await market.collect_auctions()
-    sections = {
-        "inventory": {
-            "payload": {
-                "inv_contents": {
-                    "items": [
-                        {"itemId": "SHARD_TEST", "variantKey": None, "count": 2},
-                        {"itemId": "NO_PRICE_ITEM", "variantKey": None, "count": 3},
-                    ]
-                }
-            }
-        },
-        "pets": {"payload": {"pets": []}},
-    }
-    payload, _ = await market.portfolio(sections)
-    assert payload["pricedItems"] == 1
-    assert payload["unknownItems"] == 1
-    assert payload["estimatedNetWorth"] == 200.5
-    assert payload["knownEstimatedValue"] == 200.5
-    assert payload["estimateComplete"] is False
-    unknown = next(item for item in payload["perItem"] if item["itemId"] == "NO_PRICE_ITEM")
-    assert unknown["unitPrice"] is None
-    assert unknown["totalPrice"] is None
-    assert unknown["method"] is None

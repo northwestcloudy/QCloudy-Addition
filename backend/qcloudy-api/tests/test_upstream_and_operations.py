@@ -114,7 +114,7 @@ async def test_authenticated_budget_is_shared_across_concurrent_endpoints() -> N
             hypixel_api_key="super-secret",
             scheduler_enabled=False,
             hypixel_authenticated_budget_per_minute=60,
-            hypixel_authenticated_burst=2,
+            hypixel_authenticated_burst=1,
         ),
         client=client,
         clock=lambda: 100.0,
@@ -123,13 +123,11 @@ async def test_authenticated_budget_is_shared_across_concurrent_endpoints() -> N
     results = await asyncio.gather(
         upstream.fetch_player(PLAYER_UUID),
         upstream.fetch_profiles(PLAYER_UUID),
-        upstream.fetch_museum("b" * 32),
-        upstream.fetch_garden("b" * 32),
         return_exceptions=True,
     )
-    assert sum(not isinstance(result, Exception) for result in results) == 2
-    assert sum(isinstance(result, UpstreamTemporaryError) for result in results) == 2
-    assert len(requests) == 2
+    assert sum(not isinstance(result, Exception) for result in results) == 1
+    assert sum(isinstance(result, UpstreamTemporaryError) for result in results) == 1
+    assert len(requests) == 1
     await client.aclose()
 
 
@@ -334,7 +332,7 @@ async def test_authenticated_fail_fast_retry_after_reaches_the_http_client(
 
     monkeypatch.setattr(upstream, "fetch_player", throttled)
     _, client = app_client
-    response = await client.get(f"/v1/pv/{PLAYER_UUID}")
+    response = await client.get(f"/v1/dungeons/quick-view/{PLAYER_UUID}?floor=F7")
 
     assert response.status_code == 503
     assert response.headers["Retry-After"] == "9"
@@ -355,11 +353,12 @@ async def test_health_readiness_openapi_and_error_envelope(app_client) -> None:
     assert ready.json()["data"]["dependencies"]["sqlite"] == "ok"
 
     spec = (await client.get("/openapi.json")).json()
-    assert "/v1/pv/{target}" in spec["paths"]
+    assert "/v1/dungeons/quick-view/{target}" in spec["paths"]
     assert "/v1/market/prices" in spec["paths"]
     assert "/v1/market/bazaar/shards" in spec["paths"]
+    assert not any(path.startswith("/v1/pv") for path in spec["paths"])
 
-    invalid = await client.get("/v1/pv/!!")
+    invalid = await client.get("/v1/dungeons/quick-view/!!")
     assert invalid.status_code == 422
     assert set(invalid.json()) == {"schemaVersion", "error"}
 
@@ -381,7 +380,7 @@ async def test_production_readiness_requires_the_authenticated_hypixel_key(
     }
 
 
-def test_nginx_template_discards_request_scoped_logs_with_pv_identities() -> None:
+def test_nginx_template_discards_request_scoped_logs_with_player_identities() -> None:
     config = (
         Path(__file__).resolve().parents[1]
         / "deploy"

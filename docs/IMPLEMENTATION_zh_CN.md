@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha2` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha3` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -406,19 +406,19 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程账号数据或重连地址。
 
-## 玩家档案浏览与 QCloudy 市场服务
+## Dungeon 玩家快速查看与 QCloudy 服务
 
-`ProfileCommands` 注册 Brigadier 字面量 `/pv`，对应玩家输入的 `//pv`，并注册普通客户端字面量 `qpv`；它绝不占用普通 `/pv`。两个根节点各自接受一个可选的单个 `StringArgumentType.word()` 玩家名/UUID 参数；省略时读取本机游戏 Profile 名称。命令只在客户端线程构造 `ProfileViewerScreen`，不会调用 `sendCommand` 或 `sendChat`。
+QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qpv`、`//pv` 处理器、档案界面/模型/缓存、物品价格悬停客户端、`/v1/pv/*` 路由或 `/v1/market/tooltip-prices` 路由。Shard Bazaar 传输类型已迁移到 `market.shard`，因此现有 Shard Planner 不依赖被删除的包。
 
-`QcaApiClient` 是固定路由 Java HTTP 客户端。其固定数据来源为普通 443 端口的 `https://api.qcloudy.net/`；禁止跳转，连接/请求超时分别为五秒/十五秒，每个响应在 UTF-8 解析前用流式读取限制为 4 MiB。任意 URL、用户信息、fragment、改变后的响应 URI、非 HTTPS 与其他端口都会被拒绝。`ProfileJsonParser` 只接受 schema 1，限制字符串与 Profile 数量，忽略可向后兼容的未知分类，并且没有 Dungeon 枚举。`ProfileService` 先在本地校验名称/UUID，用单调递增 generation 取消被新请求替代的工作，解析有界错误信封，并只把成功快照保存到进程内 `SessionProfileCache`。本地条目在相关服务端最早时间边界到期，并且绝不超过十分钟。
+`DungeonJoinParser` 只接受 Dungeon Finder 的精确新成员消息，拒绝普通 Party 加入与 Kuudra 消息。`DungeonFloor` 只读取本机排队计分板中的 `E`、`F1-F7` 或 `M1-M7`，不浏览 Party Finder 列表。`DungeonQuickViewManager` 以 Hypixel 会话和独立 Dungeons 开关为门控，对两秒内重复加入行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。
 
-主 `/v1/pv/{target}` 响应包含身份、可选择的 Profile 描述、独立数据源元数据与非 Dungeon 分类。Museum/Garden 使用补充固定端点，使六小时/十二小时缓存与完整 Profile 一小时缓存保持独立；补充端点失败时，已经加载的主快照仍可使用。服务端 NBT 解码只输出有界物品摘要，不把 Base64 发给界面；每个顶层分类都有独立的节点/字节投影预算，因此前面的大型背包不会再用共享预算耗尽 Skills、Minion 或后续分类。Museum 会先验证成员关系，并且只返回被查询 UUID 对应的 member。`ProfileViewerScreen` 延续 QCA 深色/青色设计，使用固定身份/Profile 顶栏、图标导航、指标卡、进度条、语义分组与按槽位排列的物品网格；它明确显示 loading/error/private/missing/partial/truncated/stale 状态，不会把任意 JSON、内部 ID、原始时间戳或投影限制标记递归打印成主要界面。
+`DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅在进程内缓存 60 秒。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒/十五秒超时和 4 MiB 响应上限。`DungeonQuickViewSnapshot` 只接受有界 schema 1，并使用三态装备模型，使不完整来源显示 `Missing` 而不是错误的叉。
 
-可部署 FastAPI 服务位于 `backend/qcloudy-api`。`Settings` 只从服务器环境读取 `QCA_HYPIXEL_API_KEY`。`HypixelUpstream` 只暴露命名方法而非通用代理，并且只给 player/profiles/Museum/Garden 请求附加 `API-Key`；Bazaar、active/ended auctions、公开资源和 Mojang 名称解析均不带 Key。`CacheStore` 优先 Redis、故障时回退进程内存，支持请求合并、仅技术故障使用旧缓存，以及分布式采集锁。成功返回的 private/missing 是新的缓存值，因此会替换旧可见数据。
+`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 与五职业通过 `SHOW_TEXT` 悬停显示精确 XP；职业名称使用原生下划线。护甲、已识别武器和宠物转换为本地 ItemStack，并通过 `HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(...))` 使用 Minecraft 原生物品 Tooltip 排列。标题和下分隔线按字形宽度测量，上下端点误差不超过一个分隔符。底部红色、粗体、下划线的 `ClickEvent.RunCommand("/party kick <已校验玩家名>")` 是唯一踢人路径；任何结果、缺失字段、职业组合或计时器都不能自动执行它。
 
-`MarketManager` 每 60 秒刷新 Bazaar、每 120 秒刷新 active AH、每 30 秒读取 ended auctions、每六小时检查静态资源；公开 item resources 使用 14 天技术缓存。active AH 依次读取 page 0、有限并发的其余页面与最终 page 0 源版本检查；任何页面缺失或漂移都会拒绝整个周期，因此只原子发布一致快照。物品身份由有界 NBT 解析与稳定 variant fingerprint 得出；active BIN 同时提供最低 BIN 与最低最多五个 listing 的中位数。ended auctions 以 auction ID 在 SQLite 去重，约保留 30 天；采集器错过官方 60 秒窗口会记录 coverage gap。完整市场来源拥有全部所需已发布组成；`partial` 会在至少一个组成已过时或不可用时保留仍可使用的值。打开 PV 或 Planner 只读取已发布快照，不启动或加速采集器。
+可部署 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles，选择当前或最近保存的可见 Profile，只投影 Catacombs/职业 XP、指定层完成次数/最快时间、总 Secrets 与全部 run 平均值、Magical Power、四个护甲槽、指定武器和两个龙宠。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；服务器 Key 只存在环境中，接口不是通用代理。
 
-`POST /v1/market/tooltip-prices` 接受数量受限的 item ID、可选实际 `variantKey` 与物品数量。AH 固定按以下顺序显示：可选 `NPC Sell Price`、clean/base variant 当前 `Low. BIN Price`、72 小时 clean LBIN 时间加权 `3 Day Avg. Price`、实际手持 variant 的 `Item NW Value`。clean LBIN 样本单独写入 SQLite；无效 coverage gap 会中断连续窗口，最初 72 小时均价保持不可用，绝不用 ended-auction 数据冒充。BZ 固定为可选 `NPC Sell Price`、来自 `instantSellPrice`（立即卖出可得金币）的 `BZ Sell Price`、来自 `instantBuyPrice`（立即买入需付金币）的 `BZ Buy Price`。每项 quote 返回 `status`、`unitCoins` 与 `totalCoins`；缺失、非正数或非有限值均省略。数量大于一时先显示总价，再用灰色显示 `(单价 each)`；数量为一时不加后缀。客户端使用带千位逗号的完整 Coins 数字而不是 K/M 缩写，以实际测量的两列显示橙色标签与青色数值，不插入通用价格标题；相同进行中请求会合并，成功 Tooltip 最多缓存 60 秒，悬停物品变化或关闭界面时取消过时请求。
+`MarketManager` 继续供 Shard Planner 与固定市场 API 使用。Bazaar 每 60 秒、active AH 每 120 秒、ended auctions 每 30 秒、静态资源每六小时刷新；Dungeon 查询不会启动或加速采集器。
 Release 检查状态和已经确认的远端结果只保存在本次进程内；不会持久化更新响应、提醒历史、用户名、UUID 或服务器地址。
 
 ## 14. 完整对外操作清单
@@ -428,10 +428,9 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 | `/qca`、`/qc` | 打开本地QCA设置 | 无服务器载荷 |
 | `/qshard [英文查询]` | 打开本地离线 Shard Fusion Guide 并预填搜索 | 无服务器载荷 |
 | `/cake`、`/centurycakeeffect` | 打开本地 Century Cake 效果/计时界面 | 无服务器载荷 |
-| 玩家输入 `//pv [玩家名或 UUID]` 或 `/qpv [玩家名或 UUID]` | 打开只读界面；没有可用进程缓存时，向固定 `api.qcloudy.net` 发出一次有界档案主请求 | 无 Minecraft 服务器载荷；玩家明确触发 |
-| 玩家切换 SkyBlock Profile 或重试 PV | 发出对应的有界档案主请求，并受进程缓存与请求 generation 取消机制约束 | 无 Minecraft 服务器载荷；玩家明确触发 |
-| 玩家在 PV 中打开尚未缓存的 Museum 或 Garden | 向对应固定补充端点发出一次有界 HTTPS 请求；失败不影响已加载的主快照 | 无 Minecraft 服务器载荷；玩家明确触发 |
-| 玩家悬停于 PV 中尚无价格缓存的已解码物品 | 向固定 QCloudy 端点发出一次有界、合并重复的 Tooltip 价格批量 HTTPS 请求；悬停变化或关闭 PV 时取消过时工作 | 无 Minecraft 服务器载荷；玩家明确界面操作 |
+| 开启 Dungeon Quick View 时收到 Dungeon Finder 精确新成员行 | 为该新成员发出一次有界、可合并的 HTTPS 快速查看请求，并输出本地聊天卡 | 自动只读展示；无 Minecraft 服务器载荷 |
+| 玩家悬停 Dungeon 快速查看中的数值或物品 | 显示已加载的本地 XP 文字或原生 ItemStack Tooltip | 无网络或服务器载荷 |
+| 玩家点击 Dungeon 快速查看中带下划线的踢人操作 | 通过 Minecraft 聊天 `RUN_COMMAND` 发送 `party kick <已校验新成员>` | 否；必须真实点击 |
 | 玩家打开 Shard Planner 并加载价格快照 | 从固定 `api.qcloudy.net` 发出一次有界异步 Shard 价格 HTTPS 读取；不会启动市场采集器 | 无 Minecraft 服务器载荷；玩家明确触发 |
 | 玩家输入 `/th` | `sendCommand("warp torrhus")` | 否 |
 | 玩家输入 `/helia` | `sendCommand("chapter torrhus")` | 否 |

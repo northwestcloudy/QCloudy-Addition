@@ -1,7 +1,6 @@
 package cloudy.autume.addition.network;
 
-import cloudy.autume.addition.profile.ShardBazaarSide;
-import cloudy.autume.addition.profile.market.MarketTooltipRequestItem;
+import cloudy.autume.addition.market.shard.ShardBazaarSide;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
@@ -35,19 +34,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class QcaApiClientTest {
     @Test
-    void buildsOnlyTheFrozenHttpsOriginAndProfileIdQuery() {
+    void buildsOnlyTheFrozenHttpsOriginAndDungeonFloorQuery() {
         HttpClient transport = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NEVER).build();
         QcaApiClient client = new QcaApiClient(transport, "QCA-Test/1", 1024);
 
-        HttpRequest request = client.buildProfileRequest(
-                "NorthwestCloudy", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+        HttpRequest request = client.buildDungeonQuickViewRequest("NorthwestCloudy", "M7");
 
         assertEquals("https", request.uri().getScheme());
         assertEquals("api.qcloudy.net", request.uri().getHost());
-        assertEquals("/v1/pv/NorthwestCloudy", request.uri().getPath());
-        assertEquals("profileId=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-                request.uri().getRawQuery());
+        assertEquals("/v1/dungeons/quick-view/NorthwestCloudy", request.uri().getPath());
+        assertEquals("floor=M7", request.uri().getRawQuery());
         assertEquals(QcaApiClient.REQUEST_TIMEOUT, request.timeout().orElseThrow());
         assertEquals("QCA-Test/1", request.headers().firstValue("User-Agent").orElseThrow());
     }
@@ -67,41 +64,6 @@ final class QcaApiClientTest {
     }
 
     @Test
-    void marketTooltipRequestUsesTheFrozenBoundedPostContract() {
-        String body = QcaApiClient.marketTooltipRequestBody(List.of(
-                new MarketTooltipRequestItem("slot-1",
-                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
-                                "hyperion", "upgrade=10", 2)),
-                new MarketTooltipRequestItem("slot-2",
-                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
-                                "ENCHANTED_DIAMOND", null, 1))));
-        CapturingClient transport = new CapturingClient();
-        QcaApiClient client = new QcaApiClient(transport, "QCA-Test/1", 1024);
-
-        HttpRequest request = client.buildMarketTooltipPricesRequest(List.of(
-                new MarketTooltipRequestItem("slot-1",
-                        new cloudy.autume.addition.profile.market.MarketTooltipQuery(
-                                "HYPERION", "upgrade=10", 2))));
-
-        assertEquals("POST", request.method());
-        assertEquals("/v1/market/tooltip-prices", request.uri().getPath());
-        assertEquals("application/json",
-                request.headers().firstValue("Content-Type").orElseThrow());
-        assertEquals("{\"items\":[{\"requestId\":\"slot-1\",\"itemId\":\"HYPERION\","
-                        + "\"variantKey\":\"upgrade=10\",\"quantity\":2},"
-                        + "{\"requestId\":\"slot-2\",\"itemId\":\"ENCHANTED_DIAMOND\","
-                        + "\"quantity\":1}]}", body);
-        assertThrows(IllegalArgumentException.class,
-                () -> QcaApiClient.marketTooltipRequestBody(List.of()));
-        assertThrows(IllegalArgumentException.class,
-                () -> QcaApiClient.marketTooltipRequestBody(List.of(
-                        new MarketTooltipRequestItem("same",
-                                new cloudy.autume.addition.profile.market.MarketTooltipQuery("A", null, 1)),
-                        new MarketTooltipRequestItem("same",
-                                new cloudy.autume.addition.profile.market.MarketTooltipQuery("B", null, 1)))));
-    }
-
-    @Test
     void rejectsRedirectFollowingTransportsAndUnsafeUserAgents() {
         HttpClient redirects = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.ALWAYS).build();
@@ -116,7 +78,7 @@ final class QcaApiClientTest {
 
     @Test
     void boundedReaderRejectsOversizeAndChangedResponseUrisAndClosesBodies() {
-        URI requested = URI.create("https://api.qcloudy.net/v1/pv/Test");
+        URI requested = URI.create("https://api.qcloudy.net/v1/dungeons/quick-view/Test");
         TrackingInputStream oversized = new TrackingInputStream(new byte[17]);
         CompletionException tooLarge = assertThrows(CompletionException.class,
                 () -> QcaApiClient.readResponse(requested,
@@ -145,7 +107,8 @@ final class QcaApiClientTest {
         CapturingClient transport = new CapturingClient(true);
         QcaApiClient client = new QcaApiClient(transport, "QCA-Test/1", 1024);
 
-        CompletableFuture<QcaApiClient.Response> request = client.fetchProfile("NorthwestCloudy", null);
+        CompletableFuture<QcaApiClient.Response> request =
+                client.fetchDungeonQuickView("NorthwestCloudy", "F7");
 
         assertTrue(request.cancel(true));
         assertTrue(transport.future.isCancelled());

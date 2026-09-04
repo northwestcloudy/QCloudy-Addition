@@ -109,14 +109,6 @@ class FakeUpstream:
                 }
             ],
         }
-        self.museum_payload: dict[str, Any] = {
-            "success": True,
-            "members": {PLAYER_UUID: {"items": {}}},
-        }
-        self.garden_payload: dict[str, Any] = {
-            "success": True,
-            "garden": {"uuid": PROFILE_ID},
-        }
 
     def _called(self, name: str) -> None:
         self.calls[name] = self.calls.get(name, 0) + 1
@@ -132,14 +124,6 @@ class FakeUpstream:
     async def fetch_profiles(self, player_uuid: str) -> dict[str, Any]:
         self._called("profiles")
         return self.profiles_payload
-
-    async def fetch_museum(self, profile_id: str) -> dict[str, Any]:
-        self._called("museum")
-        return self.museum_payload
-
-    async def fetch_garden(self, profile_id: str) -> dict[str, Any]:
-        self._called("garden")
-        return self.garden_payload
 
     async def fetch_bazaar(self) -> dict[str, Any]:
         self._called("bazaar")

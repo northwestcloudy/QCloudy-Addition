@@ -43,21 +43,15 @@ class Settings(BaseSettings):
     name_fresh_seconds: int = 72 * 60 * 60
     name_stale_seconds: int = 72 * 60 * 60
     name_negative_seconds: int = 15 * 60
-    player_fresh_seconds: int = 60 * 60
-    player_stale_seconds: int = 24 * 60 * 60
-    profiles_fresh_seconds: int = 60 * 60
-    profiles_stale_seconds: int = 24 * 60 * 60
-    museum_fresh_seconds: int = 6 * 60 * 60
-    museum_stale_seconds: int = 24 * 60 * 60
-    garden_fresh_seconds: int = 12 * 60 * 60
-    garden_stale_seconds: int = 24 * 60 * 60
+    dungeon_player_fresh_seconds: int = 2 * 60
+    dungeon_player_stale_seconds: int = 10 * 60
+    dungeon_profiles_fresh_seconds: int = 2 * 60
+    dungeon_profiles_stale_seconds: int = 10 * 60
 
     bazaar_stale_seconds: int = 10 * 60
     auction_stale_seconds: int = 15 * 60
     ended_gap_threshold_seconds: int = 60
     ended_sales_retention_days: int = 30
-    pv_market_item_limit: int = 256
-
     cors_origins: list[str] = Field(default_factory=list)
 
     @property

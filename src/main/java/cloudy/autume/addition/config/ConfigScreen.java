@@ -670,6 +670,7 @@ public final class ConfigScreen extends Screen {
         COMBAT_DEATH_SAVES(Category.COMBAT, "config.group.death_saves"),
         COMBAT_DEPLOYABLES(Category.COMBAT, "config.group.deployables"),
         COMBAT_VISIBILITY(Category.COMBAT, "config.group.combat_visibility"),
+        DUNGEON_PARTY(Category.DUNGEONS, "config.group.dungeon_party"),
         PET_DISPLAY(Category.ITEMS_AND_MENUS, "config.group.pet_display"),
         CENTURY_CAKES(Category.ITEMS_AND_MENUS, "config.group.century_cakes"),
         SHARD_FUSION(Category.ITEMS_AND_MENUS, "config.group.shard_fusion"),
@@ -702,6 +703,8 @@ public final class ConfigScreen extends Screen {
                 "config.desc.chat.fast_party_commands"),
         PARTY_COMMANDS(FeatureGroup.COMMANDS, "config.commands.party_commands",
                 "config.desc.commands.party_commands"),
+        DUNGEON_QUICK_VIEW(FeatureGroup.DUNGEON_PARTY, "config.dungeon.quick_view",
+                "config.desc.dungeon.quick_view"),
         FISHING_BITE_ALERT(FeatureGroup.FISHING, "config.fishing.bite_alert", "config.desc.fishing.bite_alert"),
         DWARVEN_MAP(FeatureGroup.MAPS, "config.dwarven_map", "config.desc.dwarven_map"),
         GLACITE_MAP(FeatureGroup.MAPS, "config.glacite_map", "config.desc.glacite_map"),
@@ -770,6 +773,7 @@ public final class ConfigScreen extends Screen {
                 case QUICK_PRIVATE_PARTY_REQUEST -> config.chat.quickPrivatePartyRequest;
                 case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands;
                 case PARTY_COMMANDS -> config.chat.partyCommands;
+                case DUNGEON_QUICK_VIEW -> config.dungeons.playerQuickView;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels;
@@ -828,6 +832,7 @@ public final class ConfigScreen extends Screen {
                         !config.chat.quickPrivatePartyRequest;
                 case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands = !config.chat.fastPartyCommands;
                 case PARTY_COMMANDS -> config.chat.partyCommands = !config.chat.partyCommands;
+                case DUNGEON_QUICK_VIEW -> config.dungeons.playerQuickView = !config.dungeons.playerQuickView;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert = !config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines = !config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels = !config.maps.glaciteTunnels;
@@ -901,6 +906,7 @@ public final class ConfigScreen extends Screen {
                 case HUD_ANIMATIONS, HUNTING_ALERT_SOUND, UNIFIED_SETTINGS_EDITOR, UNIFIED_HUD_EDITOR,
                         MANUAL_RECONNECT, PARTY_AUTO_ACCEPT, DIRECT_MESSAGE_PARTY_REQUEST,
                         QUICK_PRIVATE_PARTY_REQUEST, FAST_PARTY_COMMANDS, PARTY_COMMANDS,
+                        DUNGEON_QUICK_VIEW,
                         FISHING_BITE_ALERT,
                         COLD_SAFETY, DOOMSPIRAL_READY, WARDEN_READY_ALERT,
                         FAIRY_SOUL_WAYPOINTS, SAFARI_CRITTER_HIGHLIGHT, BEEHEEMOTH_HELPER,
@@ -929,7 +935,8 @@ public final class ConfigScreen extends Screen {
             if (this == HUD_ANIMATIONS || this == HUNTING_ALERT_SOUND
                     || this == MANUAL_RECONNECT || this == DEATH_SAVE_ALERTS
                     || this == DIRECT_MESSAGE_PARTY_REQUEST
-                    || this == QUICK_PRIVATE_PARTY_REQUEST) return false;
+                    || this == QUICK_PRIVATE_PARTY_REQUEST
+                    || this == DUNGEON_QUICK_VIEW) return false;
             if (this == FAIRY_SOUL_WAYPOINTS) return false;
             if (huntingFeature()) return hudType() != null || !HuntingOption.forFeature(this).isEmpty();
             return true;

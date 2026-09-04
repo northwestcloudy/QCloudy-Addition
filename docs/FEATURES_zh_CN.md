@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能说明
 
-## 统一设置与 HUD 控制——0.3.10-alpha2 开发快照
+## 统一设置与 HUD 控制——0.3.10-alpha3 开发快照
 
 > 当前源码包含尚未公开的 Alpha 工作；当前公开测试版仍为 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
@@ -207,18 +207,16 @@ Epic 名称使用 Minecraft 深紫色 `§5`，不再使用亮紫/粉色 `§d`；
 
 **具体功能：**总功能和两种传送类型均默认保留原声。普通传送与 Etherwarp 可分别改为六种本地 Minecraft 预设：紫颂果传送、末影人传送、紫水晶清响、经验球、末地传送门填充或潜影贝传送；每种自定义声音独立保存 10–200% 音量和 50–200% 音调。QCA 只在本地玩家手持 `ASPECT_OF_THE_END` 或 `ASPECT_OF_THE_VOID` 时替换已识别的附近声音，不修改网络包、物品使用、冷却、传送距离或移动。旧版静音配置会迁移为保留原声。
 
-## 11. 玩家档案浏览与市场快照
+## 11. Dungeon 玩家快速查看
 
-### 11.1 本地入口与分类
+### 11.1 触发与展示
 
-`//pv`、`//pv <玩家名或 UUID>`、`/qpv`、`/qpv <玩家名或 UUID>` 打开同一个只读 QCA 界面；不填写目标时使用本机 Minecraft 玩家。普通 `/pv` 根节点刻意保留给其他模组。固定顶部栏可以切换 SkyBlock Profile；有明确 Minecraft 物品可表达的分类优先用图标导航，指标卡、进度条、语义分组与按槽位排列的物品网格代替原来的键值文字堆。本功能不放设置卡片，本版本也不包含 Dungeon 或自动组队档案查询。
+独立的 **Dungeon Player Quick View** 只匹配 Dungeon Finder 宣布“新玩家加入 dungeon group”的精确消息，只分析刚加入的玩家，不分析原队员，也不浏览 Party Finder 列表。它在 Dungeons 分类下有独立、默认开启的开关，与已经删除的通用玩家档案浏览不共享命令、界面或缓存。
 
-界面按概览、装备、饰品、宠物、背包/末影箱/Storage/Wardrobe/Vault、技能、Slayer、挖矿、Minion、生物图鉴、收藏、Crimson Isle/Kuudra/Dojo/Trophy Fish、Rift、其他/Farming、Museum、Garden、市场/净值整理转换后的响应。私密、缺失、部分、截断、旧缓存和服务故障都会明确显示。已解码物品容器使用可视化槽位网格；内部 ID、原始时间戳、投影限制标记、NBT Base64 与任意 JSON 递归都不作为正式界面。服务端给每个分类独立投影预算，因此大型背包不会再耗尽 Skills、Minion 或后续分类的容量。
+彩色聊天卡一次显示：Catacombs 等级、总 Secrets/所有地牢完成次数的平均 Secrets、五职业等级、当前排队楼层的完成次数与最快时间、四件护甲、Withered Blade/Terminator、Golden Dragon/Ender Dragon，以及 Magical Power。Catacombs 与职业在悬停中显示精确 XP；五个职业名称使用 Minecraft 原生下划线。识别到的护甲、武器和宠物使用原生物品悬停；确认没有时显示叉，来源私密、缺失或不完整时显示 `Missing`，不伪装成 0。
 
-### 11.2 缓存与市场规则
+标题居中嵌入按像素测量的上分隔线；下分隔线复用同一宽度，使上下端点误差不超过一个分隔符。底部红色、粗体、原生下划线文字是唯一踢人入口：只有玩家真实点击后才执行 `/party kick <已校验玩家名>`。QCA 不自动踢人，也不判断职业冲突。
 
-模组只连接 `https://api.qcloudy.net`：禁止跳转、连接超时五秒、请求超时十五秒、响应上限 4 MiB，并固定 HTTPS 主机；模组中没有 Hypixel API Key。后端持有应用 Key，只开放固定转换路由，不是通用 Hypixel 代理。玩家名到 UUID 缓存 72 小时，不再额外延长技术旧缓存；无效名称负缓存 15 分钟；`/v2/player` 与完整 `/v2/skyblock/profiles` 新鲜期为一小时，技术故障旧缓存最多 24 小时；Museum 为六小时，Garden 为十二小时，两者旧缓存上限均为 24 小时。成功返回私密/缺失时会替换旧快照，不会用旧数据掩盖新的隐私状态。模组进程内缓存最多十分钟，并且绝不会超过服务器给出的时间边界。
+### 11.2 请求与缓存
 
-服务器大约每 60 秒收集一次 Bazaar、每两分钟收集一次完整且版本一致的 active AH、每 30 秒读取一次 ended auctions。只有全部页面与最终 page 0 都属于同一源版本时，AH 周期才会原子发布。Tooltip 请求有数量与响应边界，会在客户端合并重复请求并最多缓存 60 秒；悬停目标改变或关闭界面时会取消已经过时的工作。它只读取服务器已经发布的快照，不会启动或加速采集。
-
-AH Tooltip 固定按以下顺序排版：可选 `NPC Sell Price`、clean/base variant 当前最低白板挂单的 `Low. BIN Price`、clean LBIN 历史时间加权的 `3 Day Avg. Price`、手中实际 variant 的 `Item NW Value`。三日均价必须先拥有连续 72 小时有效 clean LBIN 覆盖；新部署最初 72 小时不会显示这一行，而且它不是 ended-auction 成交中位数。BZ Tooltip 固定为可选 `NPC Sell Price`、立即卖出可获得金币的 `BZ Sell Price`、立即买入要支付金币的 `BZ Buy Price`。界面不添加通用价格标题或分隔线；缺失、无效、不适用或不安全的行直接省略，不显示为 0。数量大于一时先显示整组总价，灰色括号中显示单件价格；数量为一时不加括号。Coins 使用带千位逗号的完整数字，不缩写成 K/M；橙色标签与青色数值使用实际测量的两列对齐，不靠空格填充。
+整张卡只向固定 `https://api.qcloudy.net` 发出一次有界异步 HTTPS 请求。禁止跳转，连接/请求超时为五秒/十五秒，响应上限 4 MiB；客户端不含 Hypixel API Key。相同进行中请求会合并，成功响应只缓存 60 秒，离开会话时取消未完成工作。后端并行加载 player 与 Profiles，各自缓存两分钟；仅在技术故障时允许最多十分钟旧值。私密与缺失仍明确显示，不会被旧成功数据掩盖。

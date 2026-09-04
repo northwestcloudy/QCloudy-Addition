@@ -1,25 +1,25 @@
-# QCloudy 档案与市场隐私说明
+# QCloudy Dungeon 快速查看与市场隐私说明
 
-本文说明 QCA 可选只读“玩家档案浏览”和市场价格请求；完整客户端/规则边界仍以 `COMPLIANCE_zh_CN.md` 为准。
+本文说明 QCA 的 Dungeon Player Quick View 与 Shard Planner 市场请求；完整客户端/规则边界仍以 `COMPLIANCE_zh_CN.md` 为准。
 
 ## 什么时候发出请求
 
-只有玩家打开 `//pv` 或 `/qpv`、切换所选 SkyBlock Profile、重试失败页面，或打开当前有界缓存中尚不可用的补充分类时，QCA 才请求档案数据。Shard Planner 在加载价格时请求有界价格快照。两条路径都不会执行玩法自动化、发送 Minecraft 聊天/服务器命令或启动市场采集器。
+只有客户端位于 Hypixel、该功能开启，并且收到 Dungeon Finder 宣布新玩家加入 dungeon group 的精确消息时，QCA 才请求 Dungeon 数据；每次只查询刚加入的玩家。它不会浏览 Party Finder 列表、轮询队伍或建立玩家历史。Shard Planner 只在玩家明确加载价格时请求有界价格快照。
 
 ## 模组会发送什么
 
-目标固定为 `https://api.qcloudy.net`。服务器与正常网络基础设施可以看到连接 IP 和 QCA User-Agent。档案请求还包含玩家明确查询的 Minecraft 玩家名或 UUID；切换后也会包含 SkyBlock Profile ID。模组不会发送 Minecraft 会话 Token、Microsoft 凭据、Hypixel API Key、当前服务器地址、模组列表、聊天记录、坐标、背包上传、Cookie 或遥测/设备标识。
+目标固定为 `https://api.qcloudy.net`。请求包含新加入玩家的 Minecraft 名称，以及本地计分板可识别时的当前排队楼层 ID。服务器与正常网络基础设施可以看到连接 IP 和 QCA User-Agent。模组不会发送 Minecraft 会话 Token、Microsoft 凭据、Hypixel API Key、当前服务器地址、模组列表、聊天记录、坐标、背包上传、Cookie 或遥测/设备标识。
+
+玩家点击 `CLICK HERE TO KICK THE PLAYER OUT` 后，Minecraft 聊天点击事件会向服务器发送 `/party kick <已校验玩家名>`。任何查询结果都不能自动触发该命令。
 
 ## 处理与保留时间
 
-QCloudy 服务使用服务器端应用 Key 解析名称并读取公开或玩家已允许的 Hypixel 数据，然后限制大小并转换后才返回模组。名称/UUID 缓存 72 小时，不再额外延长技术旧缓存；无效名称负缓存 15 分钟。玩家与完整 SkyBlock Profile 响应缓存一小时，技术故障旧缓存最多 24 小时。Museum 缓存六小时，Garden 缓存十二小时，两者技术故障旧缓存上限均为 24 小时。成功返回 private/missing 时会替换旧数据。
+QCloudy 服务使用服务器端应用 Key 解析新成员名称，读取对应 Hypixel player 与 SkyBlock Profiles，选择已选 Profile（否则选择最近可见 Profile），只投影聊天卡所需字段，然后返回有界响应。名称/UUID 缓存 72 小时，无效名称负缓存 15 分钟；Dungeon player 与 Profiles 新鲜期为两分钟，仅在上游技术故障时可使用最多十分钟的旧值。私密或缺失保持明确状态，不转换为 0。
 
-Bazaar 快照约每 60 秒刷新，可用旧快照最多十分钟；active AH 约每两分钟刷新，十五分钟后不可再作为旧快照使用。ended-auction 成交样本会去重并大约保留 30 天，用于计算聚合中位数与覆盖完整性；它们是市场成交，不是 QCA 玩家查询历史。公开 Hypixel item resources 每六小时刷新一次，并可保留在 14 天技术缓存中；它只包含静态物品元数据，不包含 QCA 玩家查询事件。
+可运行模组合并相同的进行中请求，只在进程内保留成功结果 60 秒；会话变化时取消未完成工作，不把远程玩家快照写入 `config/qcloudy_addition.json`。
 
-QCA 不保存 PV 访问/请求历史、玩家会话历史或跨会话分析画像。共享名称/档案缓存按被查询数据身份与新鲜度建立，不按发起查询的 QCA 用户建立。生产部署模板同时关闭 Nginx 与 Uvicorn access log，避免把请求路径中的玩家名或 UUID 留作浏览历史。
-
-可运行模组只在内存中缓存成功响应，最多十分钟且不会超过服务端时间边界；远程玩家快照和市场历史不会写入 `config/qcloudy_addition.json`。
+Bazaar 快照约每 60 秒刷新，技术旧值上限十分钟；active AH 约每两分钟刷新，旧值上限十五分钟。去重后的 ended-auction 市场样本大约保留 30 天；它们是市场成交，不是 QCA 玩家查询历史。SQLite 只保存这些市场样本，不保存 Dungeon Quick View。生产模板关闭 Nginx 与 Uvicorn access log，避免把路径中的玩家名保存成浏览历史。
 
 ## 安全边界
 
-Hypixel 应用 Key 只存在服务器环境中，绝不会打进 JAR 或返回客户端。公开服务只开放固定转换路由，不是任意 Hypixel 代理。模组强制 HTTPS、拒绝跳转和来源变化，并限制请求时间与响应大小。未知价格保持未知，私密/缺失数据会明确标注。运维错误日志可以保留有界技术状态，但不得包含 PV 请求路径、玩家查询、API Key、请求正文或完整上游档案响应。
+Hypixel 应用 Key 只存在服务器环境中，绝不会打进 JAR 或返回客户端。服务只开放固定转换路由，不是任意 Hypixel 代理。模组强制 HTTPS、拒绝跳转和来源变化，并限制请求时间与响应大小。运维日志可以保留有界技术状态，但不得包含玩家查询、API Key、请求正文或完整上游响应。

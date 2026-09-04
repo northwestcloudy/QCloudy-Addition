@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "QCloudy API",
-    "summary": "Player profile and transformed SkyBlock market data for QCloudy Addition.",
-    "version": "1.0.0"
+    "summary": "Dungeon quick-view and transformed SkyBlock market data for QCloudy Addition.",
+    "version": "1.1.0"
   },
   "paths": {
     "/health": {
@@ -52,13 +52,13 @@
         }
       }
     },
-    "/v1/pv/{target}": {
+    "/v1/dungeons/quick-view/{target}": {
       "get": {
         "tags": [
-          "Player Viewer"
+          "Dungeons"
         ],
-        "summary": "Player Viewer",
-        "operationId": "player_viewer_v1_pv__target__get",
+        "summary": "Dungeon Quick View",
+        "operationId": "dungeon_quick_view_v1_dungeons_quick_view__target__get",
         "parameters": [
           {
             "name": "target",
@@ -72,21 +72,21 @@
             }
           },
           {
-            "name": "profileId",
+            "name": "floor",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
                   "type": "string",
-                  "minLength": 32,
-                  "maxLength": 36
+                  "minLength": 1,
+                  "maxLength": 2
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Profileid"
+              "title": "Floor"
             }
           }
         ],
@@ -98,121 +98,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Player Viewer V1 Pv  Target  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/pv/{player_uuid}/{profile_id}/museum": {
-      "get": {
-        "tags": [
-          "Player Viewer"
-        ],
-        "summary": "Museum",
-        "operationId": "museum_v1_pv__player_uuid___profile_id__museum_get",
-        "parameters": [
-          {
-            "name": "player_uuid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 36,
-              "title": "Player Uuid"
-            }
-          },
-          {
-            "name": "profile_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 36,
-              "title": "Profile Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Museum V1 Pv  Player Uuid   Profile Id  Museum Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/pv/{player_uuid}/{profile_id}/garden": {
-      "get": {
-        "tags": [
-          "Player Viewer"
-        ],
-        "summary": "Garden",
-        "operationId": "garden_v1_pv__player_uuid___profile_id__garden_get",
-        "parameters": [
-          {
-            "name": "player_uuid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 36,
-              "title": "Player Uuid"
-            }
-          },
-          {
-            "name": "profile_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 32,
-              "maxLength": 36,
-              "title": "Profile Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Garden V1 Pv  Player Uuid   Profile Id  Garden Get"
+                  "title": "Response Dungeon Quick View V1 Dungeons Quick View  Target  Get"
                 }
               }
             }

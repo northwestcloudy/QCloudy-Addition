@@ -64,6 +64,7 @@ final class UnifiedModIntegration {
             Map.entry("UNIFIED_HUD_EDITOR", "general:manage_other_mod_huds"),
             Map.entry("MANUAL_RECONNECT", "general:manual_reconnect_button"),
             Map.entry("PARTY_AUTO_ACCEPT", "general:friend_party_auto_accept"),
+            Map.entry("DUNGEON_QUICK_VIEW", "dungeons:dungeon_player_quick_view"),
             Map.entry("FISHING_BITE_ALERT", "fishing:fishing_bite_sound"),
             Map.entry("DWARVEN_MAP", "maps:dwarven_mines_map"),
             Map.entry("GLACITE_MAP", "maps:glacite_tunnels_map"),

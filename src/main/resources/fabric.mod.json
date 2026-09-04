@@ -3,7 +3,7 @@
   "id": "qcloudy_addition",
   "version": "${version}",
   "name": "QCloudy_Addition",
-  "description": "Client-only Hypixel SkyBlock maps, HUDs, profile viewer, bounded market tools, pets, inventory utilities, and opt-in party/chat helpers.",
+  "description": "Client-only Hypixel SkyBlock maps, HUDs, Dungeon player quick view, bounded market tools, pets, inventory utilities, and opt-in party/chat helpers.",
   "authors": ["QCloudy_Addition contributors"],
   "contact": {
     "homepage": "https://qcloudy.net/",

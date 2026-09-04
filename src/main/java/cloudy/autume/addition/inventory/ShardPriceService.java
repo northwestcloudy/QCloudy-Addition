@@ -2,10 +2,10 @@ package cloudy.autume.addition.inventory;
 
 import cloudy.autume.addition.QCloudyAdditionClient;
 import cloudy.autume.addition.network.QcaApiClient;
-import cloudy.autume.addition.profile.ShardBazaarLoadResult;
-import cloudy.autume.addition.profile.ShardBazaarService;
-import cloudy.autume.addition.profile.ShardBazaarSide;
-import cloudy.autume.addition.profile.ShardBazaarSnapshot;
+import cloudy.autume.addition.market.shard.ShardBazaarLoadResult;
+import cloudy.autume.addition.market.shard.ShardBazaarService;
+import cloudy.autume.addition.market.shard.ShardBazaarSide;
+import cloudy.autume.addition.market.shard.ShardBazaarSnapshot;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.time.Clock;

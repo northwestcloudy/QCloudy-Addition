@@ -38,7 +38,7 @@
 | AOTE/AOTV 声音自定义 | 手持物品 ID 与客户端收到的附近声音事件 | 保留原声，或按设置的音量/音调替换为本地原版声音 | 无 |
 | Attribute Shard Fusion Guide | 随模组打包的离线 320-Shard 效果/获取/Fusion JSON 与 320 张本地图标、已经在本地菜单/物品栏收到的可选原生 ItemStack、玩家真实搜索/点击/按键 | 本地详细信息/合成来源/可合成内容界面、Shard 专属离线图标、语义文字颜色与遵循材质包的已观察覆盖 | 无；`/qshard` 是纯客户端界面命令 |
 | Shard Planner | 打包配方/速率、本地 Planner 设置、QCloudy API 的有界 Bazaar 快照、玩家亲自打开 Hunting Box 页面中可见的 Shard 数量/lore | 本地路线 Tree、候选、材料汇总、直接配方筛选、详情、Fusion Lines 与按 Profile 仓库 | 玩家明确加载 Planner 价格时，向 `api.qcloudy.net` 异步发送一次有界 Shard 价格 HTTPS 请求；不发送 `/hb`、不点击、不 Fusion |
-| 玩家档案浏览 | 玩家主动输入本地 `//pv` 或 `/qpv` 目标；省略时使用本机玩家名 | 带独立新鲜度标签、可切换 SkyBlock Profile 的只读 QCA 档案界面 | 只异步请求 `api.qcloudy.net` 的固定档案/市场 HTTPS 路由；不发送服务器命令/聊天，模组不含 Hypixel API Key，也不直接请求需认证的 Hypixel API |
+| Dungeon 玩家快速查看 | 精确收到的 Dungeon Finder 新成员消息、本地排队楼层计分板文字与新成员名称 | 带有界数据和原生悬停的彩色本地聊天卡 | 向固定 `api.qcloudy.net` 发出一个有界异步 HTTPS 请求；模组不直接请求需认证的 Hypixel API。只有玩家真实点击带下划线操作才发送 `party kick <已校验新成员>` |
 | 配置 | 可改绑本地按键、本地 `/qca`/`/qc` 与鼠标输入 | JSON 配置文件 | 无 |
 | Release 更新提醒 | 构建内嵌的通道/版本/Minecraft/Release 基线元数据，以及公开稳定版 manifest | 确认存在更新且匹配当前版本时显示一次 Toast 与一条本地可点击聊天消息 | Alpha：无；Beta/Release：每个客户端进程最多向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`；绝不下载更新 |
 | 统一模组控制 | 对已安装 SkyHanni、Skyblocker、Firmament、BabyZombieAddons、Feesh 运行时对象的按需只读能力扫描；固定本地元数据分类；扫描后玩家在 QCA 中的真实点击/拖动 | 扫描进度、独立设置/HUD 数量、提供方选择、原生设置、原生 HUD 位置/缩放/对齐变化 | 无；扫描/分类只读，后续编辑也只通过对应提供方自己的保存/update 路径写入本地客户端配置 |
@@ -52,7 +52,7 @@
 - 本地设置命令：`/qca`、`/qc`；若其他客户端命令已占用某个根名称，则跳过该别名。它们只打开 QCA 设置，不发送内容。
 - 可选提供方集成按能力探测，而不是精确版本白名单。第三方设置与 HUD 分别受两个默认关闭的总开关控制。每一次扫描都必须经过第二次本地确认：首次开启但没有有效快照时，以及每一次 Refresh，都会先明确显示具体扫描范围。取消首次确认会保持总开关关闭；取消 Refresh 会保留已校验快照；重启后恢复为开启的开关不会静默扫描。两个界面共用通过校验的快照，但设置/HUD 数量独立显示；只列出已安装并实际产出可读能力的提供方，两个开关都关闭时停止扫描。分类先用原生/已验证规则，之后才使用固定本地分类器，置信度不足时保持未分类。过程中没有云端模型、提供方下载、HTTP、服务器查询或直接编辑配置文件；之后玩家主动编辑时也只调用所选已安装提供方自己的保存/update 机制。
 - 本地 Shard 命令：`/qshard [英文查询]`；打开随模组打包的离线 Attribute Shard Fusion Guide，并可预填本地搜索。它不会发送聊天、服务器命令、数据包、菜单输入或网络请求。
-- 本地档案命令：`//pv [玩家名或 UUID]`、`/qpv [玩家名或 UUID]`；省略目标时使用本机玩家。两者只打开同一个只读界面，不发送聊天或服务器命令；普通 `/pv` 不注册。界面只可请求已披露的 QCloudy API 路由，本版本不会进行 Dungeon/组队档案查询。
+- QCA 不再注册通用档案命令 `//pv` 或 `/qpv`。Dungeon Quick View 没有命令入口，只对 Dungeon Finder 的精确新成员行响应。它绝不自动踢人；`party kick <新成员>` 只存在于玩家真实点击红色下划线操作后的载荷中。
 - 本地 Century Cake 命令：`/cake`、`/centurycakeeffect`；只打开本地蛋糕效果菜单。过期提醒中的带下划线链接在玩家点击后发送精确 `/visit northwestcloudy`；未点击时不会发送，计时器也不会自动触发该指令。
 - 本地 Torrhus 快捷命令：`/th`；没有设置项且无法关闭。玩家明确输入时，QCA 发送精确内容 `warp torrhus`，等同手动输入 `/warp torrhus`；只有在其他客户端命令已经占用 `/th` 时才跳过注册。
 - 本地 Helia 快捷命令：`/helia`；没有设置项。玩家明确输入时，QCA 发送精确内容 `chapter torrhus`，等同手动输入 `/chapter torrhus`；只有在其他客户端命令已经占用 `/helia` 时才跳过注册。
@@ -87,7 +87,7 @@
 
 QCA 不包含 Hypixel Mod API、WebSocket、遥测、坐标共享服务、自动下载/安装更新器、宏、模拟输入、自动点击/移动或方块交互。可运行模组中没有 Hypixel API Key，也不会直接请求需要认证的 Hypixel Profile 端点。QCloudy 有界 API 客户端与下述 Release 提醒客户端是 QCA 自有的两条网页访问路径；对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
 
-档案/市场客户端只接受普通 HTTPS 端口的 `https://api.qcloudy.net`，禁止跳转，连接超时五秒、请求超时十五秒、响应上限 4 MiB。请求必然会让 QCloudy 服务器看到连接 IP、QCA User-Agent 与被查询的玩家名/UUID/Profile；它不会发送 Minecraft 会话凭据、Cookie、Hypixel API Key、服务器地址、模组列表、聊天记录、坐标或遥测标识。后端持有应用 Key，只提供固定转换端点而不是通用代理，会合并/缓存上游请求、限制解码 NBT 大小并保留私密/缺失状态。模组只在当前进程内缓存成功快照，最多十分钟且不会超过服务端新鲜度元数据；远程档案和价格历史不会写入 QCA 本地配置。
+Dungeon/市场客户端只接受普通 HTTPS 端口的 `https://api.qcloudy.net`，禁止跳转，连接超时五秒、请求超时十五秒、响应上限 4 MiB。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选排队楼层；它不会发送 Minecraft 会话凭据、Cookie、Hypixel API Key、服务器地址、模组列表、聊天记录、坐标或遥测标识。后端持有应用 Key，只提供固定转换端点而不是通用代理，会合并/缓存上游请求、限制解码 NBT 大小并保留私密/缺失状态。模组只在进程内缓存成功 Quick View 60 秒；远程玩家数据和价格历史不会写入 QCA 本地配置。
 
 Release 更新提醒永久开启，没有功能卡片或配置项。Alpha 构建会在安排任何工作或打开 HTTP 连接前直接返回。Beta 或 Release 构建在第一次进入世界后安排一次检查，延迟五秒后异步向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送 HTTPS `GET`；整个客户端进程最多一次。连接超时为五秒、请求超时为十秒、禁止重定向、只接受 HTTP 200，并把响应限制为 128 KiB。失败只记日志，不向玩家报错，也没有重试循环。若确认结果等待展示时玩家已断线，则保留到下一次进入世界再显示。
 
@@ -99,7 +99,7 @@ Release 更新提醒永久开启，没有功能卡片或配置项。Alpha 构建
 
 Shard Fusion Guide 与 Planner 都是只读本地资料。320 项目录、规范化 Wiki 效果/获取摘要、合成规则、速率基线、320 张 Shard 专属 PNG、物品模型与映射都在发布前生成并打包进 JAR；生成器使用 [Attributes 表格](https://hypixelskyblock.minecraft.wiki/w/Attributes)、[Attribute Fusion 规则](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion)、[官方 Bazaar 产品列表](https://api.hypixel.net/v2/skyblock/bazaar) 与已审核 MIT 许可 SkyShards 数据。运行中的 QCA 没有访问这些来源或图标服务的代码路径。搜索、规划、切换焦点、打开详细信息/合成来源/可合成内容、使用历史、解析内置图标、渲染已经收到的原生 ItemStack 或拖动 Fusion Lines 节点，都不会点击容器、执行 Fusion、选择输出、向服务器发送 `/qshard` 或改变服务器状态。已经收到的原生玩家头继续走 Minecraft 正常渲染管线；QCA 不会额外发起纹理请求。
 
-QCA 不会抓取 SkyHanni、Skyblocker 或 Firmament 的私有字段。Planner 只读取 QCloudy 有界 Shard 价格响应：Bazaar `buyPrice` 明确表示立即买入/获取成本，`sellPrice` 表示立即卖出/清算价值。完整市场来源表示所需已发布组成均可用；`partial` 表示至少一个组成已过时或不可用，但仍有部分可用值。没有可靠价格的物品保持 `unknown`；未知、畸形与非正数价格会被省略，不会改成 0。后端大约每分钟刷新 Bazaar；active AH 必须完成一次版本一致的原子周期；ended auctions 会去重并记录 coverage gap；估值优先真实成交，之后才回退到稳健的低价 BIN。打开档案界面只读取已经发布的市场快照，不会启动或加速 AH 采集。仓库同样只在玩家亲自打开后读取精确可见 `Hunting Box` 菜单与 `Owned: N Shards` lore，不发送 `/hb`、不请求另一页、不点击槽位、不读取隐藏背包、不自动执行路线。Planner 与档案浏览始终只提供信息。
+QCA 不会抓取 SkyHanni、Skyblocker 或 Firmament 的私有字段。Planner 只读取 QCloudy 有界 Shard 价格响应：Bazaar `buyPrice` 明确表示立即买入/获取成本，`sellPrice` 表示立即卖出/清算价值。完整市场来源表示所需已发布组成均可用；`partial` 表示至少一个组成已过时或不可用，但仍有部分可用值。没有可靠价格的物品保持 `unknown`；未知、畸形与非正数价格会被省略，不会改成 0。后端大约每分钟刷新 Bazaar；active AH 必须完成一次版本一致的原子周期；ended auctions 会去重并记录 coverage gap。Dungeon 查询不读取市场快照，也不启动采集器。仓库只在玩家亲自打开后读取精确可见 `Hunting Box` 菜单与 `Owned: N Shards` lore，不发送 `/hb`、不请求另一页、不点击槽位、不读取隐藏背包、不自动执行路线。
 
 独立的统一设置适配器会使用经过能力检查的反射访问已安装模组的实时客户端配置，因为这五个提供方没有共同且稳定的跨模组设置 API。Feesh 设置写入使用其公开委托属性 setter 与 `Settings.save()`；Feesh Overlay 移动使用实时注册表和 `PersistentDataManager`。扫描和编辑均不会调用 Feesh 的 API、聊天、命令、分享或玩法路径。提供方版本号不作为白名单。提供方探测必须由玩家主动确认且按需发生：首次开启但没有有效快照时会先显示第二次确认，每一次 Refresh 也会再次显示；只有确认回调能够创建扫描任务，重启后恢复的开关或启动 tick 都不能绕过。刷新期间上一份快照继续有效，新结果只在校验后发布，两个开关都关闭时取消任务并清除快照。原生/已验证规则先运行，小型固定本地元数据分类器只处理余下内容；不确定功能保持未分类。扫描不会联系模型或服务，也不会写入。只有玩家之后真实编辑时，才可能调用已识别提供方数值 setter 和其原生保存/update 机制。该访问不用于价格、玩法状态、网络通信、隐藏服务器数据或自动化，QCA 也不会直接修改其他模组的配置文件。
 

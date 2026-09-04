@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha3 通用 PV 剥离与 Dungeon Quick View 验证
+
+日期：2026-09-04<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha3` 完整删除 QCA 通用 `//pv` 与 `/qpv` 功能，包括客户端源码/测试、后端源码与路由，同时保留独立 Dungeon Player Quick View 与 Shard Planner。Dungeon Quick View 只对 Dungeon Finder 的精确新成员消息响应，不浏览列表，也绝不自动踢人。这仍是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release/更新检查基线仍为 0.3.9。
+
+## 本地构建产物
+
+- `build/libs/QCloudy_Addition-0.3.10-alpha3+26.1.2.jar` — 3,696,300 字节 — `fb8071730416cbbdcf79d576c1822149f94b0cb2bfcf4fbfe6f1c34d8188f2a7`
+- `build/libs/QCloudy_Addition-0.3.10-alpha3+26.1.2-sources.jar` — 3,125,205 字节 — `070bf0fb3da4279de5e9d1be426301de0fd496f7a3e1931655d9b3aa0f16596f`
+
+## 已完成验证
+
+- `./gradlew clean test build` 成功：57 个测试套件、316 项测试，0 failure、0 error、0 skipped。
+- FastAPI 后端通过 Python 编译与 44 项 pytest。OpenAPI 已重新生成并包含 6 条固定路由；包含 `/v1/dungeons/quick-view/{target}`，不再包含 `/v1/pv/*` 或 `/v1/market/tooltip-prices`。
+- 两个 JAR 均通过 JDK 25 `jar --validate`。可运行 JAR 精确声明 `0.3.10-alpha3+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25 及匹配的 Fabric Loader/Fabric API 要求。
+- 干净 JAR 包含专用 `dungeon` 与独立 `market/shard` 类，不含 `cloudy/autume/addition/profile/` 条目或旧 Profile Viewer/命令/服务类。
+- 回归覆盖精确 Dungeon Finder 加入匹配、普通 Party/Kuudra 拒绝、排队楼层解析、有界 schema/三态解析、一位小数等级、原生下划线、上下测量线端点对齐、点击式踢人载荷、悬停绑定、请求合并、底层传输取消、缓存及 Shard Bazaar 独立性。
+- 后端覆盖选中 Profile 投影、Catacombs 50 级上限、楼层次数/最快时间、Secrets 平均值、Magical Power、护甲/武器/宠物提取、有界原生 lore、无效楼层、旧路由 404，以及缓存/市场回归。
+
+## 尚未完成的实服验证边界
+
+- 本地验证没有使用已登录 Hypixel 的真实 Dungeon Finder 队伍、真实私密档案组合、材质包/GUI Scale 矩阵或已部署 QCloudy API。
+- 原生物品悬停的构造已编译并验证绑定；精确游戏内视觉间距、标题线效果和真实物品 lore 仍需安装 Alpha 后实机检查。
+- 后端改动尚未部署，也没有执行 Git commit/push、GitHub Release 或 Modrinth 发布。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha2 图形化档案与 Tooltip 价格验证
 
 日期：2026-09-02<br>

@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha3 generic-PV removal and Dungeon Quick View validation
+
+Date: 2026-09-04<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha3` removes the generic QCA `//pv` and `/qpv` feature, including its client source, tests, backend source, and routes, while preserving the independent Dungeon Player Quick View and Shard Planner. Dungeon Quick View reacts only to an exact Dungeon Finder newcomer message and never browses listings or kicks automatically. This remains an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Local build artifacts
+
+- `build/libs/QCloudy_Addition-0.3.10-alpha3+26.1.2.jar` — 3,696,300 bytes — `fb8071730416cbbdcf79d576c1822149f94b0cb2bfcf4fbfe6f1c34d8188f2a7`
+- `build/libs/QCloudy_Addition-0.3.10-alpha3+26.1.2-sources.jar` — 3,125,205 bytes — `070bf0fb3da4279de5e9d1be426301de0fd496f7a3e1931655d9b3aa0f16596f`
+
+## Completed verification
+
+- `./gradlew clean test build` completed successfully: 57 suites, 316 tests, 0 failures, 0 errors, and 0 skipped.
+- The FastAPI backend completed Python compilation and 44 pytest cases. OpenAPI was regenerated with 6 fixed routes; it contains `/v1/dungeons/quick-view/{target}` and contains no `/v1/pv/*` or `/v1/market/tooltip-prices` route.
+- Both JARs pass JDK 25 `jar --validate`. The playable JAR declares exact version `0.3.10-alpha3+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, and matching Fabric Loader/Fabric API requirements.
+- Clean-JAR inspection contains the dedicated `dungeon` and independent `market/shard` classes and no `cloudy/autume/addition/profile/` entry or old Profile Viewer/command/service class.
+- Regression tests cover exact Dungeon Finder join matching, ordinary-party/Kuudra rejection, queued-floor parsing, bounded schema/tri-state parsing, one-decimal levels, native underlining, aligned measured separators, click-only kick payload, hover attachment, request coalescing, transport cancellation, cache behavior, and Shard Bazaar independence.
+- Backend tests cover selected-profile projection, the Catacombs level-50 cap, floor runs/fastest time, Secrets average, Magical Power, armor/weapon/pet extraction, bounded native lore, invalid floors, removed-route 404 behavior, cache and market regressions.
+
+## Remaining live-validation boundary
+
+- No authenticated Hypixel gameplay session, real Dungeon Finder party, real private-profile combination, resource-pack/GUI-scale matrix, or deployed QCloudy API was exercised in this local pass.
+- Native item-hover construction is compiled and its attachment is regression-tested; exact in-game visual spacing, title-line appearance, and live item lore still require an installed Alpha pass.
+- The backend changes have not been deployed, and no Git commit, push, GitHub Release, or Modrinth version was created.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha2 visual profile and tooltip-price validation
 
 Date: 2026-09-02<br>

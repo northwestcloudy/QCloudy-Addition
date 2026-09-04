@@ -17,7 +17,7 @@ from .cache import CacheStore
 from .config import Settings
 from .errors import ApiProblem
 from .market import MarketManager
-from .profile_service import PlayerProfileService
+from .dungeon_service import DungeonQuickViewService
 from .responses import error_body
 from .storage import MarketStorage
 from .upstream import HypixelUpstream
@@ -31,7 +31,7 @@ class ApplicationServices:
     cache: CacheStore
     storage: MarketStorage
     upstream: Any
-    profiles: PlayerProfileService
+    dungeons: DungeonQuickViewService
     market: MarketManager
 
 
@@ -51,14 +51,14 @@ def create_app(
     )
     storage = storage or MarketStorage(settings.sqlite_path)
     upstream = upstream or HypixelUpstream(settings)
-    profile_service = PlayerProfileService(settings, cache, upstream)
+    dungeon_service = DungeonQuickViewService(settings, cache, upstream)
     market = MarketManager(settings, cache, storage, upstream)
     service_bundle = ApplicationServices(
         settings=settings,
         cache=cache,
         storage=storage,
         upstream=upstream,
-        profiles=profile_service,
+        dungeons=dungeon_service,
         market=market,
     )
 
@@ -79,7 +79,7 @@ def create_app(
 
     app = FastAPI(
         title="QCloudy API",
-        summary="Player profile and transformed SkyBlock market data for QCloudy Addition.",
+        summary="Dungeon quick-view and transformed SkyBlock market data for QCloudy Addition.",
         version=__version__,
         openapi_url="/openapi.json",
         docs_url="/docs",

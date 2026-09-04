@@ -8,6 +8,7 @@ import cloudy.autume.addition.combat.DeathSaveAlertManager;
 import cloudy.autume.addition.combat.DeployableExpiryAlert;
 import cloudy.autume.addition.compat.MinecraftClientCompat;
 import cloudy.autume.addition.fishing.FishingBiteAlert;
+import cloudy.autume.addition.dungeon.DungeonQuickViewManager;
 import cloudy.autume.addition.hud.HudRenderer;
 import cloudy.autume.addition.i18n.ModText;
 import cloudy.autume.addition.input.HotkeyInputs;
@@ -23,7 +24,6 @@ import cloudy.autume.addition.party.FriendRosterStore;
 import cloudy.autume.addition.party.PartyAutoAcceptManager;
 import cloudy.autume.addition.party.PartyCommandEngine;
 import cloudy.autume.addition.party.PrivatePartyRequestCommands;
-import cloudy.autume.addition.profile.ProfileCommands;
 import cloudy.autume.addition.tracker.LocationTracker;
 import cloudy.autume.addition.tracker.HotmSlotTracker;
 import cloudy.autume.addition.tracker.PetTracker;
@@ -120,6 +120,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             IntegrationScanService.tick();
             if (ticks % 20 == 0) {
                 LocationTracker.update(client);
+                DungeonQuickViewManager.updateScoreboard(LocationTracker.scoreboardLines());
                 TabListTracker.update(client);
                 HuntingTracker.updateReceivedText(TabListTracker.lines(), LocationTracker.scoreboardLines());
                 HotmSlotTracker.update(client);
@@ -202,7 +203,6 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             registerCenturyCakeCommand(dispatcher, "cake");
             registerCenturyCakeCommand(dispatcher, "centurycakeeffect");
             registerPartyClientCommands(dispatcher);
-            ProfileCommands.register(dispatcher);
         });
 
         LOGGER.info("QCloudy_Addition initialized in client-side mode");
@@ -586,6 +586,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         PARTY_AUTO_ACCEPT.resetSession();
         PARTY_COMMAND_ENGINE.resetSession();
         PRIVATE_PARTY_REQUESTS.resetSession();
+        DungeonQuickViewManager.reset();
     }
 
     private static void onPartyMessage(Component message, boolean overlay) {
@@ -602,6 +603,8 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
                 System.currentTimeMillis());
         if (command != null) sendServerCommand(client, command);
         if (!onHypixel) return;
+
+        DungeonQuickViewManager.onMessage(client, message);
 
         if (chat.directMessagePartyRequest) {
             PRIVATE_PARTY_REQUESTS.handleIncomingDirectMessage(message.getString(), System.nanoTime())

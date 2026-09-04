@@ -22,6 +22,7 @@ public final class ModConfig {
     public CenturyCakes centuryCakes = new CenturyCakes();
     public Pets pets = new Pets();
     public Chat chat = new Chat();
+    public Dungeons dungeons = new Dungeons();
     public Inventory inventory = new Inventory();
     public Integrations integrations = new Integrations();
     public Keybinds keybinds = new Keybinds();
@@ -38,6 +39,7 @@ public final class ModConfig {
         if (centuryCakes == null) centuryCakes = new CenturyCakes();
         if (pets == null) pets = new Pets();
         if (chat == null) chat = new Chat();
+        if (dungeons == null) dungeons = new Dungeons();
         if (inventory == null) inventory = new Inventory();
         if (integrations == null) integrations = new Integrations();
         if (keybinds == null) keybinds = new Keybinds();
@@ -197,6 +199,12 @@ public final class ModConfig {
             chat.initializePartyCommandDefaults();
             configVersion = 27;
         }
+        if (configVersion < 28) {
+            // Dungeon Quick View is independent from the removed generic PV
+            // commands and may be disabled without affecting party commands.
+            dungeons.playerQuickView = true;
+            configVersion = 28;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
@@ -214,6 +222,10 @@ public final class ModConfig {
         inventory.normalize();
         integrations.normalize();
         keybinds.normalize();
+    }
+
+    public static final class Dungeons {
+        public boolean playerQuickView = true;
     }
 
     public static final class Keybinds {

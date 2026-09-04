@@ -2,6 +2,23 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha3] - 2026-09-04
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Changed
+
+- Removed the generic QCA Player Profile Viewer in full: `//pv`, `/qpv`, its screen/models/caches/item-price tooltip client, and the corresponding `/v1/pv/*` and `/v1/market/tooltip-prices` backend routes and source code.
+- Added an independent Dungeon Player Quick View. It triggers only from the exact Dungeon Finder newcomer message, analyzes that one joining player, and prints Catacombs, Secrets, five classes, queued-floor runs/fastest time, armor, selected weapons/pets, and Magical Power in a colored hover-first chat card.
+- Class names and the manual kick action use native underlining. Item details use native item hover presentation, missing data is explicit, and the measured top/bottom separators share the same endpoints.
+- The click action is the only kick path; no automatic kick, Party Finder listing scan, or class-conflict decision was added. A separate Dungeons toggle can disable the card without changing any existing party command.
+- Moved the Shard Bazaar client types out of the removed profile package so the Shard Planner remains independent and functional.
+
+### Scope
+
+- Client-side request coalescing and a 60-second successful-result cache reduce repeat delay. The QCloudy API performs one bounded quick-view response and uses short shared source caches with stale fallback only for technical failures.
+- `0.3.10-alpha3` is an Alpha source/build target only; it is not a GitHub Release, Modrinth version, or stable update target.
+
 ## [0.3.10-alpha2] - 2026-09-02
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

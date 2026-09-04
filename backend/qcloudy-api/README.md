@@ -1,93 +1,77 @@
 # QCloudy API v1
 
-QCloudy Addition 的独立 FastAPI 后端。它集中缓存 Hypixel 玩家档案，并把 Bazaar、活动拍卖和最近成交转换为含明确语义的价格数据。Mod **不会**携带 Hypixel API Key；Key 只保存在这台服务器上。
+QCloudy Addition 的独立 FastAPI 后端，为 Dungeon Player Quick View 提供一个有界响应，并继续提供 Shard Planner 使用的市场快照。Mod **不会**携带 Hypixel API Key；Key 只保存在服务器上。
 
-English summary: a deployable, cache-first backend for QCA Player Viewer and transformed SkyBlock market data. It is not a general Hypixel API proxy.
+English summary: a cache-first backend for QCA's Dungeon newcomer quick view and transformed SkyBlock market data. It is not a general Hypixel API proxy.
 
 ## 安全与合规边界
 
-- 玩家、Profiles、Museum、Garden 端点由服务端使用 `QCA_HYPIXEL_API_KEY`。
-- Bazaar、活动 AH、最近结束 AH、物品资源是公开端点，请求中绝不发送 API Key；该边界有自动测试。
-- 上游地址和方法写死在 `HypixelUpstream`，没有用户可控 URL，也没有任意代理接口。
-- 用户名查询与玩家档案是跨用户共享缓存，避免每个 Mod 客户端重复访问 Hypixel。
-- 只按用户主动使用 `/qpv` 或 `//pv` 时读取玩家数据；不持续轮询玩家状态或建立玩家历史追踪。
-- 所有认证 Hypixel 请求共用每分钟预算与短时 burst；预算耗尽会快速失败，遇到 429 或明确的 `RateLimit-Remaining: 0` 会进入有界退避断路，而不是继续重试消耗 Key。
-- API Key 不写入仓库、日志或客户端。生产环境通过权限为 `0600` 的 systemd 环境文件注入。
-- 部署模板关闭 Nginx/Uvicorn access log，并丢弃该 Nginx vhost 会附带完整 URI 的 request-scoped error log，避免把包含玩家名/UUID 的 PV 路径保存成访问历史；技术错误日志不得包含完整请求路径、API Key、请求正文或完整上游玩家响应。
+- Dungeon Quick View 只在客户端收到精确的 Dungeon Finder 新成员加入消息后查询该玩家；后端不会浏览 Party Finder 列表，也不会轮询玩家历史。
+- 玩家与 SkyBlock Profiles 由服务端使用 `QCA_HYPIXEL_API_KEY`。Bazaar、活动 AH、最近结束 AH 与物品资源使用 Hypixel 公共端点，绝不携带 Key。
+- 上游地址和方法固定在 `HypixelUpstream`，没有用户可控 URL 或任意代理接口。
+- 所有认证请求共用每分钟预算与短时 burst；预算耗尽或收到 429 时进入有界退避，不持续消耗 Key。
+- API Key 不写入仓库、日志或客户端。生产环境应通过权限为 `0600` 的 systemd 环境文件注入。
+- 部署模板关闭会记录完整玩家路径的访问日志。技术日志不得包含 API Key、请求正文或完整上游玩家响应。
+- Kick 不属于 API 行为。客户端仅在玩家点击聊天卡底部操作时发送 `/party kick <player>`，服务端不会自动决定或执行踢人。
 
-参考：[Hypixel 官方 API Reference](https://api.hypixel.net/) 与 [API Policy](https://developer.hypixel.net/policies)。生产公开服务应使用经过 Hypixel 审核的 Production application/key。
+参考：[Hypixel 官方 API Reference](https://api.hypixel.net/) 与 [API Policy](https://developer.hypixel.net/policies)。公开生产服务应使用经过 Hypixel 审核的 Production application/key。
 
 ## 数据流
 
 ```text
-QCA Mod ──HTTPS──> FastAPI
-                    ├─ shared profile cache ──> Hypixel authenticated endpoints
-                    ├─ BZ collector (60 s) ──> public Bazaar endpoint
-                    ├─ AH collector (120 s) ─> all public active-auction pages
-                    └─ ended collector (30 s) ─> public last-60-seconds endpoint
-                                              └─ SQLite sales + coverage gaps
+Dungeon Finder newcomer message
+  └─ QCA Mod ── one bounded HTTPS request ──> FastAPI
+                                               ├─ shared short player/Profile cache
+                                               └─ authenticated Hypixel endpoints
+
+Shard Planner ── bounded HTTPS request ───────> published Bazaar snapshot
+Market collectors ────────────────────────────> public Bazaar/AH endpoints
 ```
 
-Redis 是可选的共享快照/缓存层；Redis 不可用时自动退回单进程内存缓存。SQLite 是成交样本与 coverage gap 的持久层。
-进程内缓存同时受过期时间、LRU 条目数和 UTF-8 字节预算约束；过期项会主动清除，唯一查询不会在内存中永久累积。默认上限可通过 `QCA_CACHE_MEMORY_MAX_ENTRIES` 与 `QCA_CACHE_MEMORY_MAX_BYTES` 下调。
+Redis 是可选的共享缓存层；Redis 不可用时退回有条目数和字节预算的单进程内存缓存。SQLite 只持久化市场成交样本和 coverage gap，不保存 Dungeon Quick View 卡片或玩家历史。
 
 ## v1 API
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | `GET` | `/health` | 进程存活 |
-| `GET` | `/ready` | SQLite、缓存层和市场采集状态 |
-| `GET` | `/v1/pv/{target}?profileId=<32hex>` | 主 PV 快照；Museum/Garden 按需，Market 只读已发布快照做背包估值 |
-| `GET` | `/v1/pv/{uuid}/{profileId}/museum` | 仅在 UI 打开 Museum 时加载 |
-| `GET` | `/v1/pv/{uuid}/{profileId}/garden` | 仅在 UI 打开 Garden 时加载 |
+| `GET` | `/ready` | SQLite、缓存层与市场采集状态 |
+| `GET` | `/v1/dungeons/quick-view/{target}?floor=F7` | 新成员 Dungeon Quick View 的完整有界响应；floor 可省略或为 `E/F1-F7/M1-M7` |
 | `POST` | `/v1/market/prices` | 最多 256 个 `{itemId, variantKey?}` 的批量价格 |
-| `GET` | `/v1/market/bazaar/shards?side=instant_buy\|instant_sell` | Shard Planner 价格映射 |
-| `GET` | `/v1/market/status` | 采集器状态 |
+| `GET` | `/v1/market/bazaar/shards?side=instant_buy|instant_sell` | Shard Planner 价格映射 |
+| `GET` | `/v1/market/status` | 市场采集器状态 |
 
-交互文档：`/docs`；ReDoc：`/redoc`；机器规范：`/openapi.json`。仓库中的 `openapi.json` 可用 `python scripts/export_openapi.py` 重新生成。
+旧的 `/v1/pv/*` 与 `/v1/market/tooltip-prices` 已删除。交互文档：`/docs`；ReDoc：`/redoc`；机器规范：`/openapi.json`。仓库规范可用 `python scripts/export_openapi.py` 重新生成。
 
-### PV 主响应契约
+## Dungeon Quick View 契约
 
 - `schemaVersion` 固定为 `1`。
-- 顶层：`partial`、`identity`、`profiles`、`selectedProfileId`、`sources`、`sections`。
-- source 状态：`fresh/stale/private/not_found/not_requested/error`。
-- section 状态：`available/stale/private/not_found/not_loaded/error`。
-- 所有时间是 Unix epoch milliseconds。
-- 背包 Base64/gzip NBT 在后端安全解码为 `slot/count/itemId/displayName/rarity/extraAttributes/variantKey` 摘要；解析失败只返回大小和状态，不回传巨型 Base64。
-- `sections.market` 从已发布的 BZ/AH/ended 快照计算 `pricedItems/unknownItems/instantSellNetWorth/estimatedNetWorth/perItem`；它绝不因一次 PV 请求触发上游市场采集，市场未 ready 时主 PV 仍成功并标记 `partial`。
-- `misc` 包含 Farming 与尚未归类的 player/profile/member 数据，但全部经过同一递归深度、条目数、字符串长度与响应总量预算投影；不会复制无界原始对象。
-- Museum 先验证 Profile 成员关系，再只选择所查询 UUID 对应的一个 member 并做有界投影；不会向一个玩家返回其他 co-op 成员的 Museum 数据。
+- 单个响应包含：玩家 identity、Catacombs 等级/XP、五职业等级/XP、指定层数 runs/fastest、Secrets 总数/全地牢 run 平均、Magical Power、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与新鲜度。
+- Catacombs 与职业 XP 保留精确数值；客户端仅将等级显示到一位小数，并把 XP 放入悬停。
+- 护甲按 Helmet、Chestplate、Leggings、Boots 输出。后端从有限 NBT 摘要提供格式化名称与最多 80 行 lore，供客户端构造 Minecraft 原生 item hover。
+- 武器和宠物使用 `present/absent/missing` 三态。只有数据源完整时才把未找到的物品标记为 absent；解码或字段不可用时显示 missing。
+- 当前楼层最快时间取该层可用的 S+、S 或普通完成时间中的最小正值。Secrets 平均值使用总 Secrets 除以普通与 Master 所有楼层完成次数之和，排除聚合 `total` 字段。
+- 私密、缺失与异常数据不会变成 0；API 使用统一错误响应，客户端仍可生成全字段 `Missing` 卡片。
 
-错误固定为：
+统一错误格式：
 
 ```json
 {"schemaVersion":1,"error":{"code":"...","message":"...","retryable":false}}
 ```
 
-### 价格语义
-
-- `instantBuyPrice`：现在从 Bazaar 买入时支付的近似价格；来自 Hypixel `quick_status.buyPrice`。
-- `instantSellPrice`：现在向 Bazaar 快速卖出时收到的近似价格；来自 `quick_status.sellPrice`。
-- `lowestBin`：当前最低 BIN 挂单，不是已成交价。
-- `robustListingPrice`：同一 variant 最低最多 5 个 BIN 的中位数，减少单个离群挂单影响。
-- `sales24h/sales7d.median`：服务实际观察到的结束拍卖中位数；`coverageComplete=false` 时不可宣称覆盖完整。
-- 非 BIN 的 `starting_bid` 不进入 LBIN。Variant key 由 NBT `ExtraAttributes` 的稳定子集生成；NBT 失败时明确标为 `fallback`。
-
-## 缓存与采集周期
+## 缓存与市场
 
 | 数据 | fresh / 抓取 | stale 技术兜底 | 备注 |
 |---|---:|---:|---|
-| 玩家名 → UUID | 72 h | 72 h | 不存在 15 min；不另设更长 stale 窗口 |
-| Hypixel player | 1 h | 24 h | Key 端点 |
-| 全部 SkyBlock profiles | 1 h | 24 h | Key 端点 |
-| Museum | 6 h | 24 h | 按需加载 |
-| Garden | 12 h | 24 h | 按需加载 |
-| Hypixel item resources | 每 6 h 主动刷新 | 14 d 技术缓存 | 公共端点；仅静态物品元数据 |
+| 玩家名 → UUID | 72 h | 72 h | 不存在 15 min |
+| Dungeon player | 2 min | 10 min | 只在上游技术失败时使用旧值 |
+| Dungeon SkyBlock Profiles | 2 min | 10 min | 与 player 并行加载 |
+| Hypixel item resources | 每 6 h 主动刷新 | 14 d | 公共端点 |
 | Bazaar | 60 s | 10 min | 公共端点 |
-| 完整活动 AH | 120 s | 15 min | 公共端点；一致后原子发布 |
-| Recently ended AH | 30 s | upstream 仅 60 s | `auction_id` 去重，SQLite 保留 30 d |
+| 完整活动 AH | 120 s | 15 min | 版本一致后原子发布 |
+| Recently ended AH | 30 s | upstream 仅 60 s | SQLite 去重并保留 30 d |
 
-活动 AH 先读 page 0 的 `lastUpdated/totalPages/totalAuctions`，并发抓完所有页，每页必须一致，最后再读一次 page 0；版本、页数、总量或唯一 UUID 数量有任何变化，本轮整体丢弃，继续使用上一个快照。
+客户端还会合并相同的进行中 Quick View 请求，并仅缓存成功响应 60 秒。一次 Dungeon Quick View 不会启动或加速任何市场采集器。
 
 ## 本地开发
 
@@ -101,11 +85,4 @@ cp .env.example .env
 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8765
 ```
 
-不要把真实 Key 写入 `.env.example` 或提交 `.env`。完整 systemd、Nginx 和上线步骤见 [`deploy/README.md`](deploy/README.md)。
-
-## 已知限制
-
-- Variant fingerprint 是第一版稳定子集，不等于完整的 SkyHanni/Firmament 估值规则；新型宠物、属性、染色、皮肤和特殊升级需要持续补测试夹具。
-- 已成交历史从服务首次连续运行后才开始建立；在覆盖完整一个查询窗口前，`coverageComplete` 必须为 `false`。
-- 当前部署只支持单个 Uvicorn worker。Redis 可以共享缓存和 collector 锁，但**不会**共享进程内的 Hypixel 认证令牌桶/429 断路状态；启用多 worker 或多实例前，必须先实现 Redis 原子认证限流，不能仅靠填写 `QCA_REDIS_URL` 水平扩容。
-- 第一版 PV 已解码主要 inventory NBT；新增且尚未分类的字段可出现在 `misc` 的有界投影中，但深度、条目数、字符串和总响应预算都受限，不会把原始巨型数据直接发给 UI。
+不要把真实 Key 写入 `.env.example` 或提交 `.env`。部署说明见 [`deploy/README.md`](deploy/README.md)。当前只支持一个 Uvicorn worker；Redis 尚未共享认证令牌桶/429 断路状态，多 worker 前必须实现 Redis 原子认证限流。

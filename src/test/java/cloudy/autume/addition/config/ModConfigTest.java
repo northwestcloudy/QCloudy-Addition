@@ -19,6 +19,7 @@ final class ModConfigTest {
         config.centuryCakes = null;
         config.pets = null;
         config.chat = null;
+        config.dungeons = null;
         config.hudStyle = null;
 
         config.normalize();
@@ -33,6 +34,7 @@ final class ModConfigTest {
         assertNotNull(config.centuryCakes);
         assertNotNull(config.pets);
         assertNotNull(config.chat);
+        assertNotNull(config.dungeons);
         assertNotNull(config.hudStyle);
 
         config.hudStyle.pet.backgroundOpacity = 999;
@@ -47,7 +49,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(27, config.configVersion);
+        assertEquals(28, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -202,7 +204,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(27, migrated.configVersion);
+        assertEquals(28, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -248,7 +250,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(27, migrated.configVersion);
+        assertEquals(28, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
@@ -276,7 +278,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(27, migrated.configVersion);
+        assertEquals(28, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(false, migrated.chat.directMessagePartyRequest);
@@ -291,7 +293,7 @@ final class ModConfigTest {
     @Test
     void currentSchemaPreservesCommandChoicesAndRepairsOnlyNullTriggerScopes() {
         ModConfig config = new ModConfig();
-        config.configVersion = 27;
+        config.configVersion = 28;
         config.chat.directMessagePartyRequest = true;
         config.chat.quickPrivatePartyRequest = true;
         config.chat.fastPartyCommands = true;
@@ -316,7 +318,7 @@ final class ModConfigTest {
     @Test
     void partyWhitelistIsOrderedCaseInsensitiveValidatedAndCappedAtSixteen() {
         ModConfig config = new ModConfig();
-        config.configVersion = 27;
+        config.configVersion = 28;
         config.chat.partyAutoAcceptFriendMode = null;
         config.chat.partyAutoAcceptWhitelist = new java.util.ArrayList<>();
         config.chat.partyAutoAcceptWhitelist.add("  Alice  ");

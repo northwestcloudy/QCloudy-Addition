@@ -251,24 +251,6 @@ class HypixelUpstream:
         assert payload is not None
         return payload
 
-    async def fetch_museum(self, profile_id: str) -> dict[str, Any]:
-        payload = await self._json_get(
-            self._hypixel_url("skyblock/museum"),
-            params={"profile": profile_id},
-            authenticated=True,
-        )
-        assert payload is not None
-        return payload
-
-    async def fetch_garden(self, profile_id: str) -> dict[str, Any]:
-        payload = await self._json_get(
-            self._hypixel_url("skyblock/garden"),
-            params={"profile": profile_id},
-            authenticated=True,
-            not_found_is_none=True,
-        )
-        return payload or {"success": True, "garden": None}
-
     async def fetch_bazaar(self) -> dict[str, Any]:
         payload = await self._json_get(self._hypixel_url("skyblock/bazaar"))
         assert payload is not None

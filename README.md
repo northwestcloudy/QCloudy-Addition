@@ -1,17 +1,17 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current source tree is the unpublished `0.3.10-alpha2` development snapshot for Minecraft 26.1.2 only. The current public testing build remains Beta 0.3.10 for Minecraft 26.1.2 and 26.2; the latest stable release remains 0.3.9.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current source tree is the unpublished `0.3.10-alpha3` development snapshot for Minecraft 26.1.2 only. The current public testing build remains Beta 0.3.10 for Minecraft 26.1.2 and 26.2; the latest stable release remains 0.3.9.
 
 ## Quick links
 
 - [Feature list](docs/FEATURES.md)
 - [Implementation notes](docs/IMPLEMENTATION.md)
 - [Modrinth description](docs/MODRINTH_DESCRIPTION.md)
-- [Changelog (current source 0.3.10-alpha2; public Beta 0.3.10 below)](CHANGELOG.md)
+- [Changelog (current source 0.3.10-alpha3; public Beta 0.3.10 below)](CHANGELOG.md)
 - [Version and artifact naming](docs/VERSIONING.md)
 - [Validation](docs/VALIDATION.md)
 - [Compliance](docs/COMPLIANCE.md)
-- [Profile and market privacy](docs/PRIVACY.md)
+- [Dungeon quick-view and market privacy](docs/PRIVACY.md)
 
 Default language: English. Press `O` (rebindable under Controls → Key Binds → QCloudy_Addition) or use `/qca` or `/qc` to open the client-side settings, then switch to Simplified Chinese at any time. These settings aliases are registered only when their client-command names are free, open a local screen, and send nothing. The separately configured party/chat aliases are documented below.
 
@@ -42,9 +42,9 @@ The top-level order is **General, Maps, Items & Menus, Combat, Dungeons, Slayer,
 ### General
 
 - **Manual Reconnect** — adds one vanilla-sized `Reconnect` button to connection-failed and disconnected screens. The target is captured when the normal connection attempt begins, so the button also works after an initial failure. It reconnects only after the player clicks it; there is no timer, loop, retry counter, command, or automatic join.
-- **Player Profile Viewer** — local `//pv [player or UUID]` and `/qpv [player or UUID]` commands open a read-only, visual QCA SkyBlock profile browser; omitting the target selects the local player. A persistent identity/Profile bar, icon navigation, stat cards, progress bars, semantic groups, and slot-based item grids expose Overview, Gear, Accessories, Pets, Inventory/Ender Chest/Storage/Wardrobe/Vault, Skills, Slayer, Mining, Minions, Bestiary, Collections, Crimson Isle, Rift, Miscellaneous/Farming, Museum, Garden, and Market/Net Worth data without presenting a raw JSON tree. A decoded AH item tooltip uses the fixed order optional `NPC Sell Price`, clean/base-item current `Low. BIN Price`, 72-hour time-weighted clean-LBIN `3 Day Avg. Price`, then actual held-variant `Item NW Value`; a Bazaar item uses optional `NPC Sell Price`, immediate-sale proceeds as `BZ Sell Price`, then immediate-purchase cost as `BZ Buy Price`. There is no generic price header. Missing rows are omitted, prices use full comma-separated Coin values rather than K/M abbreviations, and a stack shows its total first plus `(unit each)` only when its count exceeds one. Ordinary `/pv` is deliberately not registered, Dungeon/party-profile inspection is not part of this version, and opening PV never starts a market collector. A new deployment needs 72 hours of continuous clean-LBIN samples before the three-day average can appear.
+- **Dungeon Player Quick View** — when the exact Dungeon Finder message reports that a new player joined the dungeon group, QCA analyzes only that newcomer and prints a colored chat card. It shows Catacombs level, total and per-run Secrets, all five class levels, the queued floor's run count and fastest completion, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. Catacombs/classes expose exact XP on hover; recognized armor, weapons, and pets use native item-style hover details. Missing or private fields say `Missing`. Class labels and the manual kick action use native Minecraft underlining, while measured top and bottom separators keep matching endpoints. QCA never browses Party Finder listings, never checks class conflicts, and never kicks automatically; only clicking the red underlined action runs `/party kick <player>`. The feature has an independent Dungeons setting.
 
-The viewer contacts only `https://api.qcloudy.net`; the mod never contains or receives the private Hypixel API key and never connects directly to authenticated Hypixel profile endpoints. QCloudy's service resolves the requested name and transforms the public profile response, using independent cache windows: name/UUID 72 hours with no longer stale extension, player and all SkyBlock profiles 1 hour (technical stale fallback up to 24 hours), Museum 6 hours, and Garden 12 hours. The local client cache lasts at most ten minutes and never extends server freshness metadata. Private/missing data replaces an older snapshot after a successful refresh; stale data is used only for technical failure and is labelled in the UI.
+The quick view contacts only `https://api.qcloudy.net`; the mod never contains or receives the private Hypixel API key and never connects directly to authenticated Hypixel profile endpoints. One bounded response supplies the whole card. The client coalesces identical requests and caches successful results for 60 seconds; the service caches player/Profile sources for two minutes with a ten-minute stale-on-technical-failure ceiling so repeat joins appear quickly without silently turning absent data into zero.
 
 ### Maps
 
