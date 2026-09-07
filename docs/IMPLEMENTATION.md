@@ -1,6 +1,6 @@
 # QCloudy_Addition implementation and data-flow reference
 
-This document explains what each feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the unpublished `0.3.10-alpha3` source snapshot for Minecraft 26.1.2 only. The current public test remains Beta `0.3.10`; the latest stable Release remains `0.3.9`.
+This document explains what each feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the unpublished `0.3.10-alpha4` source snapshot for Minecraft 26.1.2 only. The current public test remains Beta `0.3.10`; the latest stable Release remains `0.3.9`.
 
 ## 1. Runtime architecture
 
@@ -45,7 +45,7 @@ Feesh uses Kotlin delegated settings rather than public fields. Its adapter pair
 
 `IntegrationCompatibilityScreen` is deliberately separate from `Feature` and `UnifiedFeature` toggles. It reads the latest completed snapshot and reports named features whose primary control, secondary setting, classification, or recognised HUD coordinate contract is unavailable, with independent Settings/HUD flags; supported features are filtered out. Empty or unreadable recognised provider roots become a provider-level configuration gap instead of a false all-supported result. The report never invokes a setter or save path. Provider grouping is computed once per opened report, and wrapped row geometry is cached until the content width changes instead of being rebuilt every render frame.
 
-Location detection first confirms a Hypixel host and a received SkyBlock scoreboard. It then classifies the current island from the location-marked scoreboard line and a bounded list of known original location names. Island-specific parsers and renders do not run globally.
+`HypixelSessionTracker` is the single environment authority. The official Hypixel Mod API `ClientboundHelloPacket` confirms the network independently of the server-list address; `ClientboundLocationPacket` authoritatively selects SkyBlock versus another game and supplies server, mode, map, and lobby context. A world change clears instance fields until the next Location event, while disconnect clears the whole session. Address text is never an activation gate. While Location is pending, an exact Hypixel proxy brand plus a strict `SKYBLOCK` sidebar title and a structural Profile/Purse/location/Dungeon/Rift row can temporarily allow passive rendering, but never command-sending features. Scoreboard and Tab parsing then enrich the confirmed session with Profile, subarea, Dungeon, Rift, task, powder, and pet state; loose substring presence can no longer establish server identity.
 
 ### 1.2 Always-on Release notification
 
@@ -425,7 +425,7 @@ QCA stores no password, access token, Hypixel API key, chat history, remote acco
 
 The generic QCA Profile Viewer has been removed: no `ProfileCommands`, `/qpv`, `//pv` handler, profile screen/model/cache, item-price hover client, `/v1/pv/*` route, or `/v1/market/tooltip-prices` route remains. Shard Bazaar transport types now live under `market.shard`, keeping the existing Shard Planner independent from the removed package.
 
-`DungeonJoinParser` accepts only the exact Dungeon Finder newcomer message and rejects ordinary party joins and Kuudra messages. `DungeonFloor` reads the local player's own queue scoreboard (`E`, `F1-F7`, or `M1-M7`) without browsing Party Finder listings. `DungeonQuickViewManager` gates the feature by Hypixel session and its independent Dungeons setting, deduplicates repeat join lines for two seconds, cancels requests across session changes, and analyzes only the captured newcomer.
+`DungeonJoinParser` accepts only the exact Dungeon Finder newcomer message and rejects ordinary party joins and Kuudra messages. `DungeonFloor` reads the local player's own queue scoreboard (`E`, `F1-F7`, or `M1-M7`) without browsing Party Finder listings. `DungeonQuickViewManager` is reached only after an authoritative Mod API Location confirms SkyBlock and its independent Dungeons setting is enabled; it deduplicates repeat join lines for two seconds, cancels requests across session changes, and analyzes only the captured newcomer.
 
 `DungeonQuickViewService` validates player names and floor IDs, coalesces an identical in-flight request, and keeps a successful process-only result for 60 seconds. `QcaApiClient` sends one fixed-route request to `/v1/dungeons/quick-view/{target}` with the optional floor query. Its HTTPS origin, no-redirect policy, five/fifteen-second timeouts, and four-MiB response cap are shared with the still-independent Shard request. `DungeonQuickViewSnapshot` accepts only bounded schema 1 and uses a three-state equipment model so an incomplete source becomes `Missing` rather than an incorrect cross.
 

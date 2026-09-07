@@ -1,6 +1,6 @@
 # Third-party notices and reference provenance
 
-QCloudy_Addition's Java implementation and visual design are original. The following open-source projects were inspected to understand Minecraft 26.1.2/26.2 APIs and resilient client-side patterns. They are not bundled as dependencies.
+QCloudy_Addition's Java implementation and visual design are original. The following open-source projects were inspected to understand Minecraft 26.1.2/26.2 APIs and resilient client-side patterns. They are not bundled as dependencies unless the table explicitly says otherwise.
 
 | Project | Inspected version / commit | License | Use in QCA |
 |---|---|---|---|
@@ -9,6 +9,7 @@ QCloudy_Addition's Java implementation and visual design are original. The follo
 | SkyHanni | `7.41.0` / `3d047fc5a4683f51d73215ee31e8392f8a2f4c5c` | LGPL-2.1 | Reference for current Tab/chat formats |
 | BabyzombieAddons | `v3.4.1` / `821fc044e336c551c8e2d27b627c8782793a68a1` | LGPL-3.0 | Reference for current client event/accessor patterns and bounded loaded-entity scanning; QCA code is independently written |
 | Feesh | `1.13.0-alpha` / `9a5f9e074492a0f6c0eb4f6251ac361b7afb3992` | Apache-2.0 | Reference for its public Kotlin setting accessors, native save path, live Overlay registry, alignment anchors, and coordinate persistence; no Feesh source or resource is copied |
+| Hypixel Mod API | core `1.0.2`; Fabric `1.0.2+build.1+mc26.1` | MIT | Official Fabric implementation bundled for Hello/Location session detection; QCA does not implement the protocol itself |
 | SkyShards / SkyShards Parser | icons: `9688031dbc4e726168ffceb0f44884ff26e6e728`; planner-rate review: `382493203744df7f563d47bd6b3c30460725d047` | MIT, Copyright (c) 2026 Campion | Shard identifiers/properties, Special Fusion and acquisition-rate cross-checks; 320 PNGs and a normalized 320-entry baseline rate table are transformed and bundled, but no SkyShards application code is included |
 | NotEnoughUpdates item repository | local 2026-08-04 snapshot | MIT, Copyright (c) 2020 Moulberry | Pet identifiers, rarity XP offsets, special level-200 pet metadata, and fallback skin texture references |
 | Mod Menu API | 18.0.0 | MIT | Optional compile-only configuration entrypoint; Mod Menu is not bundled |

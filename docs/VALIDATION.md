@@ -1,3 +1,37 @@
+# QCloudy_Addition 0.3.10-alpha4 Hypixel session detection validation
+
+Date: 2026-09-07<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Compatibility test target: Minecraft 26.2<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha4` replaces every QCA server-address activation gate with one event-driven `HypixelSessionTracker`. The official Hypixel Mod API Hello packet confirms the network without relying on the address typed into Minecraft, and the official Location packet authoritatively identifies SkyBlock and supplies mode/map context. An exact Hypixel proxy brand plus a strict SkyBlock sidebar may bridge a delayed Location packet for passive display only; it cannot authorize a command. Dungeon Quick View requires an authoritative SkyBlock Location, while the existing Hypixel-wide party/chat command paths require official Hello confirmation. This remains an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha4+26.1.2.jar` — 3,793,719 bytes — `370a554d538334a81e6c93327dca60467b07c7515280091e50539d7e8462e87c`
+- `release/QCloudy_Addition-0.3.10-alpha4+26.1.2-sources.jar` — 3,127,452 bytes — `577c1b371863bcb200b8b2ea8ee6b142b518de52fcb9ff5fe3994ad4967022c7`
+
+## Completed verification
+
+- The final Minecraft 26.1.2 `clean test build prepareRelease` completed successfully: 58 suites, 321 tests, 0 failures, and 0 errors.
+- The same source compiled against Minecraft 26.2 and completed all 321 tests with 0 failures. No 26.2 Alpha artifact was produced because the Alpha policy remains Minecraft 26.1.2 only. The previously hard-coded build-metadata assertion now reads the active Gradle target, so it validates both supported targets instead of falsely failing on 26.2.
+- Both 26.1.2 JARs pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact version `0.3.10-alpha4+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+- The playable JAR contains `HypixelSessionTracker` and the official `hypixel-mod-api-1.0.2+build.1+mc26.1` Fabric wrapper. That wrapper contains its MIT notice and the official `mod-api-1.0.2` core JAR.
+- Source inspection finds no Hypixel/SkyBlock environment gate based on `ServerData.ip`, `hypixel.net`, or `hypixel.io`. The remaining `ServerAddress` use belongs only to Manual Reconnect, where preserving the address selected by the player is the intended behavior.
+- Regression tests cover Hello-only confirmation, authoritative SkyBlock/other-game Location decisions, accelerator/proxy-style brand fallback, lookalike rejection, strict scoreboard structure, command fail-closed behavior, and world-change cleanup. Existing Dungeon Quick View, party, HUD, inventory, fishing, hunting, update, networking, and configuration suites remain green.
+- Clean-JAR/source inspection still contains the dedicated `dungeon` and independent `market/shard` implementations and contains no removed generic Profile Viewer command or `cloudy/autume/addition/profile/` package.
+
+## Remaining live-validation boundary
+
+- No authenticated Hypixel session, accelerator endpoint, proxy that strips/preserves plugin messages, or real server transfer was exercised locally. Exact Hello/Location delivery timing and fallback duration still require an installed Alpha test on the live network.
+- No live Dungeon Finder join, private-profile combination, resource-pack/GUI-scale matrix, or deployed QCloudy API was exercised in this pass. The previously validated Dungeon Quick View card implementation itself was not redesigned.
+- No Git commit, push, GitHub Release, Modrinth version, server deployment, or API-key change was performed.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha3 generic-PV removal and Dungeon Quick View validation
 
 Date: 2026-09-04<br>

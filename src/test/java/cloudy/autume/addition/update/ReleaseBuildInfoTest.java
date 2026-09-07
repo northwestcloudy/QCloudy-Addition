@@ -26,7 +26,7 @@ final class ReleaseBuildInfoTest {
         ReleaseBuildInfo build = ReleaseBuildInfo.load();
         assertEquals("Alpha", build.channel());
         assertEquals("0.3.10", build.version());
-        assertEquals("26.1.2", build.minecraftVersion());
+        assertEquals(System.getProperty("qca.test.minecraftVersion"), build.minecraftVersion());
         assertEquals(1, build.releaseBaselineSequence());
     }
 }

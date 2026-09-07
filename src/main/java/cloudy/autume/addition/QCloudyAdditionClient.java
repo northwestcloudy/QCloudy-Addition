@@ -24,6 +24,7 @@ import cloudy.autume.addition.party.FriendRosterStore;
 import cloudy.autume.addition.party.PartyAutoAcceptManager;
 import cloudy.autume.addition.party.PartyCommandEngine;
 import cloudy.autume.addition.party.PrivatePartyRequestCommands;
+import cloudy.autume.addition.tracker.HypixelSessionTracker;
 import cloudy.autume.addition.tracker.LocationTracker;
 import cloudy.autume.addition.tracker.HotmSlotTracker;
 import cloudy.autume.addition.tracker.PetTracker;
@@ -35,6 +36,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -94,6 +96,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         PARTY_AUTO_ACCEPT.load();
         ShardWarehouseManager.load();
         CenturyCakeManager.load();
+        HypixelSessionTracker.init();
         ItemTimestampTooltip.register();
         SafariBeltTooltip.register();
         HuntingWorldRenderer.register();
@@ -154,8 +157,15 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             resetTrackers();
         });
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
-                RELEASE_UPDATES.onJoin(client));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            HypixelSessionTracker.beginConnection();
+            LocationTracker.clearWorldContext();
+            RELEASE_UPDATES.onJoin(client);
+        });
+        ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((client, level) -> {
+            HypixelSessionTracker.onWorldChange();
+            LocationTracker.clearWorldContext();
+        });
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.OVERLAY_MESSAGE,
                 Identifier.fromNamespaceAndPath(MOD_ID, "main_hud"), (graphics, tickCounter) -> HudRenderer.render(graphics));
@@ -406,7 +416,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
 
     private static int executeLocalPartyCommand(FabricClientCommandSource source, String input) {
         Minecraft client = source.getClient();
-        if (!isOnHypixel(client)) {
+        if (!HypixelSessionTracker.canSendHypixelCommand()) {
             source.sendError(ModText.component("party.command.hypixel_only"));
             return 0;
         }
@@ -420,7 +430,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
 
     private static int executeQuickPrivateCommand(FabricClientCommandSource source, String input) {
         Minecraft client = source.getClient();
-        if (!isOnHypixel(client)) {
+        if (!HypixelSessionTracker.canSendHypixelCommand()) {
             source.sendError(ModText.component("party.command.hypixel_only"));
             return 0;
         }
@@ -575,6 +585,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
     }
 
     private static void resetTrackers() {
+        HypixelSessionTracker.reset();
         LocationTracker.reset();
         TabListTracker.reset();
         PetTracker.reset();
@@ -592,9 +603,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
     private static void onPartyMessage(Component message, boolean overlay) {
         if (message == null || overlay) return;
         Minecraft client = Minecraft.getInstance();
-        var server = client.getCurrentServer();
-        String serverAddress = server == null ? "" : server.ip;
-        boolean onHypixel = PartyAutoAcceptManager.isHypixelAddress(serverAddress);
+        boolean onHypixel = HypixelSessionTracker.canSendHypixelCommand();
         var chat = ConfigManager.get().chat;
         String command = PARTY_AUTO_ACCEPT.onMessage(message, overlay,
                 onHypixel,
@@ -604,7 +613,9 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         if (command != null) sendServerCommand(client, command);
         if (!onHypixel) return;
 
-        DungeonQuickViewManager.onMessage(client, message);
+        if (HypixelSessionTracker.canUseDungeonQuickView()) {
+            DungeonQuickViewManager.onMessage(client, message);
+        }
 
         if (chat.directMessagePartyRequest) {
             PRIVATE_PARTY_REQUESTS.handleIncomingDirectMessage(message.getString(), System.nanoTime())
@@ -655,11 +666,6 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         if (payload == null || payload.isBlank()) return;
         var connection = client.getConnection();
         if (connection != null) connection.sendCommand(payload);
-    }
-
-    private static boolean isOnHypixel(Minecraft client) {
-        var server = client.getCurrentServer();
-        return server != null && PartyAutoAcceptManager.isHypixelAddress(server.ip);
     }
 
     private static String localPlayerName(Minecraft client) {

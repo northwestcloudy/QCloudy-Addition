@@ -85,7 +85,7 @@
 
 ## 网络与自动化审计
 
-QCA 不包含 Hypixel Mod API、WebSocket、遥测、坐标共享服务、自动下载/安装更新器、宏、模拟输入、自动点击/移动或方块交互。可运行模组中没有 Hypixel API Key，也不会直接请求需要认证的 Hypixel Profile 端点。QCloudy 有界 API 客户端与下述 Release 提醒客户端是 QCA 自有的两条网页访问路径；对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
+QCA 打包 Hypixel 官方 Mod API Fabric 实现，用于接收服务器的 Hello/Location plugin message，并通过该共享实现注册 Location 事件。QCA 不自行实现协议，不用 Public API 判断当前连接，不持有 Hypixel API Key，不自动发送 `/locraw`，也不会直接请求需要认证的 Hypixel Profile 端点。模组不包含 WebSocket、遥测、坐标共享服务、自动下载/安装更新器、宏、模拟输入、自动点击/移动或方块交互。QCloudy 有界 API 客户端与下述 Release 提醒客户端是 QCA 自有的两条网页访问路径；对外命令和聊天载荷仅限于上方逐项列出的快捷命令、点击动作、组队/聊天工具、官方 Mod API 事件注册与玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
 
 Dungeon/市场客户端只接受普通 HTTPS 端口的 `https://api.qcloudy.net`，禁止跳转，连接超时五秒、请求超时十五秒、响应上限 4 MiB。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选排队楼层；它不会发送 Minecraft 会话凭据、Cookie、Hypixel API Key、服务器地址、模组列表、聊天记录、坐标或遥测标识。后端持有应用 Key，只提供固定转换端点而不是通用代理，会合并/缓存上游请求、限制解码 NBT 大小并保留私密/缺失状态。模组只在进程内缓存成功 Quick View 60 秒；远程玩家数据和价格历史不会写入 QCA 本地配置。
 

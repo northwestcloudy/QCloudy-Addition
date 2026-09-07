@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha3` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha4` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -45,7 +45,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 `IntegrationCompatibilityScreen` 与 `Feature`、`UnifiedFeature` 的功能开关完全分离。它读取最近一次完成的扫描快照；某个已命名功能的主控制、二级设置、分类或已识别 HUD 坐标契约不可用时，会分别标记“设置”或“HUD 编辑”，可完整管理的功能会被过滤。配置根为空或无法读取时显示提供方级缺失，不会错误显示“全部支持”。报告不会调用 setter 或保存路径。提供方分组在每次打开报告时只计算一次，已经换行的行布局会缓存到内容宽度改变，不会每个渲染帧重复生成。
 
-地点识别先确认当前服务器域名属于 Hypixel，并确认计分板中存在 SkyBlock 证据；随后使用带地点标记的计分板行和有限原始地点名进行分类。只在对应岛屿运行对应解析与渲染，不在所有服务器全局扫描。
+`HypixelSessionTracker` 是唯一环境权威：Hypixel 官方 Mod API 的 `ClientboundHelloPacket` 脱离服务器列表地址确认网络身份，`ClientboundLocationPacket` 权威区分 SkyBlock 与其他游戏，并提供 server、mode、map 和 lobby。世界变化立即清空实例字段直到下一次 Location 事件，断线则清空完整会话；地址文字不再作为启用门控。Location 尚未到达时，只有精确 Hypixel 代理 Brand 加严格 `SKYBLOCK` 计分板标题及 Profile/Purse/地点/Dungeon/Rift 结构行，才能临时允许被动显示，绝不能授权发送命令。之后计分板与 Tab 只补充 Profile、子区域、Dungeon、Rift、任务、粉尘和宠物状态，宽松文字子串不能再证明服务器身份。
 
 ### 1.2 永久开启的 Release 更新提醒
 
@@ -410,7 +410,7 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 
 QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qpv`、`//pv` 处理器、档案界面/模型/缓存、物品价格悬停客户端、`/v1/pv/*` 路由或 `/v1/market/tooltip-prices` 路由。Shard Bazaar 传输类型已迁移到 `market.shard`，因此现有 Shard Planner 不依赖被删除的包。
 
-`DungeonJoinParser` 只接受 Dungeon Finder 的精确新成员消息，拒绝普通 Party 加入与 Kuudra 消息。`DungeonFloor` 只读取本机排队计分板中的 `E`、`F1-F7` 或 `M1-M7`，不浏览 Party Finder 列表。`DungeonQuickViewManager` 以 Hypixel 会话和独立 Dungeons 开关为门控，对两秒内重复加入行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。
+`DungeonJoinParser` 只接受 Dungeon Finder 的精确新成员消息，拒绝普通 Party 加入与 Kuudra 消息。`DungeonFloor` 只读取本机排队计分板中的 `E`、`F1-F7` 或 `M1-M7`，不浏览 Party Finder 列表。只有 Mod API 的权威 Location 已确认 SkyBlock 且独立 Dungeons 开关开启时，才会进入 `DungeonQuickViewManager`；它对两秒内重复加入行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。
 
 `DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅在进程内缓存 60 秒。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒/十五秒超时和 4 MiB 响应上限。`DungeonQuickViewSnapshot` 只接受有界 schema 1，并使用三态装备模型，使不完整来源显示 `Missing` 而不是错误的叉。
 

@@ -26,6 +26,7 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": ">=${fabric_api_version}",
+    "hypixel-mod-api": ">=1.0",
     "minecraft": "${minecraft_version}",
     "java": ">=25"
   },

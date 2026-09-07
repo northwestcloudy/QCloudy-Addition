@@ -1,6 +1,6 @@
 # QCloudy_Addition feature specification
 
-## Unified settings and HUD control — 0.3.10-alpha3 development snapshot
+## Unified settings and HUD control — 0.3.10-alpha4 development snapshot
 
 > This source tree contains unpublished Alpha work. The current public test remains Beta 0.3.10, and Release 0.3.9 remains the latest stable build.
 

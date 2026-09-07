@@ -1,7 +1,6 @@
 package cloudy.autume.addition.party;
 
 import cloudy.autume.addition.config.ModConfig;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
 
 import java.util.Iterator;
@@ -70,18 +69,6 @@ public final class PartyAutoAcceptManager {
     public void resetSession() {
         accepted.clear();
         store.resetPendingSnapshots();
-    }
-
-    public static boolean isHypixelAddress(String rawAddress) {
-        if (rawAddress == null || rawAddress.isBlank()) return false;
-        String host;
-        try {
-            host = ServerAddress.parseString(rawAddress).getHost().toLowerCase(Locale.ROOT);
-        } catch (RuntimeException ignored) {
-            return false;
-        }
-        return host.equals("hypixel.net") || host.endsWith(".hypixel.net")
-                || host.equals("hypixel.io") || host.endsWith(".hypixel.io");
     }
 
     static String directInviter(String raw) {

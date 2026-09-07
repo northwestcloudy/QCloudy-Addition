@@ -1,5 +1,22 @@
 # 更新日志
 
+## [0.3.10-alpha4] - 2026-09-07
+
+仅适用于 Minecraft 26.1.2 的未公开 Alpha 开发构建。当前公开测试版仍为 Beta 0.3.10，稳定 Release 与游戏内更新检查基线仍为 0.3.9。
+
+### 调整
+
+- 用唯一、事件驱动的 `HypixelSessionTracker` 替换全部运行时服务器地址门控，并接入 Hypixel 官方 Mod API。`ClientboundHelloPacket` 确认 Hypixel 网络，`ClientboundLocationPacket` 作为 SkyBlock/其他游戏、mode 与 map 的权威来源。
+- 使用加速 IP、DNS 别名或本地代理时，只要正常转发 Hypixel plugin message 就不会再让 QCA 失效。Hypixel 代理 Brand 加严格 SkyBlock 计分板只允许被动显示回退，不能授权自动接受组队、组队/聊天快捷指令、Dungeon Quick View 或其他会发送命令的路径。
+- 计分板只在已经确认的 SkyBlock 会话中补充 Profile、子区域、Rift 与 Dungeon 状态，不再用任意位置出现的 `skyblock`、`profile:` 或 `purse:` 宽松文字证明服务器身份。
+- Dungeon Quick View 必须获得权威 SkyBlock Location；Hypixel 全站可用的组队/聊天工具则必须获得官方 Hello 确认。世界切换立即清理实例状态，断线清理完整会话，避免旧岛屿或 Dungeon 状态泄漏到新实例。
+- 打包 MIT 许可的 Hypixel 官方 Mod API Fabric 运行库并在 Fabric 元数据中声明；没有加入 Public API Key、需认证的档案请求、自制 Mod API 实现或自动 `/locraw`。
+
+### 范围
+
+- 回归测试覆盖官方 Hello/Location 状态变化、非 SkyBlock Location 对误导计分板的权威覆盖、加速线路式 Brand 回退、命令安全关闭以及世界/断线重置。
+- `0.3.10-alpha4` 仅为 Alpha 源码/构建目标，不是 GitHub Release、Modrinth 版本或稳定更新目标。
+
 ## [0.3.10-alpha2] - 2026-09-02
 
 仅适用于 Minecraft 26.1.2 的未公开 Alpha 开发构建。当前公开测试版仍为 Beta 0.3.10，稳定版与游戏内更新检查基线仍为 Release 0.3.9。

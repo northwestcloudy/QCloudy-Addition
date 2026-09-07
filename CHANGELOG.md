@@ -2,6 +2,23 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha4] - 2026-09-07
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Changed
+
+- Replaced all runtime server-address gates with one event-driven `HypixelSessionTracker` backed by the official Hypixel Mod API. `ClientboundHelloPacket` confirms the Hypixel network and `ClientboundLocationPacket` is the authoritative SkyBlock/game-type, mode, and map source.
+- Accelerator, alias, and local-proxy addresses no longer disable QCA when they forward normal Hypixel plugin messages. A Hypixel proxy brand plus an exact SkyBlock sidebar signature is a passive-display fallback only and cannot authorize Party Auto Accept, party/chat command helpers, Dungeon Quick View, or any other command-sending path.
+- Scoreboard parsing now enriches an already confirmed SkyBlock session with Profile, subarea, Rift, and Dungeon context instead of treating loose `skyblock`, `profile:`, or `purse:` substrings as server identity.
+- Dungeon Quick View now requires an authoritative SkyBlock Location, while Hypixel-wide party/chat utilities require the official Hello confirmation. World changes clear instance-specific state immediately and disconnects clear the complete session, preventing stale island or Dungeon state from leaking into another instance.
+- Bundled the official MIT-licensed Hypixel Mod API Fabric runtime and declared it in Fabric metadata; no Public API key, authenticated profile request, custom Mod API implementation, or automatic `/locraw` command was added.
+
+### Scope
+
+- Regression coverage includes official Hello/Location transitions, non-SkyBlock authority over misleading sidebars, accelerator-style brand fallback, command fail-closed behavior, and world/disconnect resets.
+- `0.3.10-alpha4` is an Alpha source/build target only; it is not a GitHub Release, Modrinth version, or stable update target.
+
 ## [0.3.10-alpha3] - 2026-09-04
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

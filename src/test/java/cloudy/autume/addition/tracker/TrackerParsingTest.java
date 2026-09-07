@@ -49,14 +49,6 @@ final class TrackerParsingTest {
     }
 
     @Test
-    void acceptsHypixelPortsAndRejectsLookalikeDomains() {
-        assertTrue(LocationTracker.isHypixelAddress("mc.hypixel.net:25565"));
-        assertTrue(LocationTracker.isHypixelAddress("ALPHA.HYPIXEL.NET."));
-        assertFalse(LocationTracker.isHypixelAddress("hypixel.net.example.org"));
-        assertFalse(LocationTracker.isHypixelAddress("examplehypixel.net"));
-    }
-
-    @Test
     void extractsBoundedCommissionWidget() {
         List<String> result = TabListTracker.extractWidget(List.of(
                 "Profile: Apple", "Commissions:", " Mithril Miner: 55%", " Goblin Slayer: 2/13",

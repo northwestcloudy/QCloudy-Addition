@@ -4,8 +4,8 @@ plugins {
 }
 
 def supportedMinecraftVersions = [
-        '26.1.2': [fabricApi: '0.155.2+26.1.2', modMenu: '18.0.0', sourceSet: 'minecraft_26_1_2'],
-        '26.2'  : [fabricApi: '0.154.2+26.2', modMenu: '20.0.1', sourceSet: 'minecraft_26_2']
+        '26.1.2': [fabricApi: '0.155.2+26.1.2', modMenu: '18.0.0', sourceSet: 'minecraft_26_1_2', hypixelModApi: '1.0.2+build.1+mc26.1'],
+        '26.2'  : [fabricApi: '0.154.2+26.2', modMenu: '20.0.1', sourceSet: 'minecraft_26_2', hypixelModApi: '1.0.2+build.1+mc26.1']
 ]
 def targetMinecraftVersion = project.minecraft_version.toString()
 def targetPlatform = supportedMinecraftVersions[targetMinecraftVersion]
@@ -75,6 +75,14 @@ loom {
 repositories {
     mavenCentral()
     maven { url = 'https://maven.terraformersmc.com/releases/' }
+    maven {
+        url = 'https://repo.hypixel.net/repository/Hypixel/'
+        content { includeGroup 'net.hypixel' }
+    }
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 dependencies {
@@ -82,11 +90,15 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${targetLoaderVersion}"
     implementation "net.fabricmc.fabric-api:fabric-api:${targetFabricApiVersion}"
     compileOnly "com.terraformersmc:modmenu:${targetModMenuVersion}"
+    implementation 'net.hypixel:mod-api:1.0.2'
+    runtimeOnly "maven.modrinth:hypixel-mod-api:${targetPlatform.hypixelModApi}"
+    include "maven.modrinth:hypixel-mod-api:${targetPlatform.hypixelModApi}"
     testImplementation "net.fabricmc:fabric-loader-junit:${targetLoaderVersion}"
 }
 
 test {
     useJUnitPlatform()
+    systemProperty 'qca.test.minecraftVersion', targetMinecraftVersion
 }
 
 processResources {

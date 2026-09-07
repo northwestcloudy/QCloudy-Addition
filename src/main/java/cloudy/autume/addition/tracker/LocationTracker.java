@@ -2,8 +2,6 @@ package cloudy.autume.addition.tracker;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
@@ -31,21 +29,23 @@ public final class LocationTracker {
     }
 
     public static void update(Minecraft client) {
-        if (client.level == null || client.player == null || !isHypixel(client)) {
-            reset();
+        if (client.level == null || client.player == null) {
+            clearWorldContext();
             return;
         }
 
         List<String> lines = scoreboardLines(client);
         receivedScoreboardLines = List.copyOf(lines);
+        String serverBrand = client.player.connection == null
+                ? "" : client.player.connection.serverBrand();
         String joined = String.join("\n", lines).toLowerCase(Locale.ROOT);
-        skyBlock = joined.contains("skyblock") || joined.contains("profile:") || joined.contains("purse:");
+        skyBlock = HypixelSessionTracker.allowsPassiveSkyBlock(serverBrand, lines);
         if (!skyBlock) {
             area = IslandArea.NONE;
             visibleLocation = "";
-            profileName = "default";
             dungeon = false;
             rift = false;
+            if (HypixelSessionTracker.hasAuthoritativeLocation()) profileName = "default";
             return;
         }
 
@@ -53,8 +53,12 @@ public final class LocationTracker {
         // refresh. Keep the last explicit received label until SkyBlock is
         // exited instead of bouncing the persistence key back to "default".
         observeProfile(lines);
-        dungeon = containsAny(joined, "the catacombs", "dungeon cleared", "cleared:");
-        rift = containsAny(joined, "the rift", "rift time", "wizard tower");
+        String apiLocation = (HypixelSessionTracker.mode() + "\n" + HypixelSessionTracker.map())
+                .toLowerCase(Locale.ROOT);
+        dungeon = containsAny(apiLocation, "dungeon", "catacombs")
+                || containsAny(joined, "the catacombs", "dungeon cleared", "cleared:");
+        rift = containsAny(apiLocation, "the rift", "rift")
+                || containsAny(joined, "the rift", "rift time", "wizard tower");
 
         visibleLocation = lines.stream()
                 .filter(line -> LOCATION_MARKER.matcher(line).find())
@@ -62,6 +66,7 @@ public final class LocationTracker {
                 .orElse("");
         String evidence = visibleLocation.isEmpty() ? joined : visibleLocation.toLowerCase(Locale.ROOT);
         area = classifyEvidence(evidence);
+        if (area == IslandArea.NONE && !apiLocation.isBlank()) area = classifyEvidence(apiLocation);
         if (area == IslandArea.NONE && !visibleLocation.isEmpty()) area = classifyEvidence(joined);
     }
 
@@ -117,7 +122,7 @@ public final class LocationTracker {
     }
 
     public static boolean isSkyBlock() {
-        return skyBlock;
+        return skyBlock || HypixelSessionTracker.isSkyBlockConfirmed();
     }
 
     public static String visibleLocation() {
@@ -130,7 +135,7 @@ public final class LocationTracker {
 
     /** Updates the profile only from an explicit received Profile line. */
     public static void observeProfile(Iterable<String> receivedLines) {
-        if (!skyBlock) return;
+        if (!isSkyBlock()) return;
         for (String raw : receivedLines) {
             var matcher = PROFILE_LINE.matcher(strip(raw).trim());
             if (!matcher.matches()) continue;
@@ -163,17 +168,13 @@ public final class LocationTracker {
         receivedScoreboardLines = List.of();
     }
 
-    private static boolean isHypixel(Minecraft client) {
-        ServerData server = client.getCurrentServer();
-        if (server == null || server.ip == null) return false;
-        return isHypixelAddress(server.ip);
-    }
-
-    static boolean isHypixelAddress(String rawAddress) {
-        String address = ServerAddress.parseString(rawAddress).getHost().toLowerCase(Locale.ROOT);
-        while (address.endsWith(".")) address = address.substring(0, address.length() - 1);
-        return address.equals("hypixel.net") || address.endsWith(".hypixel.net")
-                || address.equals("hypixel.io") || address.endsWith(".hypixel.io");
+    public static void clearWorldContext() {
+        area = IslandArea.NONE;
+        skyBlock = false;
+        visibleLocation = "";
+        dungeon = false;
+        rift = false;
+        receivedScoreboardLines = List.of();
     }
 
     private static boolean containsAny(String evidence, String... needles) {

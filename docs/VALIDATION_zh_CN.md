@@ -1,3 +1,37 @@
+# QCloudy_Addition 0.3.10-alpha4 Hypixel 会话判定验证
+
+日期：2026-09-07<br>
+交付目标：仅 Minecraft 26.1.2<br>
+兼容性测试目标：Minecraft 26.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha4` 用唯一、事件驱动的 `HypixelSessionTracker` 替换全部 QCA 服务器地址启用门控。Hypixel 官方 Mod API 的 Hello 包无需依赖 Minecraft 中填写的地址即可确认 Hypixel 网络；官方 Location 包权威判定 SkyBlock 并提供 mode/map 上下文。Location 延迟期间，“精确 Hypixel 代理 Brand + 严格 SkyBlock 计分板”只能临时允许被动显示，不能授权发送命令。Dungeon Quick View 必须获得权威 SkyBlock Location；原有 Hypixel 全站组队/聊天命令路径则要求官方 Hello 确认。这仍是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release/更新检查基线仍为 0.3.9。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha4+26.1.2.jar` — 3,793,719 字节 — `370a554d538334a81e6c93327dca60467b07c7515280091e50539d7e8462e87c`
+- `release/QCloudy_Addition-0.3.10-alpha4+26.1.2-sources.jar` — 3,127,452 字节 — `577c1b371863bcb200b8b2ea8ee6b142b518de52fcb9ff5fe3994ad4967022c7`
+
+## 已完成验证
+
+- 最终 Minecraft 26.1.2 `clean test build prepareRelease` 成功：58 个测试套件、321 项测试，0 failure、0 error。
+- 相同源码针对 Minecraft 26.2 成功编译，321 项测试全部通过且 0 failure。Alpha 规则仍只为 26.1.2 生成文件，因此没有制作 26.2 Alpha 产物。原先写死 26.1.2 的构建元数据断言已改为读取当前 Gradle 目标，现在能真正验证两个受支持版本。
+- 两个 26.1.2 JAR 均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 精确声明 `0.3.10-alpha4+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求，以及必需的 `hypixel-mod-api >=1.0`。
+- 可运行 JAR 包含 `HypixelSessionTracker` 和官方 `hypixel-mod-api-1.0.2+build.1+mc26.1` Fabric 包；后者包含 MIT 许可声明与官方 `mod-api-1.0.2` 核心 JAR。
+- 源码检查未发现任何基于 `ServerData.ip`、`hypixel.net` 或 `hypixel.io` 的 Hypixel/SkyBlock 环境门控。剩余 `ServerAddress` 只属于手动重连；该功能本来就需要保留玩家选择的连接地址。
+- 回归覆盖仅 Hello 确认、SkyBlock/其他游戏 Location 权威判定、加速/代理式 Brand 回退、仿冒拒绝、严格计分板结构、命令安全关闭及世界切换清理。原有 Dungeon Quick View、组队、HUD、背包、钓鱼、狩猎、更新、网络与配置测试均保持通过。
+- 干净 JAR/源码仍包含专用 `dungeon` 与独立 `market/shard` 实现，不含已经删除的通用 Profile Viewer 命令或 `cloudy/autume/addition/profile/` 包。
+
+## 尚未完成的实服验证边界
+
+- 本地没有使用已登录 Hypixel 会话、加速入口、会保留/剥离 plugin message 的代理或真实服务器切换。Hello/Location 的准确到达时序和回退持续时间仍需安装 Alpha 后在实服验证。
+- 本轮没有使用真实 Dungeon Finder 新成员、私密档案组合、材质包/GUI Scale 矩阵或已部署 QCloudy API；此前已验证的 Dungeon Quick View 卡片实现本身没有重新设计。
+- 没有执行 Git commit/push、GitHub Release、Modrinth 发布、服务端部署或 API Key 修改。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha3 通用 PV 剥离与 Dungeon Quick View 验证
 
 日期：2026-09-04<br>

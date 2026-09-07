@@ -233,16 +233,6 @@ final class PartyAutoAcceptManagerTest {
                 ModConfig.PartyAcceptFriendMode.NORMAL_ONLY, List.of(), 1_000L));
     }
 
-    @Test
-    void recognizesOnlyRealHypixelHosts() {
-        assertTrue(PartyAutoAcceptManager.isHypixelAddress("mc.hypixel.net"));
-        assertTrue(PartyAutoAcceptManager.isHypixelAddress("hypixel.net:25565"));
-        assertTrue(PartyAutoAcceptManager.isHypixelAddress("alpha.hypixel.io"));
-        assertFalse(PartyAutoAcceptManager.isHypixelAddress("hypixel.net.evil.example"));
-        assertFalse(PartyAutoAcceptManager.isHypixelAddress("fakehypixel.net"));
-        assertFalse(PartyAutoAcceptManager.isHypixelAddress(null));
-    }
-
     private PartyAutoAcceptManager manager() {
         PartyAutoAcceptManager manager = new PartyAutoAcceptManager(
                 new FriendRosterStore(temporaryDirectory.resolve("friends.json")));
