@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha5 Dungeon Quick View 与钓鱼时机验证
+
+日期：2026-09-07<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha5` 修复两个彼此独立的时机/失败处理问题，不改变成功 Dungeon 卡片的数据契约，也不自动操作钓鱼。Dungeon Quick View 现在会把传输/服务失败与真实档案字段分开，服务故障后 30 秒内不重复网络请求但仍会立即显示新鲜的进程内缓存，并在新成员消息到达时立即读取当前排队计分板。钓鱼上钩提示会在原版应用最终 `!!!` ArmorStand 元数据后立即检测，同时保留 tick 扫描作为兜底。这仍是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release/更新检查基线仍为 0.3.9。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha5+26.1.2.jar` — 3,800,065 字节 — `4b82e4faef72d19e1bf88d7126e1d801e736ce6821e26423db3040fb2fab8aa3`
+- `release/QCloudy_Addition-0.3.10-alpha5+26.1.2-sources.jar` — 3,130,314 字节 — `b782694be9bc49ef5a257b8d174891d88647b32e516cf070ed89b893c546a790`
+
+## 已完成验证
+
+- Java 25.0.4 针对 Minecraft 26.1.2 完成最终 `clean test build prepareRelease`：59 个测试套件、331 项测试，0 failure、0 error、0 skipped。
+- 回归覆盖已知玩家级 404 与未知路由/服务级 404 的区分、30 秒故障门、恢复与只读缓存快速路径、禁止失败生成全 `Missing` 卡片或踢人动作，以及成功快照中真实字段级缺失继续显示。
+- 排队楼层回归覆盖普通层与 Master Mode 解析、同模式计分板短暂不完整时保留、完整新楼层立即替换，以及排队消失或模式变化但数据不完整时清除旧值。
+- 钓鱼回归验证数据包事件可以立即关联新出现且 owner 为空的鱼钩，未找到候选时不会消耗按 tick 计算的关联窗口。原有直接鱼钩优先、排除旧鱼钩/他人鱼钩、抛竿与收杆区分及一次播放门测试均保持通过。
+- 两个 JAR 均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 精确声明 `0.3.10-alpha5+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求及必需的 `hypixel-mod-api >=1.0`。
+- 可运行 JAR 包含 `DungeonQuickViewFailureGate`、独立 Dungeon manager/message/service、`FishingBiteAlert`、`FishingBiteSession`、`FishingHookResolver` 和已注册的 `ClientPacketListenerMixin`；独立 `market/shard` 实现仍然存在。
+
+## 尚未完成的实服验证边界
+
+- 本地没有使用已登录 Hypixel 的真实 Dungeon Finder 新成员或真实水钓/岩浆钓鱼上钩。准确实服数据包时序、档案隐私组合与每次只响一次，仍需安装本 Alpha 后分别检查一次普通层加入、一次 Master Mode 加入、一次水钓和一次岩浆钓鱼。
+- 本地 Mod 构建没有执行 QCloudy API 部署。用户在本轮修改前提供的服务器检查结果为：本机/公网 Quick View HTTP 200、本机/公网 readiness HTTP 200、已移除 `/v1/pv` 路由 HTTP 404。
+- 本轮未制作 Minecraft 26.2 Alpha 产物或兼容性构建，因为本 Alpha 仅以 Minecraft 26.1.2 为目标。构建没有执行 Git commit/push、GitHub Release、Modrinth 发布、服务端部署或 API Key 修改。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha4 Hypixel 会话判定验证
 
 日期：2026-09-07<br>

@@ -2,12 +2,28 @@ package cloudy.autume.addition.dungeon;
 
 /** Safe failure from the dedicated Dungeon quick-view endpoint. */
 public final class DungeonQuickViewException extends RuntimeException {
+    enum Scope {
+        PLAYER,
+        SERVICE
+    }
+
+    private final Scope scope;
+
     public DungeonQuickViewException(String message) {
-        this(message, null);
+        this(message, null, Scope.SERVICE);
     }
 
     public DungeonQuickViewException(String message, Throwable cause) {
+        this(message, cause, Scope.SERVICE);
+    }
+
+    DungeonQuickViewException(String message, Throwable cause, Scope scope) {
         super(safe(message), cause);
+        this.scope = scope == null ? Scope.SERVICE : scope;
+    }
+
+    boolean isServiceFailure() {
+        return scope == Scope.SERVICE;
     }
 
     private static String safe(String value) {

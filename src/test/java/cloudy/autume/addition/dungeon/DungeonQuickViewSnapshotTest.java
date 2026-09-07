@@ -97,6 +97,21 @@ final class DungeonQuickViewSnapshotTest {
         assertThrows(DungeonQuickViewException.class, () -> DungeonQuickViewSnapshot.parse(unsafe));
     }
 
+    @Test
+    void requestFailureUsesACompactWarningInsteadOfAnAllMissingCard() {
+        Component message = DungeonQuickViewMessage.unavailable(
+                "GhostsTM", "Dungeon profile service is temporarily unavailable.");
+        List<Component> parts = flatten(message);
+
+        assertEquals("[QCA] Dungeon Quick View unavailable for GhostsTM ⚠", message.getString());
+        assertTrue(parts.stream().noneMatch(part -> part.getString().contains("Catacombs:")));
+        assertTrue(parts.stream().noneMatch(part -> part.getString().contains("Missing")));
+        assertTrue(parts.stream().noneMatch(part -> part.getStyle().getClickEvent() != null));
+        Component warning = parts.stream().filter(part -> part.getString().equals(" ⚠"))
+                .findFirst().orElseThrow();
+        assertNotNull(warning.getStyle().getHoverEvent());
+    }
+
     private static List<Component> flatten(Component root) {
         List<Component> result = new ArrayList<>();
         walk(root, result);

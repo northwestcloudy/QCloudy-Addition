@@ -158,6 +158,12 @@ public final class LocationTracker {
         return receivedScoreboardLines;
     }
 
+    /** Reads the currently displayed scoreboard immediately instead of waiting for the periodic tracker tick. */
+    public static List<String> liveScoreboardLines(Minecraft client) {
+        if (client == null || client.level == null) return List.of();
+        return List.copyOf(scoreboardLines(client));
+    }
+
     public static void reset() {
         area = IslandArea.NONE;
         skyBlock = false;

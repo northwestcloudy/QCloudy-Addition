@@ -28,4 +28,20 @@ final class DungeonJoinAndFloorTest {
                 .orElseThrow().id());
         assertTrue(DungeonFloor.fromScoreboard(List.of("Tier: Floor VII")).isEmpty());
     }
+
+    @Test
+    void retainsFloorOnlyForAPartialUpdateOfTheSameQueueMode() {
+        DungeonFloor normal = new DungeonFloor("F7");
+        DungeonFloor master = new DungeonFloor("M7");
+
+        assertEquals(normal, DungeonFloor.retainWhileQueued(normal,
+                List.of("Queued: The Catacombs")).orElseThrow());
+        assertEquals(master, DungeonFloor.retainWhileQueued(normal,
+                List.of("Queued: Master Mode The Catacombs", "Tier: Floor VII"))
+                .orElseThrow());
+        assertTrue(DungeonFloor.retainWhileQueued(normal,
+                List.of("Queued: Master Mode The Catacombs")).isEmpty());
+        assertTrue(DungeonFloor.retainWhileQueued(normal,
+                List.of("SKYBLOCK", "Purse: 1,000")).isEmpty());
+    }
 }

@@ -68,7 +68,7 @@ The quick view contacts only `https://api.qcloudy.net`; the mod never contains o
 
 ### Fishing
 
-- **Fishing Bite Sound** — an opt-in local cue for Hypixel's short bite window in water or lava. It prefers the local player's directly owned Fishing Hook and uses a short post-cast association window for Hypixel lava hooks whose owner link is absent, then requires the exact visible `!!!` marker beside that hook. It plays the bundled Ciallo OGG once per hook and has an independent 0–100% volume slider at the 64% default. It never casts or reels automatically. Its collapsible subgroup is named **Bite Alerts**, avoiding a redundant `Fishing → Fishing` hierarchy.
+- **Fishing Bite Sound** — an opt-in local cue for Hypixel's short bite window in water or lava. It prefers the local player's directly owned Fishing Hook and uses a short post-cast association window for Hypixel lava hooks whose owner link is absent, then requires the exact visible `!!!` marker beside that hook. QCA observes the received marker metadata immediately and retains a tick scan as fallback, so a short-lived final marker is not lost between ticks. It plays the bundled Ciallo OGG once per hook and has an independent 0–100% volume slider at the 64% default. It never casts or reels automatically. Its collapsible subgroup is named **Bite Alerts**, avoiding a redundant `Fishing → Fishing` hierarchy.
 
 ### Hunting
 

@@ -95,7 +95,7 @@ Release 更新提醒永久开启，没有功能卡片或配置项。Alpha 构建
 
 请求不包含 Minecraft 用户名、UUID、服务器地址、SkyBlock Profile、模组列表、玩法数据、遥测标识、访问 Token、Cookie 或认证头。它仍是一次普通对外 HTTPS 请求，因此目标服务器与网络基础设施可以看到连接 IP 与 `QCloudy_Addition/<版本>` HTTP User-Agent。响应内容不会作为账号/Profile记录持久保存。
 
-钓鱼上钩提示音优先使用直接归属于本地玩家的已加载鱼钩。为了兼容 owner 关联可能缺失的 Hypixel 岩浆鱼钩，它只在玩家真实使用钓竿后开启有限 40 tick 窗口，排除抛竿前已经存在的全部鱼钩及明确属于其他玩家的鱼钩，然后才接受一根新加载、归属本地或 owner 为空的鱼钩。选中鱼钩仍存在时的第二次真实使用会被判定为收杆，不能重新打开播放门。此后只扫描该鱼钩周围四格并精确匹配收到的 `!!!` ArmorStand，每根鱼钩最多播放一次内置本地提示音。回调会原样放行真实使用动作，不会自动抛竿、收杆、点击、移动玩家，也不发送命令或额外数据包；空闲时不会运行较大范围扫描。
+钓鱼上钩提示音优先使用直接归属于本地玩家的已加载鱼钩。为了兼容 owner 关联可能缺失的 Hypixel 岩浆鱼钩，它只在玩家真实使用钓竿后开启有限 40 tick 窗口，排除抛竿前已经存在的全部鱼钩及明确属于其他玩家的鱼钩，然后才接受一根新加载、归属本地或 owner 为空的鱼钩。选中鱼钩仍存在时的第二次真实使用会被判定为收杆，不能重新打开播放门。客户端会在原版应用已收到 ArmorStand 元数据后立即检测，并保留 client tick 扫描作为兜底；两条路径都只接受选中鱼钩周围四格内的精确 `!!!` 标记，并共用每根鱼钩最多一次的播放门。回调会原样放行真实使用动作，不会自动抛竿、收杆、点击、移动玩家，也不发送命令或额外数据包；空闲时不会运行较大范围扫描。
 
 Shard Fusion Guide 与 Planner 都是只读本地资料。320 项目录、规范化 Wiki 效果/获取摘要、合成规则、速率基线、320 张 Shard 专属 PNG、物品模型与映射都在发布前生成并打包进 JAR；生成器使用 [Attributes 表格](https://hypixelskyblock.minecraft.wiki/w/Attributes)、[Attribute Fusion 规则](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion)、[官方 Bazaar 产品列表](https://api.hypixel.net/v2/skyblock/bazaar) 与已审核 MIT 许可 SkyShards 数据。运行中的 QCA 没有访问这些来源或图标服务的代码路径。搜索、规划、切换焦点、打开详细信息/合成来源/可合成内容、使用历史、解析内置图标、渲染已经收到的原生 ItemStack 或拖动 Fusion Lines 节点，都不会点击容器、执行 Fusion、选择输出、向服务器发送 `/qshard` 或改变服务器状态。已经收到的原生玩家头继续走 Minecraft 正常渲染管线；QCA 不会额外发起纹理请求。
 

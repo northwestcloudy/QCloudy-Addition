@@ -37,13 +37,7 @@ public final class FishingBiteAlert {
             return;
         }
 
-        FishingHook directHook = client.player.fishing;
-        List<FishingHook> loadedHooks = directHook == null && HOOK_RESOLVER.needsCandidates()
-                ? loadedHooks(client) : List.of();
-        int hookId = HOOK_RESOLVER.resolve(directHook == null
-                        ? FishingHookResolver.NO_HOOK : directHook.getId(),
-                loadedHooks.stream().map(hook -> candidate(client, hook)).toList());
-        FishingHook hook = directHook != null ? directHook : hookById(loadedHooks, hookId);
+        FishingHook hook = resolveHook(client, true);
         if (hook == null) {
             SESSION.reset();
             return;
@@ -51,9 +45,41 @@ public final class FishingBiteAlert {
 
         boolean biteMarkerVisible = !client.level.getEntities(hook,
                 hook.getBoundingBox().inflate(MARKER_SEARCH_RADIUS), FishingBiteAlert::isBiteMarker).isEmpty();
+        playOnce(client, hook, biteMarkerVisible);
+    }
+
+    /**
+     * Handles the received marker metadata immediately. Hypixel's final !!!
+     * state can be shorter than the gap to the next client tick, so the normal
+     * tick scan remains a fallback rather than the only observation path.
+     */
+    public static void onArmorStandMetadata(Minecraft client, ArmorStand marker) {
+        var config = ConfigManager.get().fishing;
+        if (!config.biteAlert || !LocationTracker.isSkyBlock()
+                || client.player == null || client.level == null || !isBiteMarker(marker)) return;
+        FishingHook hook = resolveHook(client, false);
+        if (hook == null || !hook.getBoundingBox().inflate(MARKER_SEARCH_RADIUS)
+                .contains(marker.position())) return;
+        playOnce(client, hook, true);
+    }
+
+    private static FishingHook resolveHook(Minecraft client, boolean advanceAssociationWindow) {
+        FishingHook directHook = client.player.fishing;
+        List<FishingHook> loadedHooks = directHook == null && HOOK_RESOLVER.needsCandidates()
+                ? loadedHooks(client) : List.of();
+        List<FishingHookResolver.Candidate> candidates = loadedHooks.stream()
+                .map(hook -> candidate(client, hook)).toList();
+        int directHookId = directHook == null ? FishingHookResolver.NO_HOOK : directHook.getId();
+        int hookId = advanceAssociationWindow
+                ? HOOK_RESOLVER.resolve(directHookId, candidates)
+                : HOOK_RESOLVER.observe(directHookId, candidates);
+        return directHook != null ? directHook : hookById(loadedHooks, hookId);
+    }
+
+    private static void playOnce(Minecraft client, FishingHook hook, boolean biteMarkerVisible) {
         if (!SESSION.shouldPlay(hook.getId(), biteMarkerVisible)) return;
 
-        float volume = config.biteAlertVolume / 100.0F;
+        float volume = ConfigManager.get().fishing.biteAlertVolume / 100.0F;
         if (volume <= 0.0F) return;
         client.getSoundManager().play(SimpleSoundInstance.forUI(BITE_SOUND, 1.0F, volume));
     }

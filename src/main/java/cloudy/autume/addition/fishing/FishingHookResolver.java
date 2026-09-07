@@ -31,6 +31,15 @@ final class FishingHookResolver {
     }
 
     int resolve(int directHookId, List<Candidate> candidates) {
+        return resolve(directHookId, candidates, true);
+    }
+
+    /** Resolves from an event without consuming the tick-based association window on a miss. */
+    int observe(int directHookId, List<Candidate> candidates) {
+        return resolve(directHookId, candidates, false);
+    }
+
+    private int resolve(int directHookId, List<Candidate> candidates, boolean advanceWindow) {
         if (directHookId != NO_HOOK) {
             fallbackHookId = NO_HOOK;
             remainingAssociationTicks = 0;
@@ -58,7 +67,7 @@ final class FishingHookResolver {
             return resolved;
         }
 
-        remainingAssociationTicks--;
+        if (advanceWindow) remainingAssociationTicks--;
         return NO_HOOK;
     }
 

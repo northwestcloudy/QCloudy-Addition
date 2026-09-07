@@ -2,6 +2,22 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha5] - 2026-09-07
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Fixed
+
+- Dungeon Quick View no longer turns HTTP, timeout, schema, or service failures into a large all-`Missing` player card. Failures now produce one compact hoverable warning without a kick action; successful responses still show legitimate field-level `Missing` values.
+- Temporary service-wide failures open a 30-second network-request and notification cooldown, preventing every newly joined player from producing another failed request and repeated chat output. Fresh 60-second session-cache hits still display immediately during that cooldown; player-specific missing-profile responses remain independent and do not block later players.
+- Dungeon Finder join messages now trigger an immediate read of the live scoreboard. A valid floor survives only a transient partial update of the same normal/Master queue and is cleared when that queue disappears, reducing false `Floor: Missing` results without leaking an old floor.
+- Fishing Bite Sound now observes the received ArmorStand metadata update immediately after vanilla applies it, so a short-lived final `!!!` state cannot disappear between client ticks. The existing tick scan remains as a fallback and both paths share the same per-cast replay guard.
+
+### Scope
+
+- Regression coverage distinguishes player-specific 404 responses from route/service failures, checks outage suppression and recovery, verifies concise failure output, covers partial/removed/changed queue floor state, and preserves the fishing cast/reel replay guard.
+- `0.3.10-alpha5` is an Alpha source/build target only; it is not a GitHub Release, Modrinth version, or stable update target.
+
 ## [0.3.10-alpha4] - 2026-09-07
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

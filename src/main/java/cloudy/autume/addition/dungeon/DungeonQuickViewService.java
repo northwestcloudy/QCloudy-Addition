@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -21,6 +22,11 @@ import java.util.concurrent.CompletionException;
 /** One-request Dungeon snapshot loader with short session caching and coalescing. */
 public final class DungeonQuickViewService {
     static final Duration SESSION_CACHE_TTL = Duration.ofSeconds(60);
+    private static final Set<String> PLAYER_UNAVAILABLE_CODES = Set.of(
+            "PLAYER_NOT_FOUND",
+            "HYPIXEL_PLAYER_NOT_FOUND",
+            "SKYBLOCK_PROFILES_NOT_FOUND",
+            "SKYBLOCK_MEMBER_NOT_FOUND");
 
     private final Gateway gateway;
     private final Clock clock;
@@ -39,7 +45,7 @@ public final class DungeonQuickViewService {
     public synchronized CompletableFuture<DungeonQuickViewSnapshot> load(String playerName, String floor) {
         String target = normalizedPlayer(playerName);
         String normalizedFloor = normalizedFloor(floor);
-        String key = target.toLowerCase(java.util.Locale.ROOT) + '|' + normalizedFloor;
+        String key = cacheKey(target, normalizedFloor);
         Instant now = clock.instant();
         Entry existingCache = cache.get(key);
         if (existingCache != null && now.isBefore(existingCache.validUntil)) {
@@ -79,6 +85,16 @@ public final class DungeonQuickViewService {
         return result;
     }
 
+    /** Returns fresh session data without starting network work. */
+    synchronized DungeonQuickViewSnapshot cached(String playerName, String floor) {
+        String key = cacheKey(normalizedPlayer(playerName), normalizedFloor(floor));
+        Entry existing = cache.get(key);
+        if (existing == null) return null;
+        if (clock.instant().isBefore(existing.validUntil)) return existing.snapshot;
+        cache.remove(key);
+        return null;
+    }
+
     public synchronized void reset() {
         cache.clear();
         for (CompletableFuture<DungeonQuickViewSnapshot> future : inFlight.values()) future.cancel(true);
@@ -87,14 +103,22 @@ public final class DungeonQuickViewService {
 
     private static DungeonQuickViewException responseFailure(QcaApiClient.Response response) {
         String message = "Dungeon profile data is temporarily unavailable.";
+        String code = "";
         try {
             JsonObject root = JsonParser.parseString(response.body()).getAsJsonObject();
             JsonObject error = root.getAsJsonObject("error");
             JsonElement rawMessage = error == null ? null : error.get("message");
             if (rawMessage != null && rawMessage.isJsonPrimitive()
                     && rawMessage.getAsJsonPrimitive().isString()) message = rawMessage.getAsString();
+            JsonElement rawCode = error == null ? null : error.get("code");
+            if (rawCode != null && rawCode.isJsonPrimitive()
+                    && rawCode.getAsJsonPrimitive().isString()) code = rawCode.getAsString();
         } catch (RuntimeException ignored) { }
-        return new DungeonQuickViewException(message);
+        DungeonQuickViewException.Scope scope = response.statusCode() == 404
+                && PLAYER_UNAVAILABLE_CODES.contains(code)
+                ? DungeonQuickViewException.Scope.PLAYER
+                : DungeonQuickViewException.Scope.SERVICE;
+        return new DungeonQuickViewException(message, null, scope);
     }
 
     private static DungeonQuickViewException mapFailure(Throwable failure) {
@@ -125,6 +149,10 @@ public final class DungeonQuickViewService {
             throw new IllegalArgumentException("Invalid Dungeon floor");
         }
         return floor;
+    }
+
+    private static String cacheKey(String playerName, String floor) {
+        return playerName.toLowerCase(java.util.Locale.ROOT) + '|' + floor;
     }
 
     private record Entry(DungeonQuickViewSnapshot snapshot, Instant validUntil) { }

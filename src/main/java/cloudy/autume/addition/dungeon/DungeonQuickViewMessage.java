@@ -33,6 +33,21 @@ public final class DungeonQuickViewMessage {
                 DungeonQuickViewMessage::itemHover);
     }
 
+    /** A request failure is not player data, so it must never be rendered as an all-Missing profile card. */
+    public static Component unavailable(String playerName, String reason) {
+        Component detail = Component.literal(reason == null || reason.isBlank()
+                ? "Dungeon profile data is unavailable." : reason).withStyle(ChatFormatting.RED);
+        MutableComponent output = Component.literal("[QCA] ")
+                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD);
+        output.append(Component.literal("Dungeon Quick View unavailable for ")
+                .withStyle(ChatFormatting.GRAY));
+        output.append(Component.literal(playerName).withStyle(ChatFormatting.AQUA));
+        output.append(Component.literal(" ⚠").withStyle(style -> style
+                .withColor(ChatFormatting.YELLOW)
+                .withHoverEvent(new HoverEvent.ShowText(detail))));
+        return output;
+    }
+
     static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width) {
         return build(snapshot, width, DungeonQuickViewMessage::itemHover);
     }

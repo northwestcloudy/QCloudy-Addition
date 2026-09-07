@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha5 Dungeon Quick View and fishing timing validation
+
+Date: 2026-09-07<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha5` fixes two independent timing/failure defects without changing the successful Dungeon card contract or automating fishing. Dungeon Quick View now separates transport/service failure from real profile fields, suppresses repeated service-outage network requests for 30 seconds while still serving fresh session-cache hits, and refreshes the live queue scoreboard when a newcomer message arrives. Fishing Bite Sound now observes the final `!!!` ArmorStand metadata immediately after vanilla applies it while retaining the tick scan as a fallback. This remains an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha5+26.1.2.jar` — 3,800,065 bytes — `4b82e4faef72d19e1bf88d7126e1d801e736ce6821e26423db3040fb2fab8aa3`
+- `release/QCloudy_Addition-0.3.10-alpha5+26.1.2-sources.jar` — 3,130,314 bytes — `b782694be9bc49ef5a257b8d174891d88647b32e516cf070ed89b893c546a790`
+
+## Completed verification
+
+- The final Minecraft 26.1.2 `clean test build prepareRelease` completed successfully with Java 25.0.4: 59 suites, 331 tests, 0 failures, 0 errors, and 0 skipped.
+- Regression coverage distinguishes known player-specific 404 codes from an unknown route/service 404, verifies the 30-second outage gate, recovery, and cache-only fast path, rejects an all-`Missing` failure card and kick action, and preserves legitimate field-level missing data on successful snapshots.
+- Queue-floor coverage verifies normal and Master Mode parsing, same-mode retention during a partial scoreboard update, immediate replacement by a complete new floor, and clearing on queue disappearance or incomplete mode change.
+- Fishing coverage verifies event observation can immediately associate a new ownerless hook without consuming the tick-based association window on a miss. Existing direct-hook priority, old/other-player rejection, cast-versus-reel handling, and at-most-once playback tests remain green.
+- Both JARs pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact version `0.3.10-alpha5+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+- The playable JAR contains `DungeonQuickViewFailureGate`, the dedicated Dungeon manager/message/service, `FishingBiteAlert`, `FishingBiteSession`, `FishingHookResolver`, and the registered `ClientPacketListenerMixin`. The independent `market/shard` implementation remains present.
+
+## Remaining live-validation boundary
+
+- No authenticated Hypixel Dungeon Finder newcomer or live water/lava bite was exercised locally. The exact live packet timing, profile privacy combinations, and one-sound behavior still require installing this Alpha and checking one real normal-floor join, one Master Mode join, one water bite, and one lava bite.
+- The QCloudy API deployment was not performed by this local Mod build. The server checks supplied immediately before this pass reported local/public Quick View HTTP 200, local/public readiness HTTP 200, and the removed `/v1/pv` route HTTP 404.
+- No Minecraft 26.2 Alpha artifact or compatibility run was performed because this Alpha target is Minecraft 26.1.2 only. No Git commit, push, GitHub Release, Modrinth version, server deployment, or API-key change was performed by this build.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha4 Hypixel session detection validation
 
 Date: 2026-09-07<br>

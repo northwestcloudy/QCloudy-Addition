@@ -90,16 +90,6 @@ public record DungeonQuickViewSnapshot(
         }
     }
 
-    public static DungeonQuickViewSnapshot missing(String playerName, String floor, String failure) {
-        EnumMap<DungeonClass, Stat> classes = new EnumMap<>(DungeonClass.class);
-        for (DungeonClass value : DungeonClass.values()) classes.put(value, Stat.missing());
-        return new DungeonQuickViewSnapshot(playerName, Stat.missing(), classes,
-                new FloorStats(floor, null, null), null, null, null,
-                java.util.Arrays.asList(null, null, null, null),
-                Presence.missing(), Presence.missing(), Presence.missing(), Presence.missing(),
-                false, failure);
-    }
-
     private static Stat stat(JsonObject object) {
         return new Stat(decimal(object, "level"), decimal(object, "xp"));
     }

@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,6 +55,46 @@ final class DungeonQuickViewServiceTest {
         CompletionException failure = assertThrows(CompletionException.class,
                 () -> service.load("GhostsTM", "F7").join());
         assertTrue(failure.getCause() instanceof DungeonQuickViewException);
+    }
+
+    @Test
+    void classifiesKnownMissingPlayerResponsesWithoutOpeningAServiceOutage() {
+        DungeonQuickViewService service = serviceReturning(404, """
+                {"error":{"code":"PLAYER_NOT_FOUND","message":"That Minecraft player does not exist."}}
+                """);
+
+        CompletionException failure = assertThrows(CompletionException.class,
+                () -> service.load("GhostsTM", "F7").join());
+        DungeonQuickViewException problem = (DungeonQuickViewException) failure.getCause();
+        assertFalse(problem.isServiceFailure());
+        assertEquals("That Minecraft player does not exist.", problem.getMessage());
+    }
+
+    @Test
+    void treatsAnUnknown404AsAServiceContractFailure() {
+        DungeonQuickViewService service = serviceReturning(404, "{\"detail\":\"Not Found\"}");
+
+        CompletionException failure = assertThrows(CompletionException.class,
+                () -> service.load("GhostsTM", "M7").join());
+        DungeonQuickViewException problem = (DungeonQuickViewException) failure.getCause();
+        assertTrue(problem.isServiceFailure());
+    }
+
+    @Test
+    void exposesFreshSessionCacheWithoutStartingAnotherRequest() {
+        DungeonQuickViewService service = serviceReturning(200, DungeonQuickViewSnapshotTest.JSON);
+
+        DungeonQuickViewSnapshot loaded = service.load("GhostsTM", "M7").join();
+
+        assertSame(loaded, service.cached("ghoststm", "m7"));
+        assertNull(service.cached("GhostsTM", "F7"));
+    }
+
+    private static DungeonQuickViewService serviceReturning(int status, String body) {
+        return new DungeonQuickViewService(
+                (target, floor) -> CompletableFuture.completedFuture(
+                        new QcaApiClient.Response(status, body, Map.of())),
+                Clock.fixed(Instant.parse("2026-09-07T00:00:00Z"), ZoneOffset.UTC));
     }
 
     private static final class FakeGateway implements DungeonQuickViewService.Gateway {
