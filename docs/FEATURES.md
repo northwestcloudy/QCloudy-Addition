@@ -1,6 +1,6 @@
 # QCloudy_Addition feature specification
 
-## Unified settings and HUD control — 0.3.10-alpha4 development snapshot
+## Unified settings and HUD control — 0.3.10-alpha6 development snapshot
 
 > This source tree contains unpublished Alpha work. The current public test remains Beta 0.3.10, and Release 0.3.9 remains the latest stable build.
 
@@ -215,9 +215,9 @@ Broad numeric ranges use draggable sliders: HUD opacity and scale, cursor-memory
 
 The independent **Dungeon Player Quick View** listens only for the exact Dungeon Finder line announcing that a new player joined the dungeon group. It analyzes that newcomer, not the existing party, and does not browse Party Finder listings. The feature has its own default-on toggle under Dungeons and does not share an enable switch, command, cache, or screen with the removed generic Profile Viewer.
 
-One colored chat card shows Catacombs level, total Secrets and average Secrets across all completed dungeon runs, all five class levels, the currently queued floor's completion count and fastest time, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. Catacombs and class values expose exact XP on hover. Class labels use native underlining. Recognized armor, weapon, and pet entries construct Minecraft's native item hover; absent equipment shows a cross, while unavailable/private/incomplete data says `Missing` rather than zero.
+One colored chat card shows Catacombs level, total Secrets and average Secrets across all completed dungeon runs, all five class levels, the currently queued floor's completion count and fastest time, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. The compact Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, separated by `/`, without an average; each number identifies its class and exact XP on hover. Recognized armor, weapon, and pet entries construct Minecraft's native item hover; absent equipment shows a cross, while unavailable/private/incomplete data says `Missing` rather than zero.
 
-The title is centered inside a measured top separator. The bottom separator is measured from the same width, keeping both endpoints aligned within one separator glyph. The final red, bold, natively underlined action is the only kick path: a physical click runs `/party kick <validated player>`. QCA never kicks automatically and makes no class-conflict decision.
+The title is centered inside a measured top separator. The lower separator uses measured normal and bold line-glyph advances from the active Minecraft font to match the top line's endpoints exactly. The final red, bold, natively underlined action is the only kick path: a physical click runs `/party kick <validated player>`. QCA never kicks automatically and makes no class-conflict decision.
 
 ### 11.2 Request and cache rules
 

@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha4` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha6` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
@@ -26,11 +26,11 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha4` 源码快照；不包含在公开 Beta 0.3.10 中。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha6` 源码快照；不包含在公开 Beta 0.3.10 中。
 
 - Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色聊天卡；不浏览 Party Finder 列表。
 - 聊天卡显示 Catacombs、Secrets、五职业等级、排队楼层完成次数/最快时间、四件护甲、指定武器/宠物与 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
-- 按像素测量的上下线端点对齐；职业与底部操作使用原生下划线。绝不自动踢人，只有玩家真实点击红色操作才执行 `/party kick <玩家>`。
+- 按像素测量的上下线端点完全对齐；类似 Odin 的职业行按 Archer/Berserk/Healer/Mage/Tank 顺序显示带职业颜色的等级数字，以 `/` 分隔，职业名称与 XP 放在悬停中且不显示平均等级。绝不自动踢人，只有玩家真实点击红色下划线操作才执行 `/party kick <玩家>`。
 - 此源码快照已删除通用 `//pv`、`/qpv` 玩家档案浏览及其源码与后端路由。
 
 ### HUD、宠物与计时

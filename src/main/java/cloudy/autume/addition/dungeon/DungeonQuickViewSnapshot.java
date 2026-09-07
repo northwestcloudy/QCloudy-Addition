@@ -182,13 +182,11 @@ public record DungeonQuickViewSnapshot(
     }
 
     public enum DungeonClass {
-        HEALER("healer", "Heal."), MAGE("mage", "Mage"), BERSERK("berserk", "Bers."),
-        ARCHER("archer", "Arch."), TANK("tank", "Tank");
+        HEALER("healer"), MAGE("mage"), BERSERK("berserk"),
+        ARCHER("archer"), TANK("tank");
 
         private final String wireName;
-        private final String label;
-        DungeonClass(String wireName, String label) { this.wireName = wireName; this.label = label; }
-        public String label() { return label; }
+        DungeonClass(String wireName) { this.wireName = wireName; }
     }
 
     public enum PresenceState { PRESENT, ABSENT, MISSING }

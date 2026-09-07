@@ -23,13 +23,22 @@ public final class DungeonQuickViewMessage {
     static final int TARGET_LINE_WIDTH = 330;
     private static final String TITLE = " QCA Player Quick View ";
     private static final String LINE_GLYPH = "─";
+    private static final DungeonQuickViewSnapshot.DungeonClass[] ODIN_CLASS_ORDER = {
+            DungeonQuickViewSnapshot.DungeonClass.ARCHER,
+            DungeonQuickViewSnapshot.DungeonClass.BERSERK,
+            DungeonQuickViewSnapshot.DungeonClass.HEALER,
+            DungeonQuickViewSnapshot.DungeonClass.MAGE,
+            DungeonQuickViewSnapshot.DungeonClass.TANK
+    };
 
     private DungeonQuickViewMessage() { }
 
     public static Component build(DungeonQuickViewSnapshot snapshot, Font font) {
         Component styledTitle = Component.literal(TITLE)
                 .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
-        return build(snapshot, font::width, font.width(styledTitle),
+        int boldLineGlyphWidth = font.width(Component.literal(LINE_GLYPH)
+                .withStyle(ChatFormatting.BOLD));
+        return build(snapshot, font::width, font.width(styledTitle), boldLineGlyphWidth,
                 DungeonQuickViewMessage::itemHover);
     }
 
@@ -54,12 +63,14 @@ public final class DungeonQuickViewMessage {
 
     static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width,
                            ItemHoverFactory hoverFactory) {
-        return build(snapshot, width, width.applyAsInt(TITLE), hoverFactory);
+        int lineGlyphWidth = Math.max(1, width.applyAsInt(LINE_GLYPH));
+        return build(snapshot, width, width.applyAsInt(TITLE), lineGlyphWidth + 1, hoverFactory);
     }
 
     private static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width,
-                                   int styledTitleWidth, ItemHoverFactory hoverFactory) {
-        Lines separators = separators(width, styledTitleWidth);
+                                   int styledTitleWidth, int boldLineGlyphWidth,
+                                   ItemHoverFactory hoverFactory) {
+        Lines separators = separators(width, styledTitleWidth, boldLineGlyphWidth);
         MutableComponent output = Component.empty();
         output.append(Component.literal(separators.left()).withStyle(ChatFormatting.DARK_AQUA));
         output.append(Component.literal(TITLE).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
@@ -75,15 +86,16 @@ public final class DungeonQuickViewMessage {
         output.append(value(snapshot.averageSecrets() == null ? "Missing"
                 : String.format(Locale.ROOT, "%.1f", snapshot.averageSecrets())));
 
-        output.append("\n").append(label("Class: "));
+        output.append("\n").append(label("Classes: "));
         int classIndex = 0;
-        for (DungeonQuickViewSnapshot.DungeonClass dungeonClass
-                : DungeonQuickViewSnapshot.DungeonClass.values()) {
-            if (classIndex++ > 0) output.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY));
+        for (DungeonQuickViewSnapshot.DungeonClass dungeonClass : ODIN_CLASS_ORDER) {
+            if (classIndex++ > 0) output.append(Component.literal("/").withStyle(ChatFormatting.DARK_GRAY));
             DungeonQuickViewSnapshot.Stat stat = snapshot.classes().get(dungeonClass);
-            MutableComponent classText = Component.literal(dungeonClass.label() + " " + level(stat))
-                    .withStyle(style -> style.withColor(ChatFormatting.AQUA).withUnderlined(true));
-            classText.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(xpHover(stat))));
+            ChatFormatting color = stat == null || stat.level() == null
+                    ? ChatFormatting.RED : classColor(dungeonClass);
+            MutableComponent classText = Component.literal(level(stat)).withStyle(style -> style
+                    .withColor(color)
+                    .withHoverEvent(new HoverEvent.ShowText(classHover(dungeonClass, stat))));
             output.append(classText);
         }
 
@@ -132,7 +144,10 @@ public final class DungeonQuickViewMessage {
                     .withHoverEvent(new HoverEvent.ShowText(detail))));
         }
 
-        output.append("\n").append(Component.literal(separators.bottom()).withStyle(ChatFormatting.DARK_AQUA));
+        output.append("\n").append(Component.literal(separators.bottomNormal())
+                .withStyle(ChatFormatting.DARK_AQUA));
+        output.append(Component.literal(separators.bottomBold())
+                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD));
         output.append("\n").append(Component.literal("CLICK HERE TO KICK THE PLAYER OUT")
                 .withStyle(style -> style.withColor(ChatFormatting.RED).withBold(true).withUnderlined(true)
                         .withHoverEvent(new HoverEvent.ShowText(Component.literal(
@@ -147,6 +162,13 @@ public final class DungeonQuickViewMessage {
 
     static Lines separators(ToIntFunction<String> width, int styledTitleWidth) {
         int glyph = Math.max(1, width.applyAsInt(LINE_GLYPH));
+        return separators(width, styledTitleWidth, glyph + 1);
+    }
+
+    static Lines separators(ToIntFunction<String> width, int styledTitleWidth,
+                            int boldLineGlyphWidth) {
+        int glyph = Math.max(1, width.applyAsInt(LINE_GLYPH));
+        int boldGlyph = Math.max(1, boldLineGlyphWidth);
         int title = Math.max(0, styledTitleWidth);
         int available = Math.max(glyph * 2, TARGET_LINE_WIDTH - title);
         int leftCount = Math.max(1, Math.round(available / (2.0f * glyph)));
@@ -155,9 +177,34 @@ public final class DungeonQuickViewMessage {
         String left = LINE_GLYPH.repeat(leftCount);
         String right = LINE_GLYPH.repeat(rightCount);
         int topWidth = width.applyAsInt(left) + title + width.applyAsInt(right);
-        int bottomCount = Math.max(2, Math.round(topWidth / (float) glyph));
-        return new Lines(left, right, LINE_GLYPH.repeat(bottomCount), topWidth,
-                width.applyAsInt(LINE_GLYPH.repeat(bottomCount)));
+        BottomLine bottom = closestBottomLine(topWidth, glyph, boldGlyph);
+        return new Lines(left, right,
+                LINE_GLYPH.repeat(bottom.normalCount()),
+                LINE_GLYPH.repeat(bottom.boldCount()),
+                topWidth, bottom.width());
+    }
+
+    private static BottomLine closestBottomLine(int targetWidth, int glyphWidth,
+                                                int boldGlyphWidth) {
+        BottomLine best = new BottomLine(2, 0, glyphWidth * 2);
+        int bestDifference = Math.abs(best.width() - targetWidth);
+        int narrowestGlyph = Math.max(1, Math.min(glyphWidth, boldGlyphWidth));
+        int maximumCount = Math.max(2, targetWidth / narrowestGlyph + 2);
+
+        for (int totalCount = 2; totalCount <= maximumCount; totalCount++) {
+            for (int boldCount = 0; boldCount <= totalCount; boldCount++) {
+                int normalCount = totalCount - boldCount;
+                int candidateWidth = normalCount * glyphWidth + boldCount * boldGlyphWidth;
+                int difference = Math.abs(candidateWidth - targetWidth);
+                if (difference < bestDifference
+                        || difference == bestDifference && boldCount < best.boldCount()) {
+                    best = new BottomLine(normalCount, boldCount, candidateWidth);
+                    bestDifference = difference;
+                }
+                if (bestDifference == 0 && best.boldCount() == 0) return best;
+            }
+        }
+        return best;
     }
 
     private static Component label(String text) {
@@ -179,6 +226,34 @@ public final class DungeonQuickViewMessage {
     private static String level(DungeonQuickViewSnapshot.Stat stat) {
         return stat == null || stat.level() == null ? "Missing"
                 : String.format(Locale.ROOT, "%.1f", stat.level());
+    }
+
+    private static ChatFormatting classColor(DungeonQuickViewSnapshot.DungeonClass dungeonClass) {
+        return switch (dungeonClass) {
+            case ARCHER -> ChatFormatting.GOLD;
+            case BERSERK -> ChatFormatting.DARK_RED;
+            case HEALER -> ChatFormatting.LIGHT_PURPLE;
+            case MAGE -> ChatFormatting.AQUA;
+            case TANK -> ChatFormatting.DARK_GREEN;
+        };
+    }
+
+    private static Component classHover(DungeonQuickViewSnapshot.DungeonClass dungeonClass,
+                                        DungeonQuickViewSnapshot.Stat stat) {
+        MutableComponent hover = Component.literal(className(dungeonClass) + " Level")
+                .withStyle(classColor(dungeonClass));
+        hover.append("\n").append(xpHover(stat));
+        return hover;
+    }
+
+    private static String className(DungeonQuickViewSnapshot.DungeonClass dungeonClass) {
+        return switch (dungeonClass) {
+            case ARCHER -> "Archer";
+            case BERSERK -> "Berserk";
+            case HEALER -> "Healer";
+            case MAGE -> "Mage";
+            case TANK -> "Tank";
+        };
     }
 
     private static Component xpHover(DungeonQuickViewSnapshot.Stat stat) {
@@ -245,7 +320,12 @@ public final class DungeonQuickViewMessage {
         return String.format(Locale.ROOT, "%d:%02d.%03d", minutes, seconds, millis);
     }
 
-    record Lines(String left, String right, String bottom, int topWidth, int bottomWidth) { }
+    record Lines(String left, String right, String bottomNormal, String bottomBold,
+                 int topWidth, int bottomWidth) {
+        String bottom() { return bottomNormal + bottomBold; }
+    }
+
+    private record BottomLine(int normalCount, int boldCount, int width) { }
 
     @FunctionalInterface
     interface ItemHoverFactory {

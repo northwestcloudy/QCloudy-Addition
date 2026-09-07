@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current source tree is the unpublished `0.3.10-alpha4` development snapshot for Minecraft 26.1.2 only. The current public testing build remains Beta 0.3.10 for Minecraft 26.1.2 and 26.2; the latest stable release remains 0.3.9.
+QCloudy_Addition is a client-only Fabric mod focused on readable SkyBlock maps, compact objective HUDs, client-side visual helpers, pet information, inventory quality-of-life tools, and opt-in party/chat utilities. The mod is bilingual, English-first, and keeps Hypixel-provided names in their original form. The current source tree is the unpublished `0.3.10-alpha6` development snapshot for Minecraft 26.1.2 only. The current public testing build remains Beta 0.3.10 for Minecraft 26.1.2 and 26.2; the latest stable release remains 0.3.9.
 
 ## Quick links
 
 - [Feature list](docs/FEATURES.md)
 - [Implementation notes](docs/IMPLEMENTATION.md)
 - [Modrinth description](docs/MODRINTH_DESCRIPTION.md)
-- [Changelog (current source 0.3.10-alpha4; public Beta 0.3.10 below)](CHANGELOG.md)
+- [Changelog (current source 0.3.10-alpha6; public Beta 0.3.10 below)](CHANGELOG.md)
 - [Version and artifact naming](docs/VERSIONING.md)
 - [Validation](docs/VALIDATION.md)
 - [Compliance](docs/COMPLIANCE.md)
@@ -42,7 +42,7 @@ The top-level order is **General, Maps, Items & Menus, Combat, Dungeons, Slayer,
 ### General
 
 - **Manual Reconnect** — adds one vanilla-sized `Reconnect` button to connection-failed and disconnected screens. The target is captured when the normal connection attempt begins, so the button also works after an initial failure. It reconnects only after the player clicks it; there is no timer, loop, retry counter, command, or automatic join.
-- **Dungeon Player Quick View** — when the exact Dungeon Finder message reports that a new player joined the dungeon group, QCA analyzes only that newcomer and prints a colored chat card. It shows Catacombs level, total and per-run Secrets, all five class levels, the queued floor's run count and fastest completion, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. Catacombs/classes expose exact XP on hover; recognized armor, weapons, and pets use native item-style hover details. Missing or private fields say `Missing`. Class labels and the manual kick action use native Minecraft underlining, while measured top and bottom separators keep matching endpoints. QCA never browses Party Finder listings, never checks class conflicts, and never kicks automatically; only clicking the red underlined action runs `/party kick <player>`. The feature has an independent Dungeons setting.
+- **Dungeon Player Quick View** — when the exact Dungeon Finder message reports that a new player joined the dungeon group, QCA analyzes only that newcomer and prints a colored chat card. It shows Catacombs level, total and per-run Secrets, all five class levels, the queued floor's run count and fastest completion, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. The class row follows Odin's compact visual order—Archer/Berserk/Healer/Mage/Tank—as class-colored numeric levels separated by `/`; hovering a number identifies the class and shows exact XP, with no average level. Recognized armor, weapons, and pets use native item-style hover details, and missing or private fields say `Missing`. The measured top and bottom separators use the active Minecraft font's normal and bold line-glyph widths to match endpoints exactly. QCA never browses Party Finder listings, never checks class conflicts, and never kicks automatically; only clicking the red underlined action runs `/party kick <player>`. The feature has an independent Dungeons setting.
 
 The quick view contacts only `https://api.qcloudy.net`; the mod never contains or receives the private Hypixel API key and never connects directly to authenticated Hypixel profile endpoints. One bounded response supplies the whole card. The client coalesces identical requests and caches successful results for 60 seconds; the service caches player/Profile sources for two minutes with a ten-minute stale-on-technical-failure ceiling so repeat joins appear quickly without silently turning absent data into zero.
 

@@ -2,6 +2,23 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha6] - 2026-09-07
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Changed
+
+- Dungeon Quick View now presents class levels in Odin's compact style: Archer, Berserk, Healer, Mage, and Tank appear as class-colored one-decimal values separated by `/`. Hovering a value reveals its class and exact XP; the line still has no average level and preserves explicit `Missing` values.
+
+### Fixed
+
+- The lower card separator now uses the active Minecraft font's measured normal and bold line-glyph advances to fill any residual pixels that whole normal glyphs cannot represent, matching the upper separator's endpoint exactly instead of allowing a visible offset.
+
+### Scope
+
+- Regression coverage verifies class order, colors, slash separators, hover details, missing-value behavior, and exact pixel-width equality for a title width that normal separator glyphs alone cannot match.
+- `0.3.10-alpha6` is an Alpha source/build target only; it is not a GitHub Release, Modrinth version, or stable update target.
+
 ## [0.3.10-alpha5] - 2026-09-07
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

@@ -1,3 +1,34 @@
+# QCloudy_Addition 0.3.10-alpha6 Dungeon Quick View 展示验证
+
+日期：2026-09-07<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha6` 修复 Dungeon Quick View 上下分隔线端点肉眼不一致的问题，并只按用户要求调整职业行的展示。Archer/Berserk/Healer/Mage/Tank 现在依次显示为带职业颜色的一位小数等级，以 `/` 分隔；每个数值仍保留职业名称与精确 XP 悬停，不加入职业平均等级，缺失职业数据仍显示 `Missing`。卡片其他内容、必须由玩家点击的手动踢人边界、请求/缓存逻辑及全部非 Dungeon 功能均保持不变。这仍是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release/更新检查基线仍为 0.3.9。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha6+26.1.2.jar` — 3,802,669 字节 — `b09616947919dc1fc1568f3fd6c0955fe57c450fcb05f9366b28c01f46a82c3d`
+- `release/QCloudy_Addition-0.3.10-alpha6+26.1.2-sources.jar` — 3,130,972 字节 — `63aa3934eed34bc1abc1627b1c0b880a66c4ac28b76accd1f4f2de090490286a`
+
+## 已完成验证
+
+- Java 25 针对 Minecraft 26.1.2 完成最终 `clean test build prepareRelease`：59 个测试套件、333 项测试，0 failure、0 error、0 skipped。
+- 职业行回归覆盖紧凑文本的精确顺序、一位小数、Archer 颜色、`/` 分隔、移除职业下划线、职业名称/XP 悬停，以及红色 `Missing`。原有手动踢人、物品悬停、有界数据结构、服务/缓存、会话判定、钓鱼及无关功能测试继续通过。
+- 分隔线回归模拟了上分隔线完整样式宽度为 331 像素、普通横线每枚前进 6 像素的字体；渲染器会在普通横线中使用一枚前进 7 像素的粗体横线，使下线精确达到 331 像素，而不是舍入为 330 或 336。
+- 两个 JAR 均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 精确声明 `0.3.10-alpha6+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求及必需的 `hypixel-mod-api >=1.0`。
+- 可运行 JAR 包含独立 Dungeon Quick View manager/message/snapshot 类和不受影响的 `market/shard` 实现。
+
+## 尚未完成的实服验证边界
+
+- 本地没有使用已登录 Hypixel 的真实 Dungeon Finder 新成员，也没有在 Minecraft 聊天栏进行渲染。准确的实服字体/资源包外观、GUI 缩放、聊天宽度、悬停位置及点击行为仍需安装本 Alpha 后用一张真实新成员卡片确认。
+- 本次仅调整客户端展示，不需要部署服务端；QCloudy API 数据结构与路由均未修改。
+- 本轮未制作 Minecraft 26.2 Alpha 产物或兼容性构建，因为本 Alpha 仅以 Minecraft 26.1.2 为目标。构建没有执行 Git commit/push、GitHub Release、Modrinth 发布或服务端修改。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha5 Dungeon Quick View 与钓鱼时机验证
 
 日期：2026-09-07<br>

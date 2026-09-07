@@ -1,3 +1,34 @@
+# QCloudy_Addition 0.3.10-alpha6 Dungeon Quick View presentation validation
+
+Date: 2026-09-07<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha6` fixes the visible endpoint mismatch between Dungeon Quick View's upper and lower separators and changes only the class row's presentation to the compact Odin-style layout requested by the user. Archer/Berserk/Healer/Mage/Tank now appear as class-colored one-decimal values separated by `/`; each value retains a class-name and exact-XP hover, no class average is added, and unavailable class data remains `Missing`. The rest of the card, its one-click manual kick boundary, request/cache behavior, and every non-Dungeon feature remain unchanged. This is still an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha6+26.1.2.jar` — 3,802,669 bytes — `b09616947919dc1fc1568f3fd6c0955fe57c450fcb05f9366b28c01f46a82c3d`
+- `release/QCloudy_Addition-0.3.10-alpha6+26.1.2-sources.jar` — 3,130,972 bytes — `63aa3934eed34bc1abc1627b1c0b880a66c4ac28b76accd1f4f2de090490286a`
+
+## Completed verification
+
+- The final Minecraft 26.1.2 `clean test build prepareRelease` completed successfully with Java 25: 59 suites, 333 tests, 0 failures, 0 errors, and 0 skipped.
+- Class-row regression coverage verifies the exact compact text order, one-decimal values, Archer color, slash separators, removal of class underlining, class-name/XP hover, and explicit red `Missing` behavior. Existing manual kick, item hover, bounded schema, service/cache, session detection, fishing, and unrelated-feature suites remain green.
+- Separator coverage includes a simulated font where the styled top line measures 331 pixels while each normal line glyph advances six pixels. The renderer selects one seven-pixel bold line glyph among normal glyphs, producing an exact 331-pixel lower line rather than rounding to 330 or 336.
+- Both JARs pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact version `0.3.10-alpha6+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+- The playable JAR contains the dedicated Dungeon Quick View manager/message/snapshot classes and the independent `market/shard` implementation.
+
+## Remaining live-validation boundary
+
+- No authenticated Hypixel Dungeon Finder join or Minecraft chat render was exercised locally. The exact live font/resource-pack appearance, GUI scale, chat width, hover placement, and click behavior still require installing this Alpha and checking a real newcomer card.
+- No server deployment is needed for this client-only presentation change; the QCloudy API schema and routes were not changed.
+- No Minecraft 26.2 Alpha artifact or compatibility run was performed because this Alpha target is Minecraft 26.1.2 only. No Git commit, push, GitHub Release, Modrinth version, or server change was performed by this build.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha5 Dungeon Quick View and fishing timing validation
 
 Date: 2026-09-07<br>

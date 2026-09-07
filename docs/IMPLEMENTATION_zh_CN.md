@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha4` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha6` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -414,7 +414,7 @@ QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qp
 
 `DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅在进程内缓存 60 秒。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒/十五秒超时和 4 MiB 响应上限。`DungeonQuickViewSnapshot` 只接受有界 schema 1，并使用三态装备模型，使不完整来源显示 `Missing` 而不是错误的叉。
 
-`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 与五职业通过 `SHOW_TEXT` 悬停显示精确 XP；职业名称使用原生下划线。护甲、已识别武器和宠物转换为本地 ItemStack，并通过 `HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(...))` 使用 Minecraft 原生物品 Tooltip 排列。标题和下分隔线按字形宽度测量，上下端点误差不超过一个分隔符。底部红色、粗体、下划线的 `ClickEvent.RunCommand("/party kick <已校验玩家名>")` 是唯一踢人路径；任何结果、缺失字段、职业组合或计时器都不能自动执行它。
+`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 通过 `SHOW_TEXT` 悬停显示精确 XP。职业行采用类似 Odin 的紧凑展示：Archer、Berserk、Healer、Mage、Tank 依次显示为带职业颜色的一位小数等级，以 `/` 分隔；每个数值悬停显示职业名称和精确 XP，不计算平均等级。护甲、已识别武器和宠物转换为本地 ItemStack，并通过 `HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(...))` 使用 Minecraft 原生物品 Tooltip 排列。标题按当前 `Font` 测量完整粗体样式；下分隔线动态组合普通和粗体横线字形，利用粗体前进宽度补齐普通字形无法覆盖的余数，使测量端点与上分隔线完全一致。底部红色、粗体、下划线的 `ClickEvent.RunCommand("/party kick <已校验玩家名>")` 是唯一踢人路径；任何结果、缺失字段、职业组合或计时器都不能自动执行它。
 
 可部署 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles，选择当前或最近保存的可见 Profile，只投影 Catacombs/职业 XP、指定层完成次数/最快时间、总 Secrets 与全部 run 平均值、Magical Power、四个护甲槽、指定武器和两个龙宠。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；服务器 Key 只存在环境中，接口不是通用代理。
 

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,16 +60,22 @@ final class DungeonQuickViewSnapshotTest {
     }
 
     @Test
-    void preservesNativeUnderlinesAndManualKickClick() {
+    void usesOdinStyleClassLevelsAndPreservesManualKickClick() {
         DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(JSON);
         Component message = DungeonQuickViewMessage.build(view, String::length,
                 (item, kind) -> new HoverEvent.ShowText(Component.literal(item.name())));
         List<Component> parts = flatten(message);
-        Component healer = parts.stream().filter(part -> part.getString().startsWith("Heal. "))
+        Component archer = parts.stream().filter(part -> part.getString().equals("42.0")
+                        && part.getStyle().getColor() != null
+                        && part.getStyle().getColor().getValue() == 0xFFAA00)
                 .findFirst().orElseThrow();
         Component kick = parts.stream().filter(part -> part.getString().equals(
                 "CLICK HERE TO KICK THE PLAYER OUT")).findFirst().orElseThrow();
-        assertTrue(healer.getStyle().isUnderlined());
+        assertTrue(message.getString().contains("Classes: 42.0/39.5/30.1/41.0/31.0"));
+        assertFalse(archer.getStyle().isUnderlined());
+        HoverEvent.ShowText classHover = assertInstanceOf(HoverEvent.ShowText.class,
+                archer.getStyle().getHoverEvent());
+        assertEquals("Archer Level\nXP: 85,359,640", classHover.value().getString());
         assertTrue(kick.getStyle().isUnderlined());
         assertTrue(kick.getStyle().isBold());
         ClickEvent.RunCommand click = assertInstanceOf(ClickEvent.RunCommand.class,
@@ -89,6 +96,33 @@ final class DungeonQuickViewSnapshotTest {
         DungeonQuickViewMessage.Lines lines = DungeonQuickViewMessage.separators(
                 String::length, 40);
         assertTrue(Math.abs(lines.topWidth() - lines.bottomWidth()) <= 1);
+    }
+
+    @Test
+    void separatorUsesBoldLineGlyphsToMatchAnOtherwiseUnreachablePixelWidth() {
+        DungeonQuickViewMessage.Lines lines = DungeonQuickViewMessage.separators(
+                text -> text.length() * 6, 121, 7);
+
+        assertEquals(331, lines.topWidth());
+        assertEquals(lines.topWidth(), lines.bottomWidth());
+        assertEquals(1, lines.bottomBold().length());
+    }
+
+    @Test
+    void odinStyleClassLineKeepsMissingDataExplicit() {
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(JSON.replace(
+                "\"archer\":{\"level\":42.0,\"xp\":85359640}",
+                "\"archer\":{\"level\":null,\"xp\":null}"));
+        Component message = DungeonQuickViewMessage.build(view, String::length,
+                (item, kind) -> new HoverEvent.ShowText(Component.literal(item.name())));
+        Component missingArcher = flatten(message).stream()
+                .filter(part -> part.getString().equals("Missing"))
+                .filter(part -> part.getStyle().getHoverEvent() instanceof HoverEvent.ShowText hover
+                        && hover.value().getString().equals("Archer Level\nXP: Missing"))
+                .findFirst().orElseThrow();
+
+        assertEquals(0xFF5555, missingArcher.getStyle().getColor().getValue());
+        assertTrue(message.getString().contains("Classes: Missing/39.5/30.1/41.0/31.0"));
     }
 
     @Test
