@@ -2,6 +2,28 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha7] - 2026-09-08
+
+Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Added
+
+- Added the requested one-decimal `Class Average` after the compact Archer/Berserk/Healer/Mage/Tank values. Any unavailable class keeps the average explicitly `Missing`.
+- Added separate Fast Party Command audiences for `!warp` and all other `!` commands, an independent self-trigger switch, and a case-insensitive command whitelist. Audience choices are None, Party members only, Friends only, Guild members only, and Guild members and friends.
+- Added account-scoped guild-member snapshots and reused the existing account-scoped friend snapshots for command authorization. A guild list is trusted only after both online and offline sections complete; incomplete social lists fail closed.
+- Added bordered current-value dropdowns with expandable choices for discrete multi-value settings, including party audiences, provider/enum values, timestamp/sound/chat modes, border width, commission display, and pet accessory display.
+
+### Fixed
+
+- Dungeon Quick View now obtains the requested floor from the local player's own active Party Finder listing, proven by the delist control, and retains the queued-scoreboard parser only as a fallback. Newcomer requests therefore include the advertised `F/M/E` floor before instance queueing, allowing the existing API to return floor run count and fastest completion instead of permanent `Missing` values.
+
+### Safety and compatibility
+
+- Fast Party Commands still accept triggers only from Party Chat. A non-self sender is already a party member; friend/guild audiences narrow that set, while the explicit whitelist may allow a named party member. Public, guild, and private chat remain unable to trigger these commands.
+- Schema 29 migrates old per-command self/other scopes without widening access when mixed settings cannot be represented by the new shared controls. No automatic `/fl`, `/g members`, `/g onlinemode`, party kick, Party Finder click, or server-list refresh was added.
+- Regression coverage includes own-listing floor selection and rejection of other listings, class-average missing behavior, permission/whitelist precedence, conservative config migration, complete/incomplete guild lists, account persistence, and the unchanged command/feature suites.
+- `0.3.10-alpha7` is an Alpha source/build target only; it is not a GitHub Release, Modrinth version, or stable update target.
+
 ## [0.3.10-alpha6] - 2026-09-07
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

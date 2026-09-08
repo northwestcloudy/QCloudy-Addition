@@ -149,6 +149,43 @@ final class PartyCommandEngineTest {
     }
 
     @Test
+    void separatesWarpFromOtherAudiencesAndKeepsSelfIndependent() {
+        PartyCommandEngine.AccessPolicy policy = new PartyCommandEngine.AccessPolicy(
+                false,
+                PartyCommandEngine.Audience.FRIENDS,
+                PartyCommandEngine.Audience.GUILD_MEMBERS,
+                name -> false,
+                name -> name.equalsIgnoreCase("FriendPlayer"),
+                name -> name.equalsIgnoreCase("GuildPlayer"));
+
+        assertEquals(Status.COMMAND, authorizedParty(new PartyCommandEngine(),
+                "FriendPlayer", "!warp", policy, 0L).status());
+        assertEquals(Status.IGNORED, authorizedParty(new PartyCommandEngine(),
+                "GuildPlayer", "!warp", policy, 0L).status());
+        assertEquals(Status.COMMAND, authorizedParty(new PartyCommandEngine(),
+                "GuildPlayer", "!all", policy, 0L).status());
+        assertEquals(Status.IGNORED, authorizedParty(new PartyCommandEngine(),
+                "FriendPlayer", "!all", policy, 0L).status());
+        assertEquals(Status.IGNORED, authorizedParty(new PartyCommandEngine(),
+                LOCAL, "!all", policy, 0L).status());
+    }
+
+    @Test
+    void explicitWhitelistOverridesNonSelfAudienceButNotDisabledFeaturesOrSelfSwitch() {
+        PartyCommandEngine.AccessPolicy policy = new PartyCommandEngine.AccessPolicy(
+                false, PartyCommandEngine.Audience.NONE, PartyCommandEngine.Audience.NONE,
+                name -> name.equalsIgnoreCase("AllowedPlayer"), name -> false, name -> false);
+
+        assertEquals(Status.COMMAND, authorizedParty(new PartyCommandEngine(),
+                "AllowedPlayer", "!warp", policy, 0L).status());
+        assertEquals(Status.IGNORED, authorizedParty(new PartyCommandEngine(),
+                LOCAL, "!warp", policy, 0L).status());
+        assertEquals(Status.IGNORED, new PartyCommandEngine().handlePartyChat(
+                "Party > AllowedPlayer: !warp", LOCAL, true, feature -> false,
+                policy, COORDINATES, 0L).status());
+    }
+
+    @Test
     void ignoresEveryNonPartyChannelAndUnknownDoubleSlashButCancelsRecognizedErrors() {
         PartyCommandEngine engine = new PartyCommandEngine();
         for (String text : List.of(
@@ -285,5 +322,12 @@ final class PartyCommandEngineTest {
                                                    long nowNanos) {
         return engine.handleLocalDoubleSlash(input, LOCAL, true, ALL_ENABLED,
                 COORDINATES, nowNanos);
+    }
+
+    private static PartyCommandEngine.Result authorizedParty(
+            PartyCommandEngine engine, String sender, String message,
+            PartyCommandEngine.AccessPolicy policy, long nowNanos) {
+        return engine.handlePartyChat("Party > " + sender + ": " + message, LOCAL, true,
+                ALL_ENABLED, policy, COORDINATES, nowNanos);
     }
 }

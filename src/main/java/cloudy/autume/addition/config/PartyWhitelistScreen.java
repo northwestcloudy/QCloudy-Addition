@@ -14,12 +14,13 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Ordered, case-insensitive whitelist editor for friend party auto-accept. */
+/** Ordered, case-insensitive editor shared by the two independent party whitelists. */
 final class PartyWhitelistScreen extends Screen {
     private static final int ROW_HEIGHT = 30;
     private static final int ROW_GAP = 5;
 
     private final Screen parent;
+    private final Target target;
     private final long openedAt = System.nanoTime();
     private final List<Hit> hits = new ArrayList<>();
     private final VerticalScrollbar rowsScrollbar = new VerticalScrollbar();
@@ -40,8 +41,15 @@ final class PartyWhitelistScreen extends Screen {
     private int maxScroll;
 
     PartyWhitelistScreen(Screen parent) {
-        super(ModText.component("config.party.whitelist.screen_title"));
+        this(parent, Target.PARTY_AUTO_ACCEPT);
+    }
+
+    PartyWhitelistScreen(Screen parent, Target target) {
+        super(ModText.component(target == Target.FAST_PARTY_COMMANDS
+                ? "config.fast_party.whitelist.screen_title"
+                : "config.party.whitelist.screen_title"));
         this.parent = parent;
+        this.target = target == null ? Target.PARTY_AUTO_ACCEPT : target;
     }
 
     @Override
@@ -91,9 +99,9 @@ final class PartyWhitelistScreen extends Screen {
                 windowY + 34, AcaUiTheme.HEADER);
         AcaUiTheme.button(graphics, font, "‹", windowX + 10, windowY + 8, 24, 18,
                 AcaUiTheme.contains(mouseX, mouseY, windowX + 10, windowY + 8, 24, 18), false);
-        drawFitted(graphics, ModText.get("config.party.whitelist.screen_title"),
+        drawFitted(graphics, ModText.get(target.key("screen_title")),
                 windowX + 42, windowY + 10, windowWidth - 54, AcaUiTheme.TEXT, true);
-        drawFitted(graphics, ModText.get("config.party.whitelist.sync_hint"),
+        drawFitted(graphics, ModText.get(target.key("sync_hint")),
                 contentX, windowY + 43, contentWidth, AcaUiTheme.TEXT_MUTED, false);
 
         hits.clear();
@@ -109,15 +117,14 @@ final class PartyWhitelistScreen extends Screen {
         int y = windowY + 66;
         graphics.fill(contentX, y, contentX + contentWidth, y + 32, AcaUiTheme.CARD);
         graphics.outline(contentX, y, contentWidth, 32, AcaUiTheme.BORDER_SOFT);
-        graphics.text(font, Component.literal(ModText.get("config.party.whitelist.title"))
+        graphics.text(font, Component.literal(ModText.get(target.key("title")))
                         .withStyle(ChatFormatting.BOLD), contentX + 10, y + 11, AcaUiTheme.TEXT, false);
-        String count = ModText.get("config.party.whitelist.count", chat.partyAutoAcceptWhitelist.size(),
-                ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT);
+        String count = ModText.get("config.party.whitelist.count", target.names(chat).size(), target.limit());
         int addX = contentX + contentWidth - 28;
         int countRight = addX - 8;
         graphics.text(font, count, countRight - font.width(count), y + 11, AcaUiTheme.TEXT_DIM, false);
         boolean enabled = editorMode == EditorMode.NONE
-                && chat.partyAutoAcceptWhitelist.size() < ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT;
+                && target.names(chat).size() < target.limit();
         boolean hovered = enabled && AcaUiTheme.contains(mouseX, mouseY, addX, y + 5, 22, 22);
         graphics.fill(addX, y + 5, addX + 22, y + 27,
                 enabled ? (hovered ? AcaUiTheme.ACCENT : AcaUiTheme.CONTROL) : AcaUiTheme.CARD);
@@ -156,7 +163,7 @@ final class PartyWhitelistScreen extends Screen {
     }
 
     private void drawRows(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        List<String> names = ConfigManager.get().chat.partyAutoAcceptWhitelist;
+        List<String> names = target.names(ConfigManager.get().chat);
         int totalHeight = names.isEmpty() ? ROW_HEIGHT
                 : names.size() * (ROW_HEIGHT + ROW_GAP) - ROW_GAP;
         maxScroll = Math.max(0, totalHeight - rowsHeight);
@@ -306,7 +313,7 @@ final class PartyWhitelistScreen extends Screen {
             case ADD -> openEditor(EditorMode.ADD, "");
             case EDIT -> openEditor(EditorMode.EDIT, hit.name);
             case DELETE -> {
-                ConfigManager.get().chat.removePartyAutoAcceptWhitelist(hit.name);
+                target.remove(ConfigManager.get().chat, hit.name);
                 if (editingOriginal.equalsIgnoreCase(hit.name)) closeEditor();
                 ConfigManager.save();
             }
@@ -340,7 +347,7 @@ final class PartyWhitelistScreen extends Screen {
             errorKey = "config.party.whitelist.invalid";
             return;
         }
-        boolean duplicate = chat.partyAutoAcceptWhitelist.stream()
+        boolean duplicate = target.names(chat).stream()
                 .anyMatch(name -> name.equalsIgnoreCase(candidate)
                         && (editorMode != EditorMode.EDIT || !name.equalsIgnoreCase(editingOriginal)));
         if (duplicate) {
@@ -348,13 +355,13 @@ final class PartyWhitelistScreen extends Screen {
             return;
         }
         if (editorMode == EditorMode.ADD
-                && chat.partyAutoAcceptWhitelist.size() >= ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT) {
+                && target.names(chat).size() >= target.limit()) {
             errorKey = "config.party.whitelist.limit";
             return;
         }
         boolean changed = editorMode == EditorMode.ADD
-                ? chat.addPartyAutoAcceptWhitelist(candidate)
-                : chat.replacePartyAutoAcceptWhitelist(editingOriginal, candidate);
+                ? target.add(chat, candidate)
+                : target.replace(chat, editingOriginal, candidate);
         if (!changed) {
             errorKey = "config.party.whitelist.duplicate";
             return;
@@ -406,6 +413,42 @@ final class PartyWhitelistScreen extends Screen {
     }
 
     private enum EditorMode { NONE, ADD, EDIT }
+
+    enum Target {
+        PARTY_AUTO_ACCEPT,
+        FAST_PARTY_COMMANDS;
+
+        String key(String suffix) {
+            return (this == FAST_PARTY_COMMANDS ? "config.fast_party.whitelist."
+                    : "config.party.whitelist.") + suffix;
+        }
+
+        List<String> names(ModConfig.Chat chat) {
+            return this == FAST_PARTY_COMMANDS
+                    ? chat.fastPartyCommandWhitelist : chat.partyAutoAcceptWhitelist;
+        }
+
+        int limit() {
+            return this == FAST_PARTY_COMMANDS ? ModConfig.Chat.FAST_PARTY_WHITELIST_LIMIT
+                    : ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT;
+        }
+
+        boolean add(ModConfig.Chat chat, String name) {
+            return this == FAST_PARTY_COMMANDS ? chat.addFastPartyCommandWhitelist(name)
+                    : chat.addPartyAutoAcceptWhitelist(name);
+        }
+
+        boolean replace(ModConfig.Chat chat, String oldName, String newName) {
+            return this == FAST_PARTY_COMMANDS
+                    ? chat.replaceFastPartyCommandWhitelist(oldName, newName)
+                    : chat.replacePartyAutoAcceptWhitelist(oldName, newName);
+        }
+
+        boolean remove(ModConfig.Chat chat, String name) {
+            return this == FAST_PARTY_COMMANDS ? chat.removeFastPartyCommandWhitelist(name)
+                    : chat.removePartyAutoAcceptWhitelist(name);
+        }
+    }
 
     private enum Action { ADD, EDIT, DELETE, CONFIRM, CANCEL }
 

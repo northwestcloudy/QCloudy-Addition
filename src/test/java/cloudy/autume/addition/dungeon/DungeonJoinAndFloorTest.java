@@ -44,4 +44,55 @@ final class DungeonJoinAndFloorTest {
         assertTrue(DungeonFloor.retainWhileQueued(normal,
                 List.of("SKYBLOCK", "Purse: 1,000")).isEmpty());
     }
+
+    @Test
+    void readsOnlyTheLocalPlayersOwnAdvertisedPartyFinderFloor() {
+        List<DungeonPartyFinderFloorTracker.MenuEntry> entries = List.of(
+                new DungeonPartyFinderFloorTracker.MenuEntry(10, "OtherPlayer's Party",
+                        List.of("Dungeon: The Catacombs", "Floor: Floor V"), true, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(48, "LocalPlayer's Party",
+                        List.of("Dungeon: Master Mode The Catacombs", "Floor: Floor VII"), true, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(50, "Delist Group", List.of(), false, true));
+
+        assertEquals("M7", DungeonPartyFinderFloorTracker.floorFromPartyFinder(
+                "Party Finder", entries, "LocalPlayer").orElseThrow().id());
+    }
+
+    @Test
+    void rejectsSearchFiltersAndOtherPlayersListingsWithoutLocalDelistProof() {
+        List<DungeonPartyFinderFloorTracker.MenuEntry> entries = List.of(
+                new DungeonPartyFinderFloorTracker.MenuEntry(10, "OtherPlayer's Party",
+                        List.of("Dungeon: The Catacombs", "Floor: Floor VII"), true, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(50, "Refresh", List.of(), false, false));
+
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromPartyFinder(
+                "Party Finder", entries, "LocalPlayer").isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromPartyFinder(
+                "Select Floor", entries, "LocalPlayer").isEmpty());
+    }
+
+    @Test
+    void findsOwnSearchResultWhenDelistControlAppearsBeforeBottomPartyHead() {
+        List<DungeonPartyFinderFloorTracker.MenuEntry> entries = List.of(
+                new DungeonPartyFinderFloorTracker.MenuEntry(11, "LocalPlayer's Party",
+                        List.of("Dungeon: The Catacombs", "Floor: Entrance",
+                                "You are in this party"), true, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(53, "Delist Group", List.of(), false, true));
+
+        assertEquals("E", DungeonPartyFinderFloorTracker.floorFromPartyFinder(
+                "Party Finder", entries, "LocalPlayer").orElseThrow().id());
+    }
+
+    @Test
+    void acceptsNamedDelistControlWhenHypixelChangesItsItemType() {
+        List<DungeonPartyFinderFloorTracker.MenuEntry> entries = List.of(
+                new DungeonPartyFinderFloorTracker.MenuEntry(10, "LocalPlayer's Party",
+                        List.of("Dungeon: The Catacombs", "Floor: Floor VI",
+                                "You are in this party"), true, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(53, "Delist Group",
+                        List.of(), false, false));
+
+        assertEquals("F6", DungeonPartyFinderFloorTracker.floorFromPartyFinder(
+                "Party Finder", entries, "LocalPlayer").orElseThrow().id());
+    }
 }

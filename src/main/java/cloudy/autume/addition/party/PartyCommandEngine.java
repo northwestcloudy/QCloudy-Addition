@@ -42,6 +42,31 @@ public final class PartyCommandEngine {
                                   Predicate<Feature> featureEnabled,
                                   Function<Feature, TriggerScope> scopeFor,
                                   BlockCoordinates coordinates, long nowNanos) {
+        return handlePartyChat(raw, localPlayer, masterEnabled, featureEnabled,
+                (feature, sender) -> {
+                    TriggerScope scope = scopeFor == null ? null : scopeFor.apply(feature);
+                    return scope != null && scope.allows(sender, localPlayer);
+                }, coordinates, nowNanos);
+    }
+
+    /**
+     * Handles a Party Chat command with the shared QCA audience model. The
+     * channel parser already proves every non-self sender is a current party
+     * member; friend and guild predicates only narrow that set.
+     */
+    public Result handlePartyChat(String raw, String localPlayer, boolean masterEnabled,
+                                  Predicate<Feature> featureEnabled, AccessPolicy accessPolicy,
+                                  BlockCoordinates coordinates, long nowNanos) {
+        return handlePartyChat(raw, localPlayer, masterEnabled, featureEnabled,
+                (feature, sender) -> accessPolicy != null
+                        && accessPolicy.allows(feature, sender, localPlayer),
+                coordinates, nowNanos);
+    }
+
+    private Result handlePartyChat(String raw, String localPlayer, boolean masterEnabled,
+                                   Predicate<Feature> featureEnabled,
+                                   java.util.function.BiPredicate<Feature, String> authorized,
+                                   BlockCoordinates coordinates, long nowNanos) {
         var parsed = PartyChatLine.parse(raw);
         if (parsed.isEmpty()) {
             roster.observeSystemMessage(raw);
@@ -56,8 +81,7 @@ public final class PartyCommandEngine {
         if (command == null) return Result.ignored();
         if (!enabled(featureEnabled, command.feature())) return Result.ignored();
 
-        TriggerScope scope = scopeFor == null ? null : scopeFor.apply(command.feature());
-        if (scope == null || !scope.allows(line.sender(), localPlayer)) return Result.ignored();
+        if (authorized == null || !authorized.test(command.feature(), line.sender())) return Result.ignored();
         if (duplicatePartyMessage(raw, nowNanos)) return Result.ignored();
 
         Result result = build(command, line.sender(), localPlayer, coordinates);
@@ -303,6 +327,45 @@ public final class PartyCommandEngine {
                     || !PartyRosterTracker.validUsername(localPlayer)) return false;
             boolean self = sender.equalsIgnoreCase(localPlayer);
             return this == SELF_ONLY ? self : !self;
+        }
+    }
+
+    public enum Audience {
+        NONE,
+        PARTY_MEMBERS,
+        FRIENDS,
+        GUILD_MEMBERS,
+        GUILD_AND_FRIENDS
+    }
+
+    /** Immutable authorization inputs for Party Chat {@code !} commands. */
+    public record AccessPolicy(boolean allowSelf, Audience warpAudience, Audience otherAudience,
+                               Predicate<String> whitelist, Predicate<String> friend,
+                               Predicate<String> guildMember) {
+        public boolean allows(Feature feature, String sender, String localPlayer) {
+            if (feature == null || !PartyRosterTracker.validUsername(sender)
+                    || !PartyRosterTracker.validUsername(localPlayer)) return false;
+            if (sender.equalsIgnoreCase(localPlayer)) return allowSelf;
+            if (test(whitelist, sender)) return true;
+
+            Audience audience = feature == Feature.WARP ? warpAudience : otherAudience;
+            if (audience == null) return false;
+            return switch (audience) {
+                case NONE -> false;
+                case PARTY_MEMBERS -> true;
+                case FRIENDS -> test(friend, sender);
+                case GUILD_MEMBERS -> test(guildMember, sender);
+                case GUILD_AND_FRIENDS -> test(friend, sender) || test(guildMember, sender);
+            };
+        }
+
+        private static boolean test(Predicate<String> predicate, String sender) {
+            if (predicate == null) return false;
+            try {
+                return predicate.test(sender);
+            } catch (RuntimeException ignored) {
+                return false;
+            }
         }
     }
 

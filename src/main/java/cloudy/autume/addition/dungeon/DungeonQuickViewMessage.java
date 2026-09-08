@@ -98,6 +98,8 @@ public final class DungeonQuickViewMessage {
                     .withHoverEvent(new HoverEvent.ShowText(classHover(dungeonClass, stat))));
             output.append(classText);
         }
+        output.append(Component.literal(" | Class Average: ").withStyle(ChatFormatting.DARK_GRAY));
+        output.append(value(classAverage(snapshot)));
 
         output.append("\n").append(label("Floor: "));
         String floor = snapshot.floor().id().isBlank() ? "Missing" : snapshot.floor().id();
@@ -226,6 +228,16 @@ public final class DungeonQuickViewMessage {
     private static String level(DungeonQuickViewSnapshot.Stat stat) {
         return stat == null || stat.level() == null ? "Missing"
                 : String.format(Locale.ROOT, "%.1f", stat.level());
+    }
+
+    private static String classAverage(DungeonQuickViewSnapshot snapshot) {
+        double total = 0.0;
+        for (DungeonQuickViewSnapshot.DungeonClass dungeonClass : ODIN_CLASS_ORDER) {
+            DungeonQuickViewSnapshot.Stat stat = snapshot.classes().get(dungeonClass);
+            if (stat == null || stat.level() == null || !Double.isFinite(stat.level())) return "Missing";
+            total += stat.level();
+        }
+        return String.format(Locale.ROOT, "%.1f", total / ODIN_CLASS_ORDER.length);
     }
 
     private static ChatFormatting classColor(DungeonQuickViewSnapshot.DungeonClass dungeonClass) {

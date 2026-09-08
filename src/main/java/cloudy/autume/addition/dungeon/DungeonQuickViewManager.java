@@ -32,10 +32,17 @@ public final class DungeonQuickViewManager {
         currentFloor = DungeonFloor.retainWhileQueued(currentFloor, lines).orElse(null);
     }
 
+    public static void updateContext(Minecraft client, List<String> scoreboardLines) {
+        updateScoreboard(scoreboardLines);
+        DungeonPartyFinderFloorTracker.update(client);
+    }
+
     public static void onMessage(Minecraft client, Component message) {
         if (!ConfigManager.get().dungeons.playerQuickView || client.player == null || message == null) return;
+        DungeonPartyFinderFloorTracker.observeSystemMessage(message.getString());
         DungeonJoinParser.newcomer(message.getString()).ifPresent(player -> {
             updateScoreboard(LocationTracker.liveScoreboardLines(client));
+            DungeonPartyFinderFloorTracker.update(client);
             request(client, player);
         });
     }
@@ -49,7 +56,9 @@ public final class DungeonQuickViewManager {
         RECENT_JOINS.entrySet().removeIf(entry -> now - entry.getValue() > 30_000_000_000L);
 
         long requestSession = session;
-        String floor = currentFloor == null ? "" : currentFloor.id();
+        DungeonFloor advertisedFloor = DungeonPartyFinderFloorTracker.currentFloor();
+        DungeonFloor requestFloor = advertisedFloor == null ? currentFloor : advertisedFloor;
+        String floor = requestFloor == null ? "" : requestFloor.id();
         DungeonQuickViewSnapshot cached = SERVICE.cached(player, floor);
         if (cached != null) {
             client.player.sendSystemMessage(DungeonQuickViewMessage.build(cached, client.font));
@@ -77,6 +86,7 @@ public final class DungeonQuickViewManager {
     public static void reset() {
         session++;
         currentFloor = null;
+        DungeonPartyFinderFloorTracker.reset();
         RECENT_JOINS.clear();
         FAILURE_GATE.reset();
         SERVICE.reset();

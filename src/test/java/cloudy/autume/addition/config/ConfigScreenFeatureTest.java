@@ -142,7 +142,8 @@ final class ConfigScreenFeatureTest {
         assertFalse(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, false));
         assertTrue(FeatureSettingsScreen.partyCommandChildSettingsAvailable(config, true));
         assertTrue(config.chat.fastPartyPromote);
-        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, config.chat.fastPartyPromoteTrigger);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                config.chat.fastPartyOtherPermission);
         assertTrue(config.chat.partyCommandPromote);
 
         fast.toggle(config);

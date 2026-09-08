@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha6` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha7` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -347,7 +347,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 - **输入与有限解析：**`PartyText` 会先移除 Minecraft 格式代码。`PartyChatLine` 只接受收到的英文 Party Chat 行，提取发送者后只接受已识别的、经空白规范化的 `!` 别名。`PrivatePartyRequestCommands` 只接受精确收到的英文私信内容 `!p`、`!party`、`!invite`。公屏、公会聊天、未识别 Party Chat 文字及其他私信都不会选中动作。
 - **成员名单与补全：**`PartyRosterTracker` 观察客户端可见的队伍成员名单，先按不区分大小写的精确名称解析玩家参数，再按唯一的不区分大小写前缀解析。前缀有歧义时不发送指令；未出现在已观察名单中的合法完整玩家名仍可使用。`!pt`/`!ptme` 把队长交给 Party Chat 发送者；`//pt`/`//ptme` 把队长交给本机玩家。同一解析器也给别名和玩家参数提供指令补全。
-- **快速组队指令：**父开关默认关闭。传送、All Invite、变更队长、踢出、坐标、晋升、Stream、地牢与 Kuudra 九个独立子开关默认开启。每个子项可分别选择只接受本机、其他队员或所有人的 Party Chat 触发。`!warp`/`!w` 与 `!allinvite`/`!all`/`!allinv` 分别使用共享的五秒与两秒动作冷却；其他已识别别名不额外增加冷却。只有父开关、子开关、触发人范围、解析、玩家名解析与冷却都允许时才发送指令。
+- **快速组队指令：**父开关默认关闭，传送、All Invite、变更队长、踢出、坐标、晋升、Stream、地牢与 Kuudra 九个子开关默认开启。本机自己的 `!` 消息由一个独立开关控制；非本机 `!warp` 单独设置权限，其他全部 `!` 指令共用另一个权限：无、仅队员、仅好友、仅工会成员、工会成员和好友。解析只接受 Party Chat，因此好友/工会权限只会缩小已经确认的队员范围；大小写不敏感的独立白名单是唯一显式放行。好友依据完整分页 `/fl`，工会只有在 `/g members` 同时出现 Online 与 Offline 标题、分区/总人数一致并正常结束后才保存；不完整或仅在线名单保持未知，QCA 不自动请求名单，也不会执行会切换服务器状态的 `/g onlinemode`。原有五秒/两秒冷却保持不变。
 - **组队指令：**独立的本机 `//` 父开关和全部九个独立子开关默认开启。它复用相同解析器和指令映射，但由于来自本机输入，不使用触发人范围。已识别但格式错误的 `//` 指令会被消费并给出本地反馈；未知 `//` 不拦截，仍可交给其他客户端/服务器指令处理器。
 - **私信工具：**自动接受组队仍是独立的本地好友/白名单判定。按账号保存的好友缓存只接受结构化 `/friend list` 行，并要求可见玩家名、`/viewprofile` UUID 点击动作与资料悬浮名称互相一致。当前页中每一条已验证好友会立即可用；只有按顺序完整读取 `1..N` 页后，才会替换权威快照并清理已经不在好友表中的旧玩家。逐行消息还必须精确符合 `<名字> is currently offline` 或 `<名字> is in <地点>`，因此夹入的公屏、公会或组队聊天不会污染好友表。普通好友与粗体特殊好友继续分开记录，schema 3 之前的缓存会失效并要求重新结构化验证。私信组队申请默认关闭，只有收到精确允许关键词时发送 `party invite <发送者>`。快速私信 `!p` 默认关闭；本机 `//invited <玩家>`、`//invited by <玩家>`、`//i <玩家>` 发送 `msg <玩家> !p`。
 - **精确映射：**Warp → `party warp`；All Invite → `party settings allinvite`；变更队长 → `party transfer <玩家>`；踢出 → `party kick <玩家>`；坐标 → 使用本机方块坐标的 `pc x: <x>, y: <y>, z: <z>`；晋升 → `party promote <玩家>`；无参数 Stream → `stream`；Stream 后接任意纯十进制 `<n>` → `stream open <n>`；Stream 后接 `c`、`close` 或 `off` → `stream close`。`fe`/`f0` → `joininstance CATACOMBS_ENTRANCE`；`me`/`m0` → `joininstance MASTER_CATACOMBS_ENTRANCE`；`f1`–`f7` → `joininstance CATACOMBS_FLOOR_ONE` 至 `CATACOMBS_FLOOR_SEVEN`；`m1`–`m7` → `joininstance MASTER_CATACOMBS_FLOOR_ONE` 至 `MASTER_CATACOMBS_FLOOR_SEVEN`；`t1`–`t5` 依次 → `joininstance KUUDRA_NORMAL`、`KUUDRA_HOT`、`KUUDRA_BURNING`、`KUUDRA_FIERY`、`KUUDRA_INFERNAL`。
@@ -414,7 +414,7 @@ QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qp
 
 `DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅在进程内缓存 60 秒。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒/十五秒超时和 4 MiB 响应上限。`DungeonQuickViewSnapshot` 只接受有界 schema 1，并使用三态装备模型，使不完整来源显示 `Missing` 而不是错误的叉。
 
-`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 通过 `SHOW_TEXT` 悬停显示精确 XP。职业行采用类似 Odin 的紧凑展示：Archer、Berserk、Healer、Mage、Tank 依次显示为带职业颜色的一位小数等级，以 `/` 分隔；每个数值悬停显示职业名称和精确 XP，不计算平均等级。护甲、已识别武器和宠物转换为本地 ItemStack，并通过 `HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(...))` 使用 Minecraft 原生物品 Tooltip 排列。标题按当前 `Font` 测量完整粗体样式；下分隔线动态组合普通和粗体横线字形，利用粗体前进宽度补齐普通字形无法覆盖的余数，使测量端点与上分隔线完全一致。底部红色、粗体、下划线的 `ClickEvent.RunCommand("/party kick <已校验玩家名>")` 是唯一踢人路径；任何结果、缺失字段、职业组合或计时器都不能自动执行它。
+`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 通过 `SHOW_TEXT` 悬停显示精确 XP。职业行按类似 Odin 的顺序显示五个带颜色的一位小数等级，并在末尾加入一位小数 Class Average；任一职业缺失时平均值保持 `Missing`。`DungeonPartyFinderFloorTracker` 只扫描玩家已经打开的 Party Finder 容器，要求底部书架取消发布控件作为归属证明，再选择底部自己的组队头或本机队长对应的搜索结果，并解析成对的 Catacombs `Dungeon:`/`Floor:` lore。缓存的发布楼层优先于排队计分板回退，用于现有 API 请求。护甲、武器和宠物仍使用 Minecraft 原生物品 Tooltip；底部红色下划线点击仍是唯一踢人路径。
 
 可部署 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles，选择当前或最近保存的可见 Profile，只投影 Catacombs/职业 XP、指定层完成次数/最快时间、总 Secrets 与全部 run 平均值、Magical Power、四个护甲槽、指定武器和两个龙宠。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；服务器 Key 只存在环境中，接口不是通用代理。
 
@@ -439,7 +439,7 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 | Beta/Release 构建第一次进入世界 | 五秒后，每个客户端进程最多向固定稳定版 manifest 发送一次 HTTPS `GET`；Alpha 完全不发送 | 是；仅检查元数据，不下载或安装 |
 | 已开启的自动接受组队收到符合条件的邀请 | `sendCommand("party accept <发送者>")` | 是，但仅在本地发送者判定通过后 |
 | 已开启的私信组队申请收到精确 `!p`、`!party` 或 `!invite` | `sendCommand("party invite <发送者>")` | 是，但仅在精确消息匹配后 |
-| 已开启的快速组队指令收到允许的已识别 Party Chat 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 是，但仅在父开关、子开关、触发人范围、解析、补全与冷却均通过后 |
+| 已开启的快速组队指令收到允许的已识别 Party Chat 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 是，但仅在父开关、子开关、自己/权限/白名单鉴权、解析、补全与冷却均通过后 |
 | 已开启的快速私信 `!p` 收到本机 `//invited …` 或 `//i …` 输入 | `sendCommand("msg <玩家> !p")` | 否；来自本机输入 |
 | 已开启的组队指令收到本机已识别 `//` 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 否；来自本机输入 |
 

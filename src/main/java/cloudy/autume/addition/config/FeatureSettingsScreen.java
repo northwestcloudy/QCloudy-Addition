@@ -38,6 +38,8 @@ final class FeatureSettingsScreen extends Screen {
     private int maxScroll;
     private Hit draggingSlider;
     private QCloudyAdditionClient.ChordAction listeningChord;
+    private String openDropdownId;
+    private int dropdownScroll;
 
     FeatureSettingsScreen(Screen parent, ConfigScreen.Feature feature) {
         this(parent, java.util.Objects.requireNonNull(UnifiedModIntegration.forQCloudy(feature)));
@@ -84,6 +86,7 @@ final class FeatureSettingsScreen extends Screen {
         graphics.disableScissor();
         contentScrollbar.update(contentX + contentWidth + 2, viewportY, viewportHeight, maxScroll, scroll);
         contentScrollbar.draw(graphics, mouseX, mouseY, AcaUiTheme.ACCENT);
+        drawOpenDropdown(graphics, mouseX, mouseY);
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         UiAnimation.pop(graphics);
     }
@@ -144,6 +147,20 @@ final class FeatureSettingsScreen extends Screen {
                     Math.max(1, rowWidth - trackEnd + x - 10), AcaUiTheme.TEXT_MUTED);
             return;
         }
+        if (setting.dropdown()) {
+            int boxWidth = Math.max(105, Math.min(210, rowWidth / 2));
+            int boxX = x + rowWidth - boxWidth - 7;
+            drawFittedText(graphics, Component.literal(setting.label()), x + 10, y + 9,
+                    Math.max(1, boxX - x - 16), available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
+            graphics.fill(boxX, y + 4, boxX + boxWidth, y + ROW_HEIGHT - 4, AcaUiTheme.CONTROL);
+            graphics.outline(boxX, y + 4, boxWidth, ROW_HEIGHT - 8,
+                    setting.id().equals(openDropdownId) ? AcaUiTheme.ACCENT : AcaUiTheme.BORDER);
+            drawFittedText(graphics, Component.literal(setting.value()), boxX + 7, y + 9,
+                    Math.max(1, boxWidth - 25), available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
+            graphics.text(font, "▼", boxX + boxWidth - 15, y + 9,
+                    available ? AcaUiTheme.TEXT_MUTED : AcaUiTheme.TEXT_DIM, false);
+            return;
+        }
         int valueWidth = Math.max(1, Math.min(rowWidth / 2,
                 rowWidth - (setting.color() ? 40 : 20)));
         int swatchX = setting.color()
@@ -164,6 +181,49 @@ final class FeatureSettingsScreen extends Screen {
         }
         drawFittedTextRight(graphics, value, x + rowWidth - 10, y + 9,
                 valueWidth, available ? AcaUiTheme.TEXT_MUTED : AcaUiTheme.TEXT_DIM);
+    }
+
+    private void drawOpenDropdown(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        DropdownLayout layout = dropdownLayout();
+        if (layout == null) return;
+        List<Choice> choices = layout.setting().dropdownChoices();
+        int maximum = Math.max(0, choices.size() - layout.visibleCount());
+        dropdownScroll = Math.clamp(dropdownScroll, 0, maximum);
+        graphics.fill(layout.x() + 3, layout.y() + 4,
+                layout.x() + layout.width() + 4, layout.y() + layout.height() + 5, 0x66000000);
+        graphics.fill(layout.x(), layout.y(), layout.x() + layout.width(),
+                layout.y() + layout.height(), AcaUiTheme.WINDOW);
+        graphics.outline(layout.x(), layout.y(), layout.width(), layout.height(), AcaUiTheme.ACCENT_DARK);
+        for (int visible = 0; visible < layout.visibleCount(); visible++) {
+            int index = dropdownScroll + visible;
+            if (index >= choices.size()) break;
+            int optionY = layout.y() + visible * layout.optionHeight();
+            boolean hovered = AcaUiTheme.contains(mouseX, mouseY, layout.x(), optionY,
+                    layout.width(), layout.optionHeight());
+            if (hovered) graphics.fill(layout.x() + 1, optionY + 1,
+                    layout.x() + layout.width() - 1, optionY + layout.optionHeight(), AcaUiTheme.CARD_HOVER);
+            if (visible > 0) graphics.fill(layout.x() + 1, optionY,
+                    layout.x() + layout.width() - 1, optionY + 1, AcaUiTheme.BORDER_SOFT);
+            drawFittedText(graphics, choices.get(index).label(), layout.x() + 8, optionY + 7,
+                    Math.max(1, layout.width() - 16));
+        }
+    }
+
+    private DropdownLayout dropdownLayout() {
+        if (openDropdownId == null) return null;
+        Hit owner = hits.stream().filter(hit -> hit.setting().id().equals(openDropdownId)).findFirst().orElse(null);
+        if (owner == null || !owner.setting().dropdown()) return null;
+        int optionHeight = 22;
+        int visibleCount = Math.min(6, owner.setting().dropdownChoices().size());
+        if (visibleCount <= 0) return null;
+        int dropdownWidth = Math.max(150, Math.min(230, owner.width() / 2));
+        int dropdownHeight = visibleCount * optionHeight;
+        int x = owner.x() + owner.width() - dropdownWidth - 7;
+        int below = owner.y() + owner.height();
+        int y = below + dropdownHeight <= contentY + viewportHeight()
+                ? below : owner.y() - dropdownHeight;
+        return new DropdownLayout(owner.setting(), x, y, dropdownWidth,
+                dropdownHeight, optionHeight, visibleCount);
     }
 
     private void drawFittedText(GuiGraphicsExtractor graphics, String text, int x, int y, int availableWidth) {
@@ -228,15 +288,22 @@ final class FeatureSettingsScreen extends Screen {
             return rows;
         }
         if (feature == ConfigScreen.Feature.FAST_PARTY_COMMANDS) {
+            rows.add(new Setting(Kind.FAST_PARTY_WARP_PERMISSION,
+                    "config.setting.fast_party.warp_permission"));
+            rows.add(new Setting(Kind.FAST_PARTY_OTHER_PERMISSION,
+                    "config.setting.fast_party.other_permission"));
+            rows.add(new Setting(Kind.FAST_PARTY_ALLOW_SELF,
+                    "config.setting.fast_party.allow_self"));
+            rows.add(new Setting(Kind.OPEN_FAST_PARTY_WHITELIST,
+                    "config.setting.fast_party.whitelist"));
             for (PartyCommandOption option : PartyCommandOption.values()) {
-                rows.add(new Setting(option, false, false));
-                rows.add(new Setting(option, true, false));
+                rows.add(new Setting(option, false));
             }
             return rows;
         }
         if (feature == ConfigScreen.Feature.PARTY_COMMANDS) {
             for (PartyCommandOption option : PartyCommandOption.values()) {
-                rows.add(new Setting(option, false, true));
+                rows.add(new Setting(option, true));
             }
             return rows;
         }
@@ -382,6 +449,24 @@ final class FeatureSettingsScreen extends Screen {
             return true;
         }
         if (click.button() != 0) return super.mouseClicked(click, doubled);
+        if (openDropdownId != null) {
+            DropdownLayout dropdown = dropdownLayout();
+            if (dropdown != null && dropdown.contains(click.x(), click.y())) {
+                int visibleIndex = (int) ((click.y() - dropdown.y()) / dropdown.optionHeight());
+                int choiceIndex = dropdownScroll + visibleIndex;
+                List<Choice> choices = dropdown.setting().dropdownChoices();
+                if (choiceIndex >= 0 && choiceIndex < choices.size()) {
+                    choices.get(choiceIndex).select().run();
+                    ConfigManager.save();
+                    openDropdownId = null;
+                    dropdownScroll = 0;
+                }
+                return true;
+            }
+            openDropdownId = null;
+            dropdownScroll = 0;
+            return true;
+        }
         if (AcaUiTheme.contains(click.x(), click.y(), windowX + 10, windowY + 8, 24, 18)) {
             onClose();
             return true;
@@ -399,6 +484,11 @@ final class FeatureSettingsScreen extends Screen {
         for (Hit hit : hits) {
             if (hit.contains(click.x(), click.y())) {
                 if (!hit.setting.available()) return true;
+                if (hit.setting.dropdown()) {
+                    openDropdownId = hit.setting.id();
+                    dropdownScroll = 0;
+                    return true;
+                }
                 if (hit.setting.slider() && hit.sliderContains(click.x(), click.y())) {
                     draggingSlider = hit;
                     updateSlider(hit, click.x());
@@ -414,6 +504,11 @@ final class FeatureSettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (openDropdownId != null && event.key() == GLFW.GLFW_KEY_ESCAPE) {
+            openDropdownId = null;
+            dropdownScroll = 0;
+            return true;
+        }
         if (listeningChord == null) return super.keyPressed(event);
         if (event.key() == GLFW.GLFW_KEY_ESCAPE
                 || event.key() == GLFW.GLFW_KEY_BACKSPACE
@@ -504,9 +599,7 @@ final class FeatureSettingsScreen extends Screen {
             return;
         }
         if (setting.partyCommandOption != null) {
-            if (setting.partyCommandTrigger) {
-                setting.partyCommandOption.cycleFastTrigger(config.chat);
-            } else if (setting.localPartyCommand) {
+            if (setting.localPartyCommand) {
                 setting.partyCommandOption.toggleLocal(config.chat);
             } else {
                 setting.partyCommandOption.toggleFast(config.chat);
@@ -538,6 +631,10 @@ final class FeatureSettingsScreen extends Screen {
                             : ModConfig.PartyAcceptFriendMode.NORMAL_ONLY;
             case OPEN_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
                     new PartyWhitelistScreen(this));
+            case FAST_PARTY_WARP_PERMISSION, FAST_PARTY_OTHER_PERMISSION -> { }
+            case FAST_PARTY_ALLOW_SELF -> config.chat.fastPartyAllowSelf = !config.chat.fastPartyAllowSelf;
+            case OPEN_FAST_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
+                    new PartyWhitelistScreen(this, PartyWhitelistScreen.Target.FAST_PARTY_COMMANDS));
             case OPEN_SHARD_GUIDE -> QCloudyAdditionClient.openShardFusionGuide(minecraft, this, "");
             case OPEN_SHARD_PLANNER -> MinecraftClientCompat.setScreen(minecraft, new ShardPlanningScreen(this,
                     ConfigManager.get().inventory.shardPlannerTarget));
@@ -656,6 +753,12 @@ final class FeatureSettingsScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        DropdownLayout dropdown = dropdownLayout();
+        if (dropdown != null && dropdown.contains(mouseX, mouseY)) {
+            int maximum = Math.max(0, dropdown.setting().dropdownChoices().size() - dropdown.visibleCount());
+            dropdownScroll = Math.clamp(dropdownScroll + (vertical < 0 ? 1 : -1), 0, maximum);
+            return true;
+        }
         if (contentScrollbar.dragging()) {
             VerticalScrollbar.Interaction scrollbarWheel = contentScrollbar.mouseScrolled(vertical, 22, scroll);
             scroll = scrollbarWheel.scroll();
@@ -732,41 +835,6 @@ final class FeatureSettingsScreen extends Screen {
             }
         }
 
-        ModConfig.PartyCommandTrigger fastTrigger(ModConfig.Chat chat) {
-            return switch (this) {
-                case WARP -> chat.fastPartyWarpTrigger;
-                case ALL_INVITE -> chat.fastPartyAllInviteTrigger;
-                case TRANSFER -> chat.fastPartyTransferTrigger;
-                case KICK -> chat.fastPartyKickTrigger;
-                case COORDINATES -> chat.fastPartyCoordinatesTrigger;
-                case PROMOTE -> chat.fastPartyPromoteTrigger;
-                case STREAM -> chat.fastPartyStreamTrigger;
-                case DUNGEON -> chat.fastPartyDungeonTrigger;
-                case KUUDRA -> chat.fastPartyKuudraTrigger;
-            };
-        }
-
-        void cycleFastTrigger(ModConfig.Chat chat) {
-            ModConfig.PartyCommandTrigger current = fastTrigger(chat);
-            ModConfig.PartyCommandTrigger next = switch (current == null
-                    ? ModConfig.PartyCommandTrigger.EVERYONE : current) {
-                case EVERYONE -> ModConfig.PartyCommandTrigger.SELF_ONLY;
-                case SELF_ONLY -> ModConfig.PartyCommandTrigger.OTHERS_ONLY;
-                case OTHERS_ONLY -> ModConfig.PartyCommandTrigger.EVERYONE;
-            };
-            switch (this) {
-                case WARP -> chat.fastPartyWarpTrigger = next;
-                case ALL_INVITE -> chat.fastPartyAllInviteTrigger = next;
-                case TRANSFER -> chat.fastPartyTransferTrigger = next;
-                case KICK -> chat.fastPartyKickTrigger = next;
-                case COORDINATES -> chat.fastPartyCoordinatesTrigger = next;
-                case PROMOTE -> chat.fastPartyPromoteTrigger = next;
-                case STREAM -> chat.fastPartyStreamTrigger = next;
-                case DUNGEON -> chat.fastPartyDungeonTrigger = next;
-                case KUUDRA -> chat.fastPartyKuudraTrigger = next;
-            }
-        }
-
         boolean localEnabled(ModConfig.Chat chat) {
             return switch (this) {
                 case WARP -> chat.partyCommandWarp;
@@ -813,7 +881,9 @@ final class FeatureSettingsScreen extends Screen {
         DEPLOYABLE_EXPIRY_CENTER_TEXT, DEPLOYABLE_EXPIRY_SOUND, DEPLOYABLE_EXPIRY_VOLUME,
         OPEN_CENTURY_CAKES, CENTURY_CAKE_SOUND, CENTURY_CAKE_VOLUME,
         CHAT_PEEK_KEY, CHAT_SCROLL_TARGET,
-        PARTY_FRIEND_MODE, OPEN_PARTY_WHITELIST
+        PARTY_FRIEND_MODE, OPEN_PARTY_WHITELIST,
+        FAST_PARTY_WARP_PERMISSION, FAST_PARTY_OTHER_PERMISSION,
+        FAST_PARTY_ALLOW_SELF, OPEN_FAST_PARTY_WHITELIST
     }
 
     static boolean shardGuideEntryEnabled(ModConfig config) {
@@ -830,7 +900,6 @@ final class FeatureSettingsScreen extends Screen {
         private final HuntingOption huntingOption;
         private final UnifiedModIntegration.NativeSetting externalSetting;
         private final PartyCommandOption partyCommandOption;
-        private final boolean partyCommandTrigger;
         private final boolean localPartyCommand;
 
         private Setting(Kind kind, String labelKey) {
@@ -839,7 +908,6 @@ final class FeatureSettingsScreen extends Screen {
             this.huntingOption = null;
             this.externalSetting = null;
             this.partyCommandOption = null;
-            this.partyCommandTrigger = false;
             this.localPartyCommand = false;
         }
 
@@ -849,7 +917,6 @@ final class FeatureSettingsScreen extends Screen {
             this.huntingOption = huntingOption;
             this.externalSetting = null;
             this.partyCommandOption = null;
-            this.partyCommandTrigger = false;
             this.localPartyCommand = false;
         }
 
@@ -859,18 +926,15 @@ final class FeatureSettingsScreen extends Screen {
             this.huntingOption = null;
             this.externalSetting = externalSetting;
             this.partyCommandOption = null;
-            this.partyCommandTrigger = false;
             this.localPartyCommand = false;
         }
 
-        private Setting(PartyCommandOption partyCommandOption, boolean partyCommandTrigger,
-                        boolean localPartyCommand) {
+        private Setting(PartyCommandOption partyCommandOption, boolean localPartyCommand) {
             this.kind = null;
             this.labelKey = "";
             this.huntingOption = null;
             this.externalSetting = null;
             this.partyCommandOption = partyCommandOption;
-            this.partyCommandTrigger = partyCommandTrigger;
             this.localPartyCommand = localPartyCommand;
         }
 
@@ -879,7 +943,7 @@ final class FeatureSettingsScreen extends Screen {
             if (partyCommandOption != null) {
                 String option = ModText.get(localPartyCommand
                         ? partyCommandOption.localLabelKey : partyCommandOption.fastLabelKey);
-                return partyCommandTrigger ? ModText.get("config.setting.party_trigger_scope", option) : option;
+                return option;
             }
             return ModText.get(labelKey);
         }
@@ -895,12 +959,6 @@ final class FeatureSettingsScreen extends Screen {
                 };
             }
             if (partyCommandOption != null) {
-                if (partyCommandTrigger) {
-                    ModConfig.PartyCommandTrigger trigger = partyCommandOption.fastTrigger(config.chat);
-                    return ModText.get("config.value.party_trigger."
-                            + (trigger == null ? ModConfig.PartyCommandTrigger.EVERYONE : trigger)
-                            .name().toLowerCase(java.util.Locale.ROOT));
-                }
                 return onOff(localPartyCommand
                         ? partyCommandOption.localEnabled(config.chat)
                         : partyCommandOption.fastEnabled(config.chat));
@@ -924,6 +982,12 @@ final class FeatureSettingsScreen extends Screen {
                 case OPEN_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
                         config.chat.partyAutoAcceptWhitelist.size(),
                         ModConfig.Chat.PARTY_AUTO_ACCEPT_WHITELIST_LIMIT);
+                case FAST_PARTY_WARP_PERMISSION -> permissionValue(config.chat.fastPartyWarpPermission);
+                case FAST_PARTY_OTHER_PERMISSION -> permissionValue(config.chat.fastPartyOtherPermission);
+                case FAST_PARTY_ALLOW_SELF -> onOff(config.chat.fastPartyAllowSelf);
+                case OPEN_FAST_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
+                        config.chat.fastPartyCommandWhitelist.size(),
+                        ModConfig.Chat.FAST_PARTY_WHITELIST_LIMIT);
                 case OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER ->
                         ModText.get(available() ? "config.open" : "config.disabled");
                 case SHARD_GUIDE_KEY, OPEN_CONFIG_KEY, CHAT_PEEK_KEY -> {
@@ -1034,6 +1098,12 @@ final class FeatureSettingsScreen extends Screen {
                 return feature != null && feature.enabled(ConfigManager.get())
                         && !UnifiedModIntegration.scanRunning();
             }
+            if (kind == Kind.FAST_PARTY_WARP_PERMISSION
+                    || kind == Kind.FAST_PARTY_OTHER_PERMISSION
+                    || kind == Kind.FAST_PARTY_ALLOW_SELF
+                    || kind == Kind.OPEN_FAST_PARTY_WHITELIST) {
+                return ConfigManager.get().chat.fastPartyCommands;
+            }
             return (kind != Kind.OPEN_SHARD_GUIDE && kind != Kind.OPEN_SHARD_PLANNER)
                     || shardGuideEntryEnabled(ConfigManager.get());
         }
@@ -1044,6 +1114,120 @@ final class FeatureSettingsScreen extends Screen {
             if (partyCommandOption != null) return false;
             return kind == Kind.DRAGON_COLOR || kind == Kind.BACKGROUND_COLOR
                     || kind == Kind.BORDER_COLOR || kind == Kind.TITLE_COLOR;
+        }
+
+        String id() {
+            if (externalSetting != null) return "external:" + externalSetting.id;
+            if (huntingOption != null) return "hunting:" + huntingOption.labelKey;
+            if (partyCommandOption != null) return "party:" + localPartyCommand + ':' + partyCommandOption.name();
+            return "kind:" + kind.name();
+        }
+
+        boolean dropdown() {
+            return dropdownChoices().size() > 1;
+        }
+
+        List<Choice> dropdownChoices() {
+            ModConfig config = ConfigManager.get();
+            if (externalSetting != null) {
+                Object value = externalSetting.value();
+                if (externalSetting.kind != UnifiedModIntegration.ValueKind.ENUM
+                        || !(value instanceof Enum<?> enumeration)) return List.of();
+                List<Choice> result = new ArrayList<>();
+                Object[] constants = enumeration.getDeclaringClass().getEnumConstants();
+                if (constants == null) return List.of();
+                for (Object constant : constants) {
+                    Enum<?> option = (Enum<?>) constant;
+                    result.add(new Choice(humanize(option.name()), () -> externalSetting.set(option)));
+                }
+                return List.copyOf(result);
+            }
+            if (kind == null) return List.of();
+            return switch (kind) {
+                case PROVIDER -> unifiedFeature.providers().stream()
+                        .map(provider -> new Choice(provider.displayName,
+                                () -> unifiedFeature.selectProvider(provider))).toList();
+                case PARTY_FRIEND_MODE -> List.of(
+                        new Choice(ModText.get("config.value.party_mode.normal_only"),
+                                () -> config.chat.partyAutoAcceptFriendMode = ModConfig.PartyAcceptFriendMode.NORMAL_ONLY),
+                        new Choice(ModText.get("config.value.party_mode.special_only"),
+                                () -> config.chat.partyAutoAcceptFriendMode = ModConfig.PartyAcceptFriendMode.SPECIAL_ONLY));
+                case FAST_PARTY_WARP_PERMISSION -> permissionChoices(
+                        value -> config.chat.fastPartyWarpPermission = value);
+                case FAST_PARTY_OTHER_PERMISSION -> permissionChoices(
+                        value -> config.chat.fastPartyOtherPermission = value);
+                case TIMESTAMP_FORMAT -> stringChoices(
+                        value -> config.inventory.timestampFormat = value,
+                        "LOCAL_24H", "LOCAL_12H", "ISO", "RFC");
+                case INSTANT_SOUND_MODE -> localizedStringChoices(
+                        value -> config.inventory.instantTransmissionSoundMode = value,
+                        "config.value.", "VANILLA", "CUSTOM");
+                case ETHERWARP_SOUND_MODE -> localizedStringChoices(
+                        value -> config.inventory.etherwarpSoundMode = value,
+                        "config.value.", "VANILLA", "CUSTOM");
+                case INSTANT_CUSTOM_SOUND -> localizedStringChoices(
+                        value -> config.inventory.instantTransmissionCustomSound = value,
+                        "config.value.sound.", "CHORUS", "ENDERMAN", "AMETHYST", "ORB", "PORTAL", "SHULKER");
+                case ETHERWARP_CUSTOM_SOUND -> localizedStringChoices(
+                        value -> config.inventory.etherwarpCustomSound = value,
+                        "config.value.sound.", "CHORUS", "ENDERMAN", "AMETHYST", "ORB", "PORTAL", "SHULKER");
+                case CHAT_SCROLL_TARGET -> localizedStringChoices(
+                        value -> config.chat.peekScrollTarget = value,
+                        "config.value.", "CHAT", "HOTBAR");
+                case BORDER_SIZE -> List.of(
+                        new Choice("1 px", () -> panelStyle().borderThickness = 1),
+                        new Choice("2 px", () -> panelStyle().borderThickness = 2),
+                        new Choice("3 px", () -> panelStyle().borderThickness = 3),
+                        new Choice("4 px", () -> panelStyle().borderThickness = 4));
+                case COMMISSION_PROGRESS -> localizedStringChoices(
+                        value -> config.mining.commissionProgressMode = value,
+                        "config.value.", "PERCENT", "NUMERIC");
+                case PET_ACCESSORY -> localizedStringChoices(
+                        value -> config.pets.petAccessoryDisplay = value,
+                        "config.value.", "ICON_AND_NAME", "ICON_ONLY", "NAME_ONLY");
+                default -> List.of();
+            };
+        }
+
+        private String permissionValue(ModConfig.PartyCommandPermission permission) {
+            ModConfig.PartyCommandPermission safe = permission == null
+                    ? ModConfig.PartyCommandPermission.NONE : permission;
+            return ModText.get("config.value.party_permission." + safe.name().toLowerCase(java.util.Locale.ROOT));
+        }
+
+        private List<Choice> permissionChoices(java.util.function.Consumer<ModConfig.PartyCommandPermission> setter) {
+            List<Choice> result = new ArrayList<>();
+            for (ModConfig.PartyCommandPermission permission : ModConfig.PartyCommandPermission.values()) {
+                result.add(new Choice(permissionValue(permission), () -> setter.accept(permission)));
+            }
+            return List.copyOf(result);
+        }
+
+        private List<Choice> stringChoices(java.util.function.Consumer<String> setter, String... values) {
+            List<Choice> result = new ArrayList<>();
+            for (String value : values) result.add(new Choice(value.replace('_', ' '), () -> setter.accept(value)));
+            return List.copyOf(result);
+        }
+
+        private List<Choice> localizedStringChoices(java.util.function.Consumer<String> setter,
+                                                    String keyPrefix, String... values) {
+            List<Choice> result = new ArrayList<>();
+            for (String value : values) {
+                result.add(new Choice(ModText.get(keyPrefix + value.toLowerCase(java.util.Locale.ROOT)),
+                        () -> setter.accept(value)));
+            }
+            return List.copyOf(result);
+        }
+
+        private String humanize(String value) {
+            String[] words = value.toLowerCase(java.util.Locale.ROOT).split("_");
+            StringBuilder result = new StringBuilder();
+            for (String word : words) {
+                if (word.isBlank()) continue;
+                if (!result.isEmpty()) result.append(' ');
+                result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+            }
+            return result.toString();
         }
 
         QCloudyAdditionClient.ChordAction chordAction() {
@@ -1160,6 +1344,15 @@ final class FeatureSettingsScreen extends Screen {
             SliderLayout slider = sliderLayout(x, width);
             return AcaUiTheme.contains(mouseX, mouseY, slider.trackX() - 5, y + 4,
                     slider.trackWidth() + 10, height - 8);
+        }
+    }
+
+    private record Choice(String label, Runnable select) { }
+
+    private record DropdownLayout(Setting setting, int x, int y, int width, int height,
+                                  int optionHeight, int visibleCount) {
+        boolean contains(double mouseX, double mouseY) {
+            return AcaUiTheme.contains(mouseX, mouseY, x, y, width, height);
         }
     }
 

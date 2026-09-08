@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能说明
 
-## 统一设置与 HUD 控制——0.3.10-alpha6 开发快照
+## 统一设置与 HUD 控制——0.3.10-alpha7 开发快照
 
 > 当前源码包含尚未公开的 Alpha 工作；当前公开测试版仍为 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
@@ -213,7 +213,7 @@ Epic 名称使用 Minecraft 深紫色 `§5`，不再使用亮紫/粉色 `§d`；
 
 独立的 **Dungeon Player Quick View** 只匹配 Dungeon Finder 宣布“新玩家加入 dungeon group”的精确消息，只分析刚加入的玩家，不分析原队员，也不浏览 Party Finder 列表。它在 Dungeons 分类下有独立、默认开启的开关，与已经删除的通用玩家档案浏览不共享命令、界面或缓存。
 
-彩色聊天卡一次显示：Catacombs 等级、总 Secrets/所有地牢完成次数的平均 Secrets、五职业等级、当前排队楼层的完成次数与最快时间、四件护甲、Withered Blade/Terminator、Golden Dragon/Ender Dragon，以及 Magical Power。职业行采用类似 Odin 的紧凑样式，按 Archer/Berserk/Healer/Mage/Tank 顺序只显示带职业颜色的等级数字，以 `/` 分隔且不显示平均等级；悬停每个数字会显示职业名称与精确 XP。识别到的护甲、武器和宠物使用原生物品悬停；确认没有时显示叉，来源私密、缺失或不完整时显示 `Missing`，不伪装成 0。
+彩色聊天卡一次显示：Catacombs 等级、总 Secrets/所有地牢完成次数的平均 Secrets、五职业等级及一位小数 Class Average、当前发布楼层的完成次数与最快时间、四件护甲、Withered Blade/Terminator、Golden Dragon/Ender Dragon，以及 Magical Power。职业行采用类似 Odin 的紧凑样式，按 Archer/Berserk/Healer/Mage/Tank 顺序显示带职业颜色的等级数字，以 `/` 分隔；悬停每个数字会显示职业名称与精确 XP。楼层跟踪只接受同一 Party Finder 菜单中由取消发布控件证明属于本机的组队条目，缓存其成对的 `Dungeon:`/`Floor:` lore，并仅把原排队计分板作为回退；其他队伍与搜索筛选不能成为请求楼层。识别到的护甲、武器和宠物使用原生物品悬停；确认没有时显示叉，来源私密、缺失或不完整时显示 `Missing`，不伪装成 0。
 
 标题居中嵌入按像素测量的上分隔线；下分隔线读取当前 Minecraft 字体中普通与粗体横线字形的实际前进宽度，补齐到与上分隔线完全相同的端点。底部红色、粗体、原生下划线文字是唯一踢人入口：只有玩家真实点击后才执行 `/party kick <已校验玩家名>`。QCA 不自动踢人，也不判断职业冲突。
 

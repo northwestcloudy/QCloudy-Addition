@@ -49,7 +49,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(28, config.configVersion);
+        assertEquals(29, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -141,26 +141,12 @@ final class ModConfigTest {
         assertEquals(true, config.chat.fastPartyStream);
         assertEquals(true, config.chat.fastPartyDungeon);
         assertEquals(true, config.chat.fastPartyKuudra);
-        assertEquals(java.util.List.of(
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE,
-                        ModConfig.PartyCommandTrigger.EVERYONE),
-                java.util.List.of(
-                        config.chat.fastPartyWarpTrigger,
-                        config.chat.fastPartyAllInviteTrigger,
-                        config.chat.fastPartyTransferTrigger,
-                        config.chat.fastPartyKickTrigger,
-                        config.chat.fastPartyCoordinatesTrigger,
-                        config.chat.fastPartyPromoteTrigger,
-                        config.chat.fastPartyStreamTrigger,
-                        config.chat.fastPartyDungeonTrigger,
-                        config.chat.fastPartyKuudraTrigger));
+        assertEquals(true, config.chat.fastPartyAllowSelf);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                config.chat.fastPartyWarpPermission);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                config.chat.fastPartyOtherPermission);
+        assertEquals(java.util.List.of(), config.chat.fastPartyCommandWhitelist);
         assertEquals(true, config.chat.partyCommands);
         assertEquals(true, config.chat.partyCommandWarp);
         assertEquals(true, config.chat.partyCommandAllInvite);
@@ -204,7 +190,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(28, migrated.configVersion);
+        assertEquals(29, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -250,7 +236,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(28, migrated.configVersion);
+        assertEquals(29, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
@@ -278,28 +264,33 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(28, migrated.configVersion);
+        assertEquals(29, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(false, migrated.chat.directMessagePartyRequest);
         assertEquals(false, migrated.chat.quickPrivatePartyRequest);
         assertEquals(false, migrated.chat.fastPartyCommands);
         assertEquals(true, migrated.chat.fastPartyWarp);
-        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, migrated.chat.fastPartyWarpTrigger);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                migrated.chat.fastPartyWarpPermission);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                migrated.chat.fastPartyOtherPermission);
+        assertEquals(true, migrated.chat.fastPartyAllowSelf);
         assertEquals(true, migrated.chat.partyCommands);
         assertEquals(true, migrated.chat.partyCommandKuudra);
     }
 
     @Test
-    void currentSchemaPreservesCommandChoicesAndRepairsOnlyNullTriggerScopes() {
+    void currentSchemaPreservesCommandChoicesAndRepairsNullPermissionsFailClosed() {
         ModConfig config = new ModConfig();
-        config.configVersion = 28;
+        config.configVersion = 29;
         config.chat.directMessagePartyRequest = true;
         config.chat.quickPrivatePartyRequest = true;
         config.chat.fastPartyCommands = true;
         config.chat.fastPartyWarp = false;
-        config.chat.fastPartyWarpTrigger = ModConfig.PartyCommandTrigger.OTHERS_ONLY;
-        config.chat.fastPartyPromoteTrigger = null;
+        config.chat.fastPartyWarpPermission = ModConfig.PartyCommandPermission.FRIENDS;
+        config.chat.fastPartyOtherPermission = null;
+        config.chat.fastPartyAllowSelf = false;
         config.chat.partyCommands = false;
         config.chat.partyCommandPromote = false;
 
@@ -309,10 +300,29 @@ final class ModConfigTest {
         assertEquals(true, config.chat.quickPrivatePartyRequest);
         assertEquals(true, config.chat.fastPartyCommands);
         assertEquals(false, config.chat.fastPartyWarp);
-        assertEquals(ModConfig.PartyCommandTrigger.OTHERS_ONLY, config.chat.fastPartyWarpTrigger);
-        assertEquals(ModConfig.PartyCommandTrigger.EVERYONE, config.chat.fastPartyPromoteTrigger);
+        assertEquals(ModConfig.PartyCommandPermission.FRIENDS, config.chat.fastPartyWarpPermission);
+        assertEquals(ModConfig.PartyCommandPermission.NONE, config.chat.fastPartyOtherPermission);
+        assertEquals(false, config.chat.fastPartyAllowSelf);
         assertEquals(false, config.chat.partyCommands);
         assertEquals(false, config.chat.partyCommandPromote);
+    }
+
+    @Test
+    void migration29DoesNotBroadenMixedLegacyCommandScopes() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 28;
+        config.chat.fastPartyWarpTrigger = ModConfig.PartyCommandTrigger.OTHERS_ONLY;
+        config.chat.fastPartyAllInviteTrigger = ModConfig.PartyCommandTrigger.EVERYONE;
+        config.chat.fastPartyPromoteTrigger = ModConfig.PartyCommandTrigger.SELF_ONLY;
+
+        config.normalize();
+
+        assertEquals(29, config.configVersion);
+        assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
+                config.chat.fastPartyWarpPermission);
+        assertEquals(ModConfig.PartyCommandPermission.NONE,
+                config.chat.fastPartyOtherPermission);
+        assertEquals(false, config.chat.fastPartyAllowSelf);
     }
 
     @Test
@@ -345,6 +355,25 @@ final class ModConfigTest {
         assertEquals(false, config.chat.replacePartyAutoAcceptWhitelist("Cloudy", "Player_0"));
         assertEquals(true, config.chat.removePartyAutoAcceptWhitelist("cLoUdY"));
         assertEquals(false, config.chat.containsPartyAutoAcceptWhitelist("Cloudy"));
+    }
+
+    @Test
+    void fastPartyWhitelistIsIndependentValidatedAndCaseInsensitive() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 29;
+        config.chat.partyAutoAcceptWhitelist.add("InviteOnly");
+        config.chat.fastPartyCommandWhitelist.add("  CommandUser  ");
+        config.chat.fastPartyCommandWhitelist.add("commanduser");
+        config.chat.fastPartyCommandWhitelist.add("bad-name");
+
+        config.normalize();
+
+        assertEquals(java.util.List.of("CommandUser"), config.chat.fastPartyCommandWhitelist);
+        assertEquals(true, config.chat.containsFastPartyCommandWhitelist("COMMANDUSER"));
+        assertEquals(false, config.chat.containsFastPartyCommandWhitelist("InviteOnly"));
+        assertEquals(true, config.chat.addFastPartyCommandWhitelist("SecondUser"));
+        assertEquals(true, config.chat.replaceFastPartyCommandWhitelist("seconduser", "ThirdUser"));
+        assertEquals(true, config.chat.removeFastPartyCommandWhitelist("thirduser"));
     }
 
     @Test

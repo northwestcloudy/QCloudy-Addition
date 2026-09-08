@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha6` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha7` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
@@ -26,11 +26,11 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha6` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha7` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10.
 
 - When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored chat card; it does not browse Party Finder listings.
-- The card shows Catacombs, Secrets, five class levels, queued-floor completions/fastest time, four armor pieces, selected weapons/pets, and Magical Power. XP and native item details appear on hover; missing data is labelled.
-- Measured top and bottom lines share exact endpoints. The Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, separated by `/`, with names and XP on hover and no average. Kicking is never automatic: only a physical click on the red underlined action runs `/party kick <player>`.
+- The card shows Catacombs, Secrets, five class levels plus Class Average, advertised-floor completions/fastest time, four armor pieces, selected weapons/pets, and Magical Power. The floor is taken only from the local player's own proven Party Finder listing, with queued scoreboard fallback. XP and native item details appear on hover; missing data is labelled.
+- Measured top and bottom lines share exact endpoints. The Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, followed by a one-decimal average. Kicking is never automatic: only a physical click on the red underlined action runs `/party kick <player>`.
 - The generic `//pv` and `/qpv` Profile Viewer, its source, and its backend routes are removed from this snapshot.
 
 ### HUDs, pets, and timers

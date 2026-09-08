@@ -4,11 +4,11 @@ This document covers QCA's Dungeon Player Quick View and Shard Planner market re
 
 ## When a request happens
 
-QCA requests Dungeon data only after the client receives the exact Dungeon Finder message that a new player joined the dungeon group, the feature is enabled, and the session is on Hypixel. It queries that newcomer only. It does not browse Party Finder listings, poll the party, or create player history. The Shard Planner requests its bounded price snapshot when its price data is explicitly loaded.
+QCA requests Dungeon data only after the client receives the exact Dungeon Finder message that a new player joined the dungeon group, the feature is enabled, and the session is on Hypixel. It queries that newcomer only. To attach the correct floor before instance queueing, it may read the local player's own entry in an already-open Party Finder menu, but only when the same menu exposes the delist control; it does not request or inspect another party's profile, poll the party, click the menu, or create player history. The Shard Planner requests its bounded price snapshot when its price data is explicitly loaded.
 
 ## Data sent by the mod
 
-The destination is fixed to `https://api.qcloudy.net`. The request contains the joining Minecraft player name and, when the local scoreboard exposes one, the queued floor ID. The server and ordinary network infrastructure can observe the connecting IP address and QCA User-Agent. The mod does not send a Minecraft session token, Microsoft credentials, Hypixel API key, current server address, mod list, chat history, coordinates, inventory upload, cookie, or telemetry/device identifier.
+The destination is fixed to `https://api.qcloudy.net`. The request contains the joining Minecraft player name and, when the own Party Finder entry or local scoreboard exposes one, the advertised/queued floor ID. The server and ordinary network infrastructure can observe the connecting IP address and QCA User-Agent. The mod does not send a Minecraft session token, Microsoft credentials, Hypixel API key, current server address, mod list, chat history, coordinates, inventory upload, cookie, or telemetry/device identifier.
 
 Clicking `CLICK HERE TO KICK THE PLAYER OUT` sends `/party kick <validated player>` to the Minecraft server through a normal chat click event. No request result can trigger that command automatically.
 

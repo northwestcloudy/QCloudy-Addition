@@ -21,6 +21,7 @@ import cloudy.autume.addition.hunting.HuntingTracker;
 import cloudy.autume.addition.hunting.HuntingWorldRenderer;
 import cloudy.autume.addition.inventory.SafariBeltTooltip;
 import cloudy.autume.addition.party.FriendRosterStore;
+import cloudy.autume.addition.party.GuildRosterStore;
 import cloudy.autume.addition.party.PartyAutoAcceptManager;
 import cloudy.autume.addition.party.PartyCommandEngine;
 import cloudy.autume.addition.party.PrivatePartyRequestCommands;
@@ -71,8 +72,10 @@ import java.util.concurrent.CompletableFuture;
 public final class QCloudyAdditionClient implements ClientModInitializer {
     public static final String MOD_ID = "qcloudy_addition";
     public static final Logger LOGGER = LoggerFactory.getLogger("QCloudy_Addition");
+    private static final FriendRosterStore FRIEND_ROSTERS = FriendRosterStore.createDefault();
+    private static final GuildRosterStore GUILD_ROSTERS = GuildRosterStore.createDefault();
     private static final PartyAutoAcceptManager PARTY_AUTO_ACCEPT =
-            new PartyAutoAcceptManager(FriendRosterStore.createDefault());
+            new PartyAutoAcceptManager(FRIEND_ROSTERS);
     private static final PartyCommandEngine PARTY_COMMAND_ENGINE = new PartyCommandEngine();
     private static final PrivatePartyRequestCommands PRIVATE_PARTY_REQUESTS =
             new PrivatePartyRequestCommands();
@@ -94,6 +97,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
     public void onInitializeClient() {
         ConfigManager.load();
         PARTY_AUTO_ACCEPT.load();
+        GUILD_ROSTERS.load();
         ShardWarehouseManager.load();
         CenturyCakeManager.load();
         HypixelSessionTracker.init();
@@ -123,7 +127,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             IntegrationScanService.tick();
             if (ticks % 20 == 0) {
                 LocationTracker.update(client);
-                DungeonQuickViewManager.updateScoreboard(LocationTracker.scoreboardLines());
+                DungeonQuickViewManager.updateContext(client, LocationTracker.scoreboardLines());
                 TabListTracker.update(client);
                 HuntingTracker.updateReceivedText(TabListTracker.lines(), LocationTracker.scoreboardLines());
                 HotmSlotTracker.update(client);
@@ -595,6 +599,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         DeployableExpiryAlert.reset();
         DeathSaveAlertManager.resetRuntime();
         PARTY_AUTO_ACCEPT.resetSession();
+        GUILD_ROSTERS.resetPendingSnapshots();
         PARTY_COMMAND_ENGINE.resetSession();
         PRIVATE_PARTY_REQUESTS.resetSession();
         DungeonQuickViewManager.reset();
@@ -605,13 +610,15 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         Minecraft client = Minecraft.getInstance();
         boolean onHypixel = HypixelSessionTracker.canSendHypixelCommand();
         var chat = ConfigManager.get().chat;
+        String accountKey = client.getUser().getProfileId().toString();
         String command = PARTY_AUTO_ACCEPT.onMessage(message, overlay,
                 onHypixel,
-                client.getUser().getProfileId().toString(), chat.partyAutoAccept,
+                accountKey, chat.partyAutoAccept,
                 chat.partyAutoAcceptFriendMode, chat.partyAutoAcceptWhitelist,
                 System.currentTimeMillis());
         if (command != null) sendServerCommand(client, command);
         if (!onHypixel) return;
+        GUILD_ROSTERS.observe(accountKey, message);
 
         if (HypixelSessionTracker.canUseDungeonQuickView()) {
             DungeonQuickViewManager.onMessage(client, message);
@@ -625,7 +632,14 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         PartyCommandEngine.Result result = PARTY_COMMAND_ENGINE.handlePartyChat(
                 message.getString(), localPlayerName(client), chat.fastPartyCommands,
                 feature -> fastPartyFeatureEnabled(chat, feature),
-                feature -> fastPartyTrigger(chat, feature), playerCoordinates(client),
+                new PartyCommandEngine.AccessPolicy(
+                        chat.fastPartyAllowSelf,
+                        fastPartyAudience(chat.fastPartyWarpPermission),
+                        fastPartyAudience(chat.fastPartyOtherPermission),
+                        chat::containsFastPartyCommandWhitelist,
+                        name -> FRIEND_ROSTERS.isFriend(accountKey, name),
+                        name -> GUILD_ROSTERS.isGuildMember(accountKey, name)),
+                playerCoordinates(client),
                 System.nanoTime());
         handlePartyCommandResult(client, result, false);
     }
@@ -709,23 +723,15 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         };
     }
 
-    private static PartyCommandEngine.TriggerScope fastPartyTrigger(
-            ModConfig.Chat chat, PartyCommandEngine.Feature feature) {
-        ModConfig.PartyCommandTrigger trigger = switch (feature) {
-            case WARP -> chat.fastPartyWarpTrigger;
-            case ALL_INVITE -> chat.fastPartyAllInviteTrigger;
-            case TRANSFER -> chat.fastPartyTransferTrigger;
-            case KICK -> chat.fastPartyKickTrigger;
-            case COORDINATES -> chat.fastPartyCoordinatesTrigger;
-            case PROMOTE -> chat.fastPartyPromoteTrigger;
-            case STREAM -> chat.fastPartyStreamTrigger;
-            case DUNGEON -> chat.fastPartyDungeonTrigger;
-            case KUUDRA -> chat.fastPartyKuudraTrigger;
-        };
-        return switch (trigger) {
-            case SELF_ONLY -> PartyCommandEngine.TriggerScope.SELF_ONLY;
-            case OTHERS_ONLY -> PartyCommandEngine.TriggerScope.OTHERS_ONLY;
-            case EVERYONE -> PartyCommandEngine.TriggerScope.EVERYONE;
+    private static PartyCommandEngine.Audience fastPartyAudience(
+            ModConfig.PartyCommandPermission permission) {
+        if (permission == null) return PartyCommandEngine.Audience.NONE;
+        return switch (permission) {
+            case NONE -> PartyCommandEngine.Audience.NONE;
+            case PARTY_MEMBERS -> PartyCommandEngine.Audience.PARTY_MEMBERS;
+            case FRIENDS -> PartyCommandEngine.Audience.FRIENDS;
+            case GUILD_MEMBERS -> PartyCommandEngine.Audience.GUILD_MEMBERS;
+            case GUILD_AND_FRIENDS -> PartyCommandEngine.Audience.GUILD_AND_FRIENDS;
         };
     }
 

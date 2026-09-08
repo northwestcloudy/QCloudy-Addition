@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha6` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha7` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [更新日志（当前源码 0.3.10-alpha6；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
+- [更新日志（当前源码 0.3.10-alpha7；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -42,7 +42,7 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 通用
 
 - **手动重连**：在连接失败和断线界面加入一个原版尺寸的“重新连接”按钮。正常连接尝试开始时就记录目标，所以首次加入失败后也能使用。只有玩家点击按钮才会重新连接；没有倒计时、循环、重试计数、命令或自动加入。
-- **Dungeon Player Quick View**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员，并在聊天栏输出彩色信息卡。卡片显示 Catacombs 等级、总 Secrets/每 Run 平均 Secrets、五职业等级、排队楼层总 Run 数及最快完成时间、四件护甲、Withered Blade/Terminator 和 Golden Dragon/Ender Dragon 持有情况，以及 Magical Power。职业行采用类似 Odin 的紧凑样式，按 Archer/Berserk/Healer/Mage/Tank 顺序只显示带职业颜色的等级数字，以 `/` 分隔；悬停数字才显示职业名称与精确 XP，不加入平均等级。已识别的护甲、武器和宠物使用原版物品式悬停详情，缺失或隐私字段显示 `Missing`。上下分隔线按当前 Minecraft 字体中普通与粗体横线字形的实际宽度补齐到完全相同端点。QCA 不浏览 Party Finder 列表、不判断职业冲突、绝不自动踢人；只有玩家真实点击红色下划线操作时才会执行 `/party kick <玩家>`。该功能在 Dungeons 分类下有独立开关。
+- **Dungeon Player Quick View**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员，并在聊天栏输出彩色信息卡。卡片显示 Catacombs 等级、总 Secrets/每 Run 平均 Secrets、五职业等级及一位小数的 Class Average、当前发布楼层的总 Run 数及最快完成时间、四件护甲、Withered Blade/Terminator 和 Golden Dragon/Ender Dragon 持有情况，以及 Magical Power。职业行采用类似 Odin 的紧凑顺序，悬停数字显示职业名称与精确 XP。为解决组队招募阶段尚未进入排队导致楼层永久 `Missing`，QCA 只读取本机已经打开的 Party Finder 中、由底部取消发布控件证明属于自己的组队条目并缓存楼层，不读取其他队伍档案。已识别的护甲、武器和宠物使用原版物品式悬停详情，缺失或隐私字段显示 `Missing`。上下分隔线按当前字体宽度对齐。QCA 不判断职业冲突、绝不自动踢人；只有玩家真实点击红色下划线操作时才会执行 `/party kick <玩家>`。
 
 Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不会收到私有 Hypixel API Key，并且不直接访问需要认证的 Hypixel 档案端点。服务端用一次有限响应提供整张卡片。客户端会合并相同的并发请求并缓存成功结果 60 秒；服务端对 player/Profile 来源保鲜 2 分钟，技术故障时最多使用 10 分钟旧缓存，使重复加入能够快速显示，同时不会把缺失数据静默当成零。
 

@@ -205,6 +205,15 @@ public final class ModConfig {
             dungeons.playerQuickView = true;
             configVersion = 28;
         }
+        if (configVersion < 29) {
+            // Replace per-command self/other scopes with one explicit self
+            // switch, an independent !warp audience, and one shared audience
+            // for every other party-chat command. Migration is fail-closed
+            // whenever the old per-command choices cannot be represented by
+            // the new shared controls without broadening access.
+            chat.migratePartyCommandPermissions();
+            configVersion = 29;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
@@ -623,8 +632,17 @@ public final class ModConfig {
         EVERYONE
     }
 
+    public enum PartyCommandPermission {
+        NONE,
+        PARTY_MEMBERS,
+        FRIENDS,
+        GUILD_MEMBERS,
+        GUILD_AND_FRIENDS
+    }
+
     public static final class Chat {
         public static final int PARTY_AUTO_ACCEPT_WHITELIST_LIMIT = 16;
+        public static final int FAST_PARTY_WHITELIST_LIMIT = 16;
 
         public boolean chatPeek = true;
         public String peekScrollTarget = "CHAT";
@@ -648,6 +666,12 @@ public final class ModConfig {
         public boolean fastPartyStream = true;
         public boolean fastPartyDungeon = true;
         public boolean fastPartyKuudra = true;
+        public boolean fastPartyAllowSelf = true;
+        public PartyCommandPermission fastPartyWarpPermission = PartyCommandPermission.PARTY_MEMBERS;
+        public PartyCommandPermission fastPartyOtherPermission = PartyCommandPermission.PARTY_MEMBERS;
+        public List<String> fastPartyCommandWhitelist = new ArrayList<>();
+
+        /** Legacy schema-27 fields retained only so schema-28 files can migrate safely. */
         public PartyCommandTrigger fastPartyWarpTrigger = PartyCommandTrigger.EVERYONE;
         public PartyCommandTrigger fastPartyAllInviteTrigger = PartyCommandTrigger.EVERYONE;
         public PartyCommandTrigger fastPartyTransferTrigger = PartyCommandTrigger.EVERYONE;
@@ -677,20 +701,12 @@ public final class ModConfig {
             if (partyAutoAcceptFriendMode == null) {
                 partyAutoAcceptFriendMode = PartyAcceptFriendMode.NORMAL_ONLY;
             }
-            repairPartyCommandTriggers();
-            List<String> repairedWhitelist = new ArrayList<>();
-            if (partyAutoAcceptWhitelist != null) {
-                for (String name : partyAutoAcceptWhitelist) {
-                    String normalized = normalizePartyAutoAcceptName(name);
-                    if (!isValidMinecraftUsername(normalized)
-                            || containsIgnoreCase(repairedWhitelist, normalized)) {
-                        continue;
-                    }
-                    repairedWhitelist.add(normalized);
-                    if (repairedWhitelist.size() >= PARTY_AUTO_ACCEPT_WHITELIST_LIMIT) break;
-                }
-            }
-            partyAutoAcceptWhitelist = repairedWhitelist;
+            if (fastPartyWarpPermission == null) fastPartyWarpPermission = PartyCommandPermission.NONE;
+            if (fastPartyOtherPermission == null) fastPartyOtherPermission = PartyCommandPermission.NONE;
+            partyAutoAcceptWhitelist = repairWhitelist(
+                    partyAutoAcceptWhitelist, PARTY_AUTO_ACCEPT_WHITELIST_LIMIT);
+            fastPartyCommandWhitelist = repairWhitelist(
+                    fastPartyCommandWhitelist, FAST_PARTY_WHITELIST_LIMIT);
         }
 
         private void initializePartyCommandDefaults() {
@@ -715,6 +731,10 @@ public final class ModConfig {
             fastPartyStreamTrigger = PartyCommandTrigger.EVERYONE;
             fastPartyDungeonTrigger = PartyCommandTrigger.EVERYONE;
             fastPartyKuudraTrigger = PartyCommandTrigger.EVERYONE;
+            fastPartyAllowSelf = true;
+            fastPartyWarpPermission = PartyCommandPermission.PARTY_MEMBERS;
+            fastPartyOtherPermission = PartyCommandPermission.PARTY_MEMBERS;
+            fastPartyCommandWhitelist = new ArrayList<>();
             partyCommands = true;
             partyCommandWarp = true;
             partyCommandAllInvite = true;
@@ -737,6 +757,58 @@ public final class ModConfig {
             if (fastPartyStreamTrigger == null) fastPartyStreamTrigger = PartyCommandTrigger.EVERYONE;
             if (fastPartyDungeonTrigger == null) fastPartyDungeonTrigger = PartyCommandTrigger.EVERYONE;
             if (fastPartyKuudraTrigger == null) fastPartyKuudraTrigger = PartyCommandTrigger.EVERYONE;
+        }
+
+        private void migratePartyCommandPermissions() {
+            repairPartyCommandTriggers();
+            fastPartyWarpPermission = allowsOthers(fastPartyWarpTrigger)
+                    ? PartyCommandPermission.PARTY_MEMBERS : PartyCommandPermission.NONE;
+            fastPartyOtherPermission = allEnabledOtherCommandsAllowOthers()
+                    ? PartyCommandPermission.PARTY_MEMBERS : PartyCommandPermission.NONE;
+            fastPartyAllowSelf = allEnabledCommandsAllowSelf();
+            if (fastPartyCommandWhitelist == null) fastPartyCommandWhitelist = new ArrayList<>();
+
+            // Gson omits null legacy values when the migrated config is saved.
+            fastPartyWarpTrigger = null;
+            fastPartyAllInviteTrigger = null;
+            fastPartyTransferTrigger = null;
+            fastPartyKickTrigger = null;
+            fastPartyCoordinatesTrigger = null;
+            fastPartyPromoteTrigger = null;
+            fastPartyStreamTrigger = null;
+            fastPartyDungeonTrigger = null;
+            fastPartyKuudraTrigger = null;
+        }
+
+        private boolean allEnabledOtherCommandsAllowOthers() {
+            return (!fastPartyAllInvite || allowsOthers(fastPartyAllInviteTrigger))
+                    && (!fastPartyTransfer || allowsOthers(fastPartyTransferTrigger))
+                    && (!fastPartyKick || allowsOthers(fastPartyKickTrigger))
+                    && (!fastPartyCoordinates || allowsOthers(fastPartyCoordinatesTrigger))
+                    && (!fastPartyPromote || allowsOthers(fastPartyPromoteTrigger))
+                    && (!fastPartyStream || allowsOthers(fastPartyStreamTrigger))
+                    && (!fastPartyDungeon || allowsOthers(fastPartyDungeonTrigger))
+                    && (!fastPartyKuudra || allowsOthers(fastPartyKuudraTrigger));
+        }
+
+        private boolean allEnabledCommandsAllowSelf() {
+            return (!fastPartyWarp || allowsSelf(fastPartyWarpTrigger))
+                    && (!fastPartyAllInvite || allowsSelf(fastPartyAllInviteTrigger))
+                    && (!fastPartyTransfer || allowsSelf(fastPartyTransferTrigger))
+                    && (!fastPartyKick || allowsSelf(fastPartyKickTrigger))
+                    && (!fastPartyCoordinates || allowsSelf(fastPartyCoordinatesTrigger))
+                    && (!fastPartyPromote || allowsSelf(fastPartyPromoteTrigger))
+                    && (!fastPartyStream || allowsSelf(fastPartyStreamTrigger))
+                    && (!fastPartyDungeon || allowsSelf(fastPartyDungeonTrigger))
+                    && (!fastPartyKuudra || allowsSelf(fastPartyKuudraTrigger));
+        }
+
+        private static boolean allowsOthers(PartyCommandTrigger trigger) {
+            return trigger == PartyCommandTrigger.OTHERS_ONLY || trigger == PartyCommandTrigger.EVERYONE;
+        }
+
+        private static boolean allowsSelf(PartyCommandTrigger trigger) {
+            return trigger == PartyCommandTrigger.SELF_ONLY || trigger == PartyCommandTrigger.EVERYONE;
         }
 
         public static String normalizePartyAutoAcceptName(String name) {
@@ -781,6 +853,63 @@ public final class ModConfig {
                     normalizePartyAutoAcceptName(name));
             if (index < 0) return false;
             partyAutoAcceptWhitelist.remove(index);
+            return true;
+        }
+
+        public boolean containsFastPartyCommandWhitelist(String name) {
+            return containsIgnoreCase(fastPartyCommandWhitelist, normalizePartyAutoAcceptName(name));
+        }
+
+        public boolean addFastPartyCommandWhitelist(String name) {
+            return addWhitelist(fastPartyCommandWhitelist, FAST_PARTY_WHITELIST_LIMIT, name);
+        }
+
+        public boolean replaceFastPartyCommandWhitelist(String oldName, String newName) {
+            return replaceWhitelist(fastPartyCommandWhitelist, oldName, newName);
+        }
+
+        public boolean removeFastPartyCommandWhitelist(String name) {
+            return removeWhitelist(fastPartyCommandWhitelist, name);
+        }
+
+        private static List<String> repairWhitelist(List<String> input, int limit) {
+            List<String> repaired = new ArrayList<>();
+            if (input == null) return repaired;
+            for (String name : input) {
+                String normalized = normalizePartyAutoAcceptName(name);
+                if (!isValidMinecraftUsername(normalized)
+                        || containsIgnoreCase(repaired, normalized)) continue;
+                repaired.add(normalized);
+                if (repaired.size() >= limit) break;
+            }
+            return repaired;
+        }
+
+        private static boolean addWhitelist(List<String> whitelist, int limit, String name) {
+            String normalized = normalizePartyAutoAcceptName(name);
+            if (!isValidMinecraftUsername(normalized) || whitelist == null
+                    || whitelist.size() >= limit || containsIgnoreCase(whitelist, normalized)) return false;
+            whitelist.add(normalized);
+            return true;
+        }
+
+        private static boolean replaceWhitelist(List<String> whitelist, String oldName, String newName) {
+            if (whitelist == null) return false;
+            String oldNormalized = normalizePartyAutoAcceptName(oldName);
+            String newNormalized = normalizePartyAutoAcceptName(newName);
+            if (!isValidMinecraftUsername(newNormalized)) return false;
+            int index = indexOfIgnoreCase(whitelist, oldNormalized);
+            if (index < 0) return false;
+            int duplicate = indexOfIgnoreCase(whitelist, newNormalized);
+            if (duplicate >= 0 && duplicate != index) return false;
+            whitelist.set(index, newNormalized);
+            return true;
+        }
+
+        private static boolean removeWhitelist(List<String> whitelist, String name) {
+            int index = indexOfIgnoreCase(whitelist, normalizePartyAutoAcceptName(name));
+            if (index < 0) return false;
+            whitelist.remove(index);
             return true;
         }
 

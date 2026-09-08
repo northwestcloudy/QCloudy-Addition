@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha7 楼层、职业、指令权限与下拉框验证
+
+日期：2026-09-08<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha7` 在进入实例排队前从本机自己的已证明 Party Finder 发布条目取得楼层，修复 Dungeon 本层统计始终 `Missing`；同时加入 Class Average，并把快速组队指令逐项触发范围替换为已确认的 `!warp`/其他指令权限、独立自己开关、指令白名单、完整好友/工会判断与可展开多选设置。这仍是未公开 Alpha；公开 Beta 仍为 0.3.10，稳定 Release/更新检查基线仍为 0.3.9。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha7+26.1.2.jar` — 3,835,868 字节 — `f6ad6e1c136ce2a21f925c60c31515a91ad8510f3cb9c5ed8ba1ae0114a0685f`
+- `release/QCloudy_Addition-0.3.10-alpha7+26.1.2-sources.jar` — 3,141,506 字节 — `7eae1eecbca327be263a2deb7bbd4b9f6ac6cba5b994051c2cca1cd99a4f94c2`
+
+## 已完成验证
+
+- Java 25 针对 Minecraft 26.1.2 完成最终 `clean test build prepareRelease`：60 个测试套件、346 项测试，0 failure、0 error、0 skipped。项目 364 个 class 文件全部使用 Java major version 69，两个归档均无重复路径。
+- 楼层回归只在书架取消发布控件证明本机正在发布时接受底部自己的 Party Finder 条目，也支持同一条件下本机队长对应的搜索结果；覆盖普通/Master/Entrance，并拒绝其他队伍、筛选菜单与无归属证明的结果。所选楼层优先于排队计分板回退进入原有有界 API 请求。
+- 指令回归覆盖 warp/其他指令独立权限、自己开关、非本机队员白名单放行、子功能关闭优先、schema 29 保守迁移、白名单校验、完整/不完整工会名单、在线/离线分段、账号隔离及持久化；原有完整分页好友列表测试继续通过。
+- 聊天卡回归覆盖 Odin 职业顺序、一位小数 Class Average、任一职业缺失时平均值 `Missing`、上下线端点、原生物品悬停与不变的真实点击踢人边界。
+- 二级设置已编译覆盖右侧带边框当前值方框与展开清单，适用于全部离散多选 QCA 设置及发现到的 Provider 枚举；布尔、滑条、颜色、按键和操作项保留原交互。
+- 两个 JAR 均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 精确声明 `0.3.10-alpha7+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求及必需的 `hypixel-mod-api >=1.0`。
+
+## 尚未完成的实服验证边界
+
+- 本地没有使用已登录 Hypixel 的真实 Party Finder Tooltip 与新成员加入。安装本 Alpha 后应分别用一次 F/M 发布确认真实菜单 lore 能使 Runs/Fastest 不再 `Missing`。
+- 本轮没有实服执行多页 `/fl`、同时含在线与离线部分的完整 `/g members`，也没有完成资源包/GUI Scale 矩阵与真实鼠标下拉交互。好友/工会权限在收到完整名单前会安全关闭，QCA 不会自动发送名单命令或 `/g onlinemode`。
+- 不需要修改或部署服务端：现有生产 quick-view 路由已经接受楼层并返回对应统计。本轮未制作 Minecraft 26.2 Alpha 产物，也未执行 Git commit/push、GitHub Release 或 Modrinth 发布。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha6 Dungeon Quick View 展示验证
 
 日期：2026-09-07<br>

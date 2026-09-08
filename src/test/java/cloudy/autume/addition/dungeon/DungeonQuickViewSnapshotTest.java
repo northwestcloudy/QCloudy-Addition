@@ -71,7 +71,8 @@ final class DungeonQuickViewSnapshotTest {
                 .findFirst().orElseThrow();
         Component kick = parts.stream().filter(part -> part.getString().equals(
                 "CLICK HERE TO KICK THE PLAYER OUT")).findFirst().orElseThrow();
-        assertTrue(message.getString().contains("Classes: 42.0/39.5/30.1/41.0/31.0"));
+        assertTrue(message.getString().contains(
+                "Classes: 42.0/39.5/30.1/41.0/31.0 | Class Average: 36.7"));
         assertFalse(archer.getStyle().isUnderlined());
         HoverEvent.ShowText classHover = assertInstanceOf(HoverEvent.ShowText.class,
                 archer.getStyle().getHoverEvent());
@@ -122,7 +123,8 @@ final class DungeonQuickViewSnapshotTest {
                 .findFirst().orElseThrow();
 
         assertEquals(0xFF5555, missingArcher.getStyle().getColor().getValue());
-        assertTrue(message.getString().contains("Classes: Missing/39.5/30.1/41.0/31.0"));
+        assertTrue(message.getString().contains(
+                "Classes: Missing/39.5/30.1/41.0/31.0 | Class Average: Missing"));
     }
 
     @Test

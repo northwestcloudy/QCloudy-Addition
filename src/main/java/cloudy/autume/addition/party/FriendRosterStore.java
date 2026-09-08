@@ -67,6 +67,10 @@ public final class FriendRosterStore {
         });
     }
 
+    public boolean isFriend(String accountKey, String username) {
+        return roster(accountKey).kindOf(username) != null;
+    }
+
     public void save(String accountKey, FriendRoster roster) {
         if (accountKey == null || accountKey.isBlank() || roster == null) return;
         String key = accountKey.trim().toLowerCase(java.util.Locale.ROOT);

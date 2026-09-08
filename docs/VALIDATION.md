@@ -1,3 +1,35 @@
+# QCloudy_Addition 0.3.10-alpha7 floor, class, command authorization, and dropdown validation
+
+Date: 2026-09-08<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha7` fixes the permanently missing Dungeon floor statistics by sourcing the floor from the local player's own proven Party Finder listing before queueing, adds the requested Class Average, and replaces per-command Fast Party sender scopes with the confirmed `!warp`/other-command audiences, independent self switch, command whitelist, complete friend/guild membership checks, and expandable multi-choice settings. This remains an unpublished Alpha; public Beta 0.3.10 and stable Release/update baseline 0.3.9 are unchanged.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha7+26.1.2.jar` — 3,835,868 bytes — `f6ad6e1c136ce2a21f925c60c31515a91ad8510f3cb9c5ed8ba1ae0114a0685f`
+- `release/QCloudy_Addition-0.3.10-alpha7+26.1.2-sources.jar` — 3,141,506 bytes — `7eae1eecbca327be263a2deb7bbd4b9f6ac6cba5b994051c2cca1cd99a4f94c2`
+
+## Completed verification
+
+- The final Minecraft 26.1.2 `clean test build prepareRelease` completed successfully with Java 25: 60 suites, 346 tests, 0 failures, 0 errors, and 0 skipped. All 364 project class files use Java major version 69 and both archives contain zero duplicate paths.
+- Floor coverage accepts the local bottom-row Party Finder entry only when a delist bookshelf proves an active own listing, supports the local leader's matching search result while that control exists, parses normal/Master/Entrance lore, and rejects other listings, filter menus, and unproven results. The selected floor is passed to the unchanged bounded API request ahead of the queued-scoreboard fallback.
+- Command coverage verifies independent warp/other audiences, the separate self switch, whitelist override for non-self party members, disabled-child precedence, conservative schema-29 migration, whitelist validation, complete/incomplete guild snapshots, online/offline section handling, account isolation, and persistence. Existing full paginated friend-list tests remain green.
+- Chat-card coverage verifies the Odin class order, exact one-decimal Class Average, average `Missing` when any class is unavailable, exact separator endpoints, native item hovers, and the unchanged physical-click kick boundary.
+- The settings implementation compiles the right-hand bordered current-value control and expandable list for every discrete multi-choice QCA setting and discovered provider enum; Boolean, slider, color, keybind, and action controls retain their existing interaction paths.
+- Both JARs pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact version `0.3.10-alpha7+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+
+## Remaining live-validation boundary
+
+- No authenticated live Hypixel Party Finder tooltip or newcomer join was exercised locally. Install this Alpha and verify one F/M listing so the real menu lore produces non-`Missing` Runs/Fastest values.
+- No live multi-page `/fl`, complete online-plus-offline `/g members`, resource-pack/GUI-scale matrix, or physical dropdown interaction was exercised. Friend/guild permissions fail closed until the corresponding complete client-received list exists; QCA sends neither list command nor `/g onlinemode` automatically.
+- No backend change or deployment is needed: the production quick-view route already accepts a floor and returns its statistics. No Minecraft 26.2 Alpha artifact, Git commit/push, GitHub Release, or Modrinth publication was performed by this build.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha6 Dungeon Quick View presentation validation
 
 Date: 2026-09-07<br>
