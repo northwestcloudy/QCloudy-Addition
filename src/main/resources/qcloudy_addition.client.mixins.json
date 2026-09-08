@@ -5,7 +5,9 @@
   "client": [
     "ChatComponentMixin",
     "ClientPacketListenerMixin",
+    "ClientboundPartyInfoPacketMixin",
     "EntityRendererMixin",
+    "HypixelModAPISendPacketMixin",
     "KeyboardHandlerMixin",
     "MouseHandlerMixin",
     "network.ConnectScreenMixin",

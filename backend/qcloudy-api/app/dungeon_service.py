@@ -32,6 +32,18 @@ CATA_XP = (
     360559640, 453559640, 569809640,
 )
 WITHER_BLADES = {"HYPERION", "ASTRAEA", "SCYLLA", "VALKYRIE"}
+REQUIREMENTS_EVIDENCE_VERSION = 1
+
+# A negative weapon claim is only safe when every storage location that may
+# hold a weapon was present and decoded. Hypixel can omit these fields when
+# inventory API access is unavailable, so an absent key is deliberately not
+# treated as an empty container.
+WEAPON_INVENTORY_CONTAINERS = (
+    "inv_contents",
+    "ender_chest_contents",
+    "backpack_contents",
+    "personal_vault_contents",
+)
 
 
 def normalize_uuid(value: str) -> str:
@@ -69,22 +81,70 @@ def _encoded(value: Any) -> str | None:
     return None
 
 
-def _items(inventory: dict[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], bool]:
-    decoded: dict[str, list[dict[str, Any]]] = {}
-    complete = True
-    for raw_key, value in list(inventory.items())[:64]:
-        encoded = _encoded(value)
-        if encoded is None:
-            continue
-        try:
-            decoded[str(raw_key)] = summarize_inventory_nbt(encoded, max_items=512)
-        except NbtDecodeError:
-            decoded[str(raw_key)] = []
+def _container_payloads(
+    container: str, value: Any
+) -> tuple[list[tuple[str, str]], bool]:
+    encoded = _encoded(value)
+    if encoded is not None:
+        return [(container, encoded)], True
+    if not isinstance(value, dict):
+        return [], False
+    if not value:
+        return [], True
+
+    payloads: list[tuple[str, str]] = []
+    complete = len(value) <= 64
+    for child_key, child in list(value.items())[:64]:
+        child_encoded = _encoded(child)
+        if child_encoded is None:
             complete = False
-    # An entirely absent inventory object means the API field is private or
-    # unavailable. It must not be interpreted as proof that the player lacks
-    # a weapon.
-    return decoded, complete and bool(decoded)
+            continue
+        payloads.append((f"{container}.{child_key}", child_encoded))
+    return payloads, complete
+
+
+def _items(
+    inventory: dict[str, Any],
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    decoded: dict[str, list[dict[str, Any]]] = {}
+    present: list[str] = []
+    decoded_containers: list[str] = []
+    failed: list[str] = []
+    truncated = len(inventory) > 64
+    for raw_key, value in list(inventory.items())[:64]:
+        key = str(raw_key)
+        present.append(key)
+        payloads, structurally_complete = _container_payloads(key, value)
+        container_complete = structurally_complete
+        for decoded_key, encoded in payloads:
+            try:
+                decoded[decoded_key] = summarize_inventory_nbt(encoded, max_items=512)
+            except NbtDecodeError:
+                decoded[decoded_key] = []
+                container_complete = False
+        if container_complete:
+            decoded_containers.append(key)
+        else:
+            failed.append(key)
+
+    expected = list(WEAPON_INVENTORY_CONTAINERS)
+    missing = [key for key in expected if key not in present]
+    complete = (
+        bool(inventory)
+        and not truncated
+        and not failed
+        and not missing
+        and all(key in decoded_containers for key in expected)
+    )
+    return decoded, {
+        "complete": complete,
+        "containersExpected": expected,
+        "containersPresent": present,
+        "containersDecoded": decoded_containers,
+        "containersFailed": failed,
+        "containersMissing": missing,
+        "truncated": truncated,
+    }
 
 
 def _item_view(item: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -174,7 +234,15 @@ class DungeonQuickViewService:
         if normalized_floor is not None and not FLOOR.fullmatch(normalized_floor):
             raise ApiProblem(422, "INVALID_FLOOR", "The Dungeon floor is invalid.", retryable=False)
         identity = await self.resolve(target)
-        player_uuid = identity.value["uuid"]
+        raw_identity_uuid = identity.value.get("uuid") if isinstance(identity.value, dict) else None
+        if not isinstance(raw_identity_uuid, str) or not UUID_TEXT.fullmatch(raw_identity_uuid):
+            raise ApiProblem(
+                502,
+                "INVALID_UPSTREAM_PLAYER_UUID",
+                "The player UUID returned by the upstream service is invalid.",
+                retryable=False,
+            )
+        player_uuid = normalize_uuid(raw_identity_uuid)
         player_result, profiles_result = await asyncio.gather(
             self.cache.get_or_load(
                 f"dungeon:player:{player_uuid}",
@@ -192,26 +260,65 @@ class DungeonQuickViewService:
         raw_player = player_result.value.get("player") if isinstance(player_result.value, dict) else None
         if not isinstance(raw_player, dict):
             raise ApiProblem(404, "HYPIXEL_PLAYER_NOT_FOUND", "Hypixel has no record for that player.")
+        raw_hypixel_uuid = raw_player.get("uuid")
+        if raw_hypixel_uuid is not None:
+            if (
+                not isinstance(raw_hypixel_uuid, str)
+                or not UUID_TEXT.fullmatch(raw_hypixel_uuid)
+                or normalize_uuid(raw_hypixel_uuid) != player_uuid
+            ):
+                raise ApiProblem(
+                    502,
+                    "UPSTREAM_PLAYER_UUID_MISMATCH",
+                    "The player data does not match the resolved player identity.",
+                    retryable=False,
+                )
         raw_profiles = profiles_result.value.get("profiles") if isinstance(profiles_result.value, dict) else None
         profiles = [p for p in raw_profiles or [] if isinstance(p, dict)]
         if not profiles:
             raise ApiProblem(404, "SKYBLOCK_PROFILES_NOT_FOUND", "That player has no visible SkyBlock profiles.")
-        selected = self._select_profile(profiles, player_uuid)
+        selected, profile_selection, selection_certain = self._select_profile(profiles, player_uuid)
         members = selected.get("members")
         member = members.get(player_uuid) if isinstance(members, dict) else None
         if not isinstance(member, dict):
             raise ApiProblem(404, "SKYBLOCK_MEMBER_NOT_FOUND", "The selected profile has no data for that player.")
 
         data = await asyncio.to_thread(self._project, raw_player, member, normalized_floor)
+        requirements_inputs = data.pop("_requirements")
         name = identity.value.get("name") or raw_player.get("displayname") or target
         if not isinstance(name, str) or not USERNAME.fullmatch(name):
             raise ApiProblem(502, "INVALID_UPSTREAM_PLAYER_NAME",
                              "The player identity returned by the upstream service is invalid.",
                              retryable=False)
+        profile_id_value = selected.get("profile_id")
+        profile_id = (
+            normalize_uuid(profile_id_value)
+            if isinstance(profile_id_value, str) and UUID_TEXT.fullmatch(profile_id_value)
+            else None
+        )
         stale = any(result.metadata.state == "stale" for result in (identity, player_result, profiles_result))
+        evidence = self._requirements_evidence(
+            query_name=target,
+            player_uuid=player_uuid,
+            name=name,
+            profile_id=profile_id,
+            profile_selection=profile_selection,
+            selection_certain=selection_certain,
+            requested_floor=normalized_floor,
+            returned_floor=data["floor"]["id"],
+            identity_metadata=identity.metadata,
+            player_metadata=player_result.metadata,
+            profile_metadata=profiles_result.metadata,
+            inputs=requirements_inputs,
+        )
         return {
-            "identity": {"uuid": player_uuid, "name": str(name)[:16]},
+            "identity": {
+                "queryName": target,
+                "uuid": player_uuid,
+                "name": str(name)[:16],
+            },
             **data,
+            "requirementsEvidence": evidence,
             "metadata": {
                 "status": "stale" if stale else "fresh",
                 "fetchedAt": min(
@@ -222,15 +329,181 @@ class DungeonQuickViewService:
         }
 
     @staticmethod
-    def _select_profile(profiles: list[dict[str, Any]], player_uuid: str) -> dict[str, Any]:
-        for profile in profiles:
-            if profile.get("selected") is True:
-                return profile
+    def _select_profile(
+        profiles: list[dict[str, Any]], player_uuid: str
+    ) -> tuple[dict[str, Any], str, bool]:
         def last_save(profile: dict[str, Any]) -> int:
             members = profile.get("members")
             member = members.get(player_uuid) if isinstance(members, dict) else None
-            return int(member.get("last_save") or 0) if isinstance(member, dict) else 0
-        return max(profiles, key=last_save)
+            value = _number(member.get("last_save")) if isinstance(member, dict) else None
+            return int(value) if value is not None else 0
+
+        selected_profiles = [
+            profile for profile in profiles if profile.get("selected") is True
+        ]
+        if len(selected_profiles) == 1:
+            return selected_profiles[0], "SELECTED", True
+        if selected_profiles:
+            return max(selected_profiles, key=last_save), "SELECTED", False
+        return max(profiles, key=last_save), "LATEST_SAVE", False
+
+    @staticmethod
+    def _requirements_evidence(
+        *,
+        query_name: str,
+        player_uuid: str,
+        name: str,
+        profile_id: str | None,
+        profile_selection: str,
+        selection_certain: bool,
+        requested_floor: str | None,
+        returned_floor: str | None,
+        identity_metadata: CacheMetadata,
+        player_metadata: CacheMetadata,
+        profile_metadata: CacheMetadata,
+        inputs: dict[str, Any],
+    ) -> dict[str, Any]:
+        def source(metadata: CacheMetadata) -> dict[str, Any]:
+            fresh = metadata.state != "stale"
+            return {
+                "status": "fresh" if fresh else "stale",
+                "fresh": fresh,
+                "fetchedAt": int(metadata.fetched_at * 1000),
+            }
+
+        sources = {
+            "identity": source(identity_metadata),
+            "player": source(player_metadata),
+            "profile": source(profile_metadata),
+        }
+        all_sources_fresh = all(value["fresh"] for value in sources.values())
+        floor_matches = requested_floor == returned_floor
+
+        blocker: str | None = None
+        if not all_sources_fresh:
+            blocker = "SOURCE_STALE"
+        elif not selection_certain:
+            blocker = "PROFILE_SELECTION_UNCERTAIN"
+        elif profile_id is None:
+            blocker = "PROFILE_ID_MISSING"
+
+        def number(
+            value: int | float | None,
+            *,
+            missing_reason: str = "FIELD_MISSING",
+            needs_floor: bool = False,
+            value_key: str = "value",
+            extra: dict[str, Any] | None = None,
+        ) -> dict[str, Any]:
+            result = dict(extra or {})
+            if blocker is not None:
+                return {"state": "UNAVAILABLE", value_key: None, "reason": blocker, **result}
+            if needs_floor and requested_floor is None:
+                return {
+                    "state": "UNAVAILABLE",
+                    value_key: None,
+                    "reason": "FLOOR_NOT_REQUESTED",
+                    **result,
+                }
+            if needs_floor and not floor_matches:
+                return {
+                    "state": "UNAVAILABLE",
+                    value_key: None,
+                    "reason": "FLOOR_MISMATCH",
+                    **result,
+                }
+            if value is None:
+                return {
+                    "state": "UNAVAILABLE",
+                    value_key: None,
+                    "reason": missing_reason,
+                    **result,
+                }
+            return {"state": "KNOWN", value_key: value, **result}
+
+        def ownership(present: bool, complete: bool, unavailable_reason: str) -> dict[str, Any]:
+            if blocker is not None:
+                return {"state": "UNAVAILABLE", "reason": blocker}
+            if present:
+                return {"state": "PRESENT"}
+            if complete:
+                return {"state": "ABSENT"}
+            return {"state": "UNAVAILABLE", "reason": unavailable_reason}
+
+        coverage = dict(inputs["inventoryCoverage"])
+        inventory_complete = blocker is None and coverage["complete"] is True
+        pets_source_complete = inputs["petsComplete"] is True
+        pets_complete = blocker is None and pets_source_complete
+
+        return {
+            "version": REQUIREMENTS_EVIDENCE_VERSION,
+            "fresh": all_sources_fresh,
+            "fetchedAt": min(value["fetchedAt"] for value in sources.values()),
+            "identity": {
+                "queryName": query_name,
+                "uuid": player_uuid,
+                "name": str(name)[:16],
+            },
+            "profile": {
+                "id": profile_id,
+                "selection": profile_selection,
+                "selectionCertain": selection_certain,
+            },
+            "request": {
+                "floor": requested_floor,
+                "responseFloor": returned_floor,
+                "floorMatches": floor_matches,
+            },
+            "sources": sources,
+            "floorCompletions": number(inputs["floorRuns"], needs_floor=True),
+            "fastestCompletion": number(
+                inputs["fastestMs"],
+                needs_floor=True,
+                value_key="valueMs",
+                missing_reason="NO_VALID_COMPLETION_TIME",
+                extra={"kind": "ANY_COMPLETION"},
+            ),
+            "averageSecrets": {
+                "state": "UNAVAILABLE",
+                "value": None,
+                "numerator": inputs["secretsNumerator"],
+                "denominator": inputs["secretsDenominator"],
+                "scope": "ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS",
+                "complete": False,
+                "reason": "SCOPE_MISMATCH",
+            },
+            "magicalPower": number(
+                inputs["magicalPower"], extra={"kind": "HIGHEST"}
+            ),
+            "weapons": {
+                **coverage,
+                "complete": inventory_complete,
+                "witherBlade": ownership(
+                    inputs["witherBladePresent"],
+                    inventory_complete,
+                    "INVENTORY_INCOMPLETE",
+                ),
+                "terminator": ownership(
+                    inputs["terminatorPresent"],
+                    inventory_complete,
+                    "INVENTORY_INCOMPLETE",
+                ),
+            },
+            "pets": {
+                "complete": pets_complete,
+                "sourceComplete": pets_source_complete,
+                "goldenDragon": ownership(
+                    inputs["goldenDragonPresent"],
+                    pets_complete,
+                    "PETS_UNAVAILABLE",
+                ),
+                "enderDragon": ownership(
+                    inputs["enderDragonPresent"],
+                    pets_complete,
+                    "PETS_UNAVAILABLE",
+                ),
+            },
+        }
 
     @staticmethod
     def _project(raw_player: dict[str, Any], member: dict[str, Any], floor: str | None) -> dict[str, Any]:
@@ -283,13 +556,14 @@ class DungeonQuickViewService:
         magical_power = _number(accessory.get("highest_magical_power"))
 
         inventory = member.get("inventory") if isinstance(member.get("inventory"), dict) else {}
-        decoded, inventory_complete = _items(inventory)
+        decoded, inventory_coverage = _items(inventory)
         all_items = [item for items in decoded.values() for item in items if isinstance(item, dict)]
         wither_blade = _best_item(all_items, WITHER_BLADES)
         terminator = _best_item(all_items, {"TERMINATOR"})
 
         pet_data = member.get("pets_data") if isinstance(member.get("pets_data"), dict) else {}
-        raw_pets = pet_data.get("pets") if isinstance(pet_data.get("pets"), list) else []
+        pets_complete = isinstance(pet_data.get("pets"), list)
+        raw_pets = pet_data.get("pets") if pets_complete else []
         def best_pet(pet_type: str) -> dict[str, Any] | None:
             candidates = [p for p in raw_pets if isinstance(p, dict) and p.get("type") == pet_type]
             return max(candidates, key=lambda p: _number(p.get("exp")) or 0) if candidates else None
@@ -304,7 +578,7 @@ class DungeonQuickViewService:
             "weapons": {
                 "witherBlade": {"present": wither_blade is not None, "item": wither_blade},
                 "terminator": {"present": terminator is not None, "item": terminator},
-                "complete": inventory_complete,
+                "complete": inventory_coverage["complete"],
             },
             "pets": {
                 "goldenDragon": {
@@ -315,6 +589,19 @@ class DungeonQuickViewService:
                     "present": (edrag := best_pet("ENDER_DRAGON")) is not None,
                     "item": _pet_view(edrag, "Ender Dragon"),
                 },
-                "complete": isinstance(pet_data.get("pets"), list),
+                "complete": pets_complete,
+            },
+            "_requirements": {
+                "floorRuns": runs,
+                "fastestMs": fastest,
+                "secretsNumerator": int(secrets) if secrets is not None else None,
+                "secretsDenominator": total_runs if has_runs else None,
+                "magicalPower": int(magical_power) if magical_power is not None else None,
+                "inventoryCoverage": inventory_coverage,
+                "witherBladePresent": wither_blade is not None,
+                "terminatorPresent": terminator is not None,
+                "petsComplete": pets_complete,
+                "goldenDragonPresent": greg is not None,
+                "enderDragonPresent": edrag is not None,
             },
         }

@@ -1,3 +1,45 @@
+# QCloudy_Addition 0.3.10-alpha8 Dungeon admission rules validation status
+
+Date: 2026-09-08<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha8` adds an explicitly confirmed, default-off Dungeon Party Finder admission-action master around the existing default-on Profile display. Configuration schema 30/rules version 1 contains exactly 14 mutually independent F1–F7/M1–M7 policies and no Entrance policy. Each floor owns nine switches: minimum exact-floor completions, no duplicate class, maximum fastest completion time, minimum average Secrets, minimum Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules retain a separate toggle and value. Disabling every rule still produces the normal Profile and does not disable Dungeon Quick View.
+
+The intended output contract is tri-state. PASS prints only Profile. UNKNOWN prints Profile plus all unavailable-evidence reasons and never kicks; a transport failure with no snapshot prints the bounded unavailable notice. FAIL prints all confirmed failed rules first and may send `party kick <validated newcomer>` immediately afterward in the same client-thread decision turn. The red underlined manual kick action remains on Profile cards. No path prints a PASS, no-kick, or kick-sent line or claims the server accepted the command.
+
+## Source and static verification completed
+
+- Source inspection confirms the fixed F1–F7/M1–M7 floor enum/map, separately allocated per-floor objects, disabled defaults, explicit enable confirmation, toggle-plus-value numeric model, saved-value retention, and defensive normalization for missing, duplicated, unsupported, and out-of-range configuration. Entrance has no settings object or policy lookup.
+- Source inspection confirms the exact join parser carries player/class/level; the ownership-proven Party Finder entry captures the advertised floor and existing player/class lore; the scoreboard is request/display fallback only and cannot authorize an action.
+- The pure evaluator uses `>=` minimums, `<=` fastest-time maximum, confirmed-absence-only item/pet failure, and named-conflict-only duplicate-class failure. A confirmed failure may coexist with UNKNOWN, but UNKNOWN is never promoted to FAIL.
+- Requirements evidence version 1 binds query/resolved identity, exactly-one-selected Profile certainty, request/response floor, freshness, and source coverage. Missing/private/stale/mismatched/unsupported evidence, zero or multiple selected Profiles, and incomplete inventory, pets, or class roster fail closed. Current average-Secrets evidence explicitly returns `SCOPE_MISMATCH` because its account-wide numerator and selected-Profile denominator do not align. Decimal threshold/result rendering preserves distinctions beyond one decimal place. The MP rule reads `highest_magical_power`, a historical maximum rather than a live-current total.
+- Source inspection confirms a qualifying policy requests fresh PartyInfo through the official Hypixel Mod API. QCA serializes its own requests with unique tickets; required mixins serialize all successful shared-API PartyInfo sends, including other mods, into a per-physical-connection ownership FIFO. Every packet/error consumes one position before registered handlers run, only the exact QCA session/ticket is retained, and the timestamp comes from packet decoding rather than delayed main-thread handling. Missing, foreign, unmatched, errored, evicted, old-world, or poisoned attribution cannot substitute the latest response. Immediately before an automatic command, the final guard rereads the live scoreboard and rechecks the same authoritative SkyBlock session/world, queue and own-listing generation/floor, unchanged policy revision and values, exact-ticket deadlines, local `LEADER`, target UUID membership/Tab identity, live connection, and one-shot action key. Failure reasons are emitted before the adjacent command call.
+- Admission decisions bypass the 60-second Profile-display cache while still coalescing the same in-flight acquisition. A returned evidence snapshot has a ten-second local monotonic decision window and an epoch check matching the backend's longest fresh-source contract; exceeding either becomes UNKNOWN. Exact departure handling clears join de-duplication and the old membership epoch, including the offline-kick line, so a rapid legitimate rejoin starts a new admission rather than being silently discarded.
+- `QcaApiClient` now collects response buffers through a non-blocking four-MiB-bounded subscriber. Its fifteen-second deadline covers both headers and the complete body; a body that never finishes cancels the transport/subscription and completes as a service timeout instead of leaving an admission pending forever.
+- English/Chinese current-state documentation and Alpha 8 changelog/validation sections were updated without rewriting the historical Alpha 7 and older sections. Repository whitespace validation is recorded by `git diff --check`; the local Markdown structural check found no unbalanced fenced block or heading without its required following blank line.
+
+## Automated/build status
+
+- The final Minecraft 26.1.2 Java 25 `clean test build prepareRelease` completed successfully: 65 suites, 422 tests, 0 failures, 0 errors, and 0 skipped. The backend regression suite also completed with 48 passing tests.
+- All 496 compiled project/test class files in the clean `build/26.1.2` target use Java major version 69, with no Finder-style `* 2.class` or `TEST-* 2.xml` conflict copies in that target. Both archives pass JDK 25 `jar --validate` and `unzip -t`, contain zero duplicate paths, and the playable JAR declares exact version `0.3.10-alpha8+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha8+26.1.2.jar` — 3,955,675 bytes — `c094b444d423e1914e38a065d0112ae493bc437fff7ff840d6d2c0f8376dbc62`
+- `release/QCloudy_Addition-0.3.10-alpha8+26.1.2-sources.jar` — 3,184,328 bytes — `458b505d329f386fe538dc9ac0d88cc760730c765db5678efc278693c6ab2847`
+
+## Deployment and live-validation boundary
+
+- The Alpha 8 requirements-evidence backend source has not been deployed to production. Until the deployed quick-view response includes supported evidence version 1, enabled rules resolve to UNKNOWN/display-only and cannot authorize automatic removal.
+- No authenticated live Hypixel run has exercised a real own Party Finder listing, structured newcomer line, fresh PartyInfo response, PASS/UNKNOWN/FAIL presentation, leadership/target race, or actual `party kick` server response. Static/unit/build checks cannot prove server acceptance, successful removal, policy permission, live menu wording, latency behavior, or absence of every future false positive.
+- A cleared/replaced own-listing context, Entrance or scoreboard-only floor, private/missing/stale/network/evidence uncertainty, PartyInfo timeout/staleness, no party, lost leadership, departed target, rule changes, session/world changes, duplicate delivery, and a missing connection are expected no-action cases and still require authenticated live/manual verification.
+- No Minecraft 26.2 Alpha artifact, production deployment, installation into a game directory, Git commit/push, GitHub Release, or Modrinth publication is claimed by this section. Public Beta 0.3.10 and stable Release/update baseline 0.3.9 remain unchanged.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha7 floor, class, command authorization, and dropdown validation
 
 Date: 2026-09-08<br>

@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha7` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha8` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [更新日志（当前源码 0.3.10-alpha7；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
+- [更新日志（当前源码 0.3.10-alpha8；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -42,9 +42,9 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 通用
 
 - **手动重连**：在连接失败和断线界面加入一个原版尺寸的“重新连接”按钮。正常连接尝试开始时就记录目标，所以首次加入失败后也能使用。只有玩家点击按钮才会重新连接；没有倒计时、循环、重试计数、命令或自动加入。
-- **Dungeon Player Quick View**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员，并在聊天栏输出彩色信息卡。卡片显示 Catacombs 等级、总 Secrets/每 Run 平均 Secrets、五职业等级及一位小数的 Class Average、当前发布楼层的总 Run 数及最快完成时间、四件护甲、Withered Blade/Terminator 和 Golden Dragon/Ender Dragon 持有情况，以及 Magical Power。职业行采用类似 Odin 的紧凑顺序，悬停数字显示职业名称与精确 XP。为解决组队招募阶段尚未进入排队导致楼层永久 `Missing`，QCA 只读取本机已经打开的 Party Finder 中、由底部取消发布控件证明属于自己的组队条目并缓存楼层，不读取其他队伍档案。已识别的护甲、武器和宠物使用原版物品式悬停详情，缺失或隐私字段显示 `Missing`。上下分隔线按当前字体宽度对齐。QCA 不判断职业冲突、绝不自动踢人；只有玩家真实点击红色下划线操作时才会执行 `/party kick <玩家>`。
+- **Dungeon Player Quick View 与入队规则**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员并输出彩色 Profile 卡。卡片显示 Catacombs 等级、总 Secrets/每 Run 平均 Secrets、五职业等级与 Class Average、当前发布楼层的完成次数/最快时间、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与 Magical Power。QCA 只接受由取消发布控件证明属于本机的 Party Finder 条目；计分板楼层仅作展示回退，不能授权自动操作。F1–F7 与 M1–M7 共 14 层分别保存、互不继承，Entrance 没有规则。每层可独立开启最低本层完成次数、禁止重复职业、最快完成时间上限、平均 Secrets 下限、Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon、Ender Dragon；数值规则各有开关和值。规则与自动操作总开关均默认关闭，开启总开关必须再次确认。关闭 Dungeon Quick View 会同时停止 Profile 与入队流程；自动操作关闭或本层全部规则关闭时仍照常输出 Profile，Entrance 也始终只显示 Profile。全部通过时只输出 Profile，不显示 PASS；证据未知、私密、过旧或不完整时输出 Profile 与原因，绝不踢人；确认有不满足项时先完整列出所有失败原因，然后仅在官方 PartyInfo 新鲜快照仍证明本机是队长、目标 UUID 仍在队内，并且同一自己的发布条目、楼层、规则、会话、世界与单次动作仍有效时，才在同一个客户端判定回合发送 `party kick <已校验玩家>`。Profile 卡原有红色下划线手动踢人操作继续保留。
 
-Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不会收到私有 Hypixel API Key，并且不直接访问需要认证的 Hypixel 档案端点。服务端用一次有限响应提供整张卡片。客户端会合并相同的并发请求并缓存成功结果 60 秒；服务端对 player/Profile 来源保鲜 2 分钟，技术故障时最多使用 10 分钟旧缓存，使重复加入能够快速显示，同时不会把缺失数据静默当成零。
+Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不会收到私有 Hypixel API Key，并且不直接访问需要认证的 Hypixel 档案端点。服务端用一次有限响应提供整张卡片。客户端会合并相同的并发请求，并把成功结果用于 Profile 展示、缓存 60 秒；已开启的自动判定会绕过这份完成缓存，另用十秒本地证据窗口。服务端对 player/Profile 来源保鲜 2 分钟，技术故障时最多使用 10 分钟旧缓存，使重复加入能够快速显示，同时不会把缺失数据静默当成零。Alpha 8 规则证据后端尚未部署，也没有在已登录 Hypixel 的实服验证；生产环境返回受支持证据前，规则只能 UNKNOWN/展示。平均 Secrets 证据目前也会返回 `SCOPE_MISMATCH`，因为账号 Secrets 与所选 Profile 完成次数范围并不一致。MP 规则使用所选 Profile 报告的历史最高 MP，因为当前来源没有可信的实时当前总值。
 
 ### 地图
 
@@ -129,11 +129,11 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 
 ## 从源码构建
 
-安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。脚本会按 `gradle.properties` 中选择的通道构建：Alpha 会测试并生成 Minecraft 26.1.2 的可运行 JAR 与 Sources JAR；Beta 与 Release 会测试并在 `release/` 生成 Minecraft 26.1.2 和 26.2 的两组文件。项目已包含固定为 Gradle 9.6.1 的 Wrapper 与 Fabric Loom 1.17.17；五个功能参考模组仍是可选项，不是构建或运行依赖，QCA 只为会话/地点判断打包 Hypixel 官方 Mod API Fabric 运行库。宠物 Profile 元数据、Shard 配方、Wiki 摘要、图标与速率基线会离线生成并写入 QCA 资源；Dungeon Quick View 或 Shard Planner 的明确操作才使用上文披露的有界 `https://api.qcloudy.net` 路径，独立的 Release 更新检查使用固定 QCloudy 官网地址。QCA 不需要 Firmament。
+安装 JDK 25 后运行 `bash tools/build_all_versions.sh`。脚本会按 `gradle.properties` 中选择的通道构建：Alpha 会测试并生成 Minecraft 26.1.2 的可运行 JAR 与 Sources JAR；Beta 与 Release 会测试并在 `release/` 生成 Minecraft 26.1.2 和 26.2 的两组文件。项目已包含固定为 Gradle 9.6.1 的 Wrapper 与 Fabric Loom 1.17.17；五个功能参考模组仍是可选项，不是构建或运行依赖。QCA 打包 Hypixel 官方 Mod API Fabric 运行库，用 Hello/Location 判断会话/地点，并在需要判断 Dungeon 自动操作时获取新鲜 PartyInfo 成员 UUID 与角色。宠物 Profile 元数据、Shard 配方、Wiki 摘要、图标与速率基线会离线生成并写入 QCA 资源；Dungeon 新成员审核与 Shard Planner 的明确价格加载使用上文披露的有界 `https://api.qcloudy.net` 路径，独立的 Release 更新检查使用固定 QCloudy 官网地址。QCA 不需要 Firmament。
 
 ## 安全边界
 
-发布版不包含 `sendChat`、WebSocket、遥测、宏、自动移动或区块请求代码。Hypixel 官方 Mod API 只用于接收 Hello/Location plugin message，并通过官方共享实现注册 Location 事件；QCA 不使用 Public API、API Key、自制协议实现或自动 `/locraw`。QCA 自身网页访问只限固定、有界的 HTTPS 路径：Dungeon Quick View/Shard Planner 的明确读取，以及 Beta/Release 每进程最多一次的 Release manifest 检查。更新检查无权下载或安装文件，Alpha 在安排该检查前直接返回。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。文档列出的可选组队/聊天工具还可以在各自总开关、子开关、发送者范围、解析和冷却条件全部满足后发送对应服务器指令；它们不会模拟点击、移动玩家或使用物品。
+发布版不包含 `sendChat`、WebSocket、遥测、宏、自动移动或区块请求代码。Hypixel 官方 Mod API 的共享实现用于 Hello/Location 会话权威。已开启的 Dungeon 入队判定会先请求一次新鲜 PartyInfo 成员 UUID/角色；只有确认 FAIL 后才会再请求一次最终快照，因此每名新成员最多两次 PartyInfo 请求。QCA 不使用 Public API、客户端 API Key、自制协议实现或自动 `/locraw`。QCA 自身网页访问只限固定、有界的 HTTPS 路径：Dungeon 新成员审核、Shard Planner 的明确价格读取，以及 Beta/Release 每进程最多一次的 Release manifest 检查。更新检查无权下载或安装文件，Alpha 在安排该检查前直接返回。普通 HUD 只读取客户端已收到的数据；`/qshard`、`/cake` 与 `/centurycakeeffect` 只打开本地界面，不发送任何内容。永久可用的本地 `/th` 与 `/helia` 只会在玩家输入时分别发送准确内容 `warp torrhus` 与 `chapter torrhus`，等同手动输入 `/warp torrhus` 与 `/chapter torrhus`。Century Cake 提醒中的带下划线续效果文字只会在玩家实际点击后发送精确 `/visit northwestcloudy`。文档列出的可选组队/聊天工具可在各自门控通过后发送对应服务器指令；Dungeon 自动踢人另有默认关闭且必须确认的总开关，只有确认失败和全部 PartyInfo/自己的发布条目最终保护同时成立才发送 `party kick <已校验新成员>`。这些工具不会模拟点击、移动玩家或使用物品。
 
 Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确列出的功能也不代表获得许可。使用前请阅读 [docs/COMPLIANCE_zh_CN.md](docs/COMPLIANCE_zh_CN.md) 和最新的 [Hypixel Allowed Modifications 说明](https://support.hypixel.net/hc/en-us/articles/6472550754962-Hypixel-Allowed-Modifications)。
 

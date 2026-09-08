@@ -85,6 +85,48 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void dungeonQuickViewKeepsItsOwnMasterAndOpensRequirementSettings() {
+        ModConfig config = new ModConfig();
+        ConfigScreen.Feature feature = ConfigScreen.Feature.DUNGEON_QUICK_VIEW;
+
+        assertEquals(ConfigScreen.Category.DUNGEONS, feature.category);
+        assertEquals(ConfigScreen.FeatureGroup.DUNGEON_PARTY, feature.group);
+        assertTrue(feature.enabled(config));
+        assertTrue(feature.hasSettings());
+        assertFalse(config.dungeons.partyFinderAutoKick.enabled);
+
+        feature.toggle(config);
+        assertFalse(config.dungeons.playerQuickView);
+        assertFalse(config.dungeons.partyFinderAutoKick.enabled);
+    }
+
+    @Test
+    void dungeonRequirementEditorsAcceptOnlySafeExplicitValues() {
+        assertEquals(50L, DungeonRequirementsScreen.parseWholeNumber("50", 0, 1_000_000));
+        assertEquals(0L, DungeonRequirementsScreen.parseWholeNumber("0", 0, 1_000_000));
+        assertEquals(null, DungeonRequirementsScreen.parseWholeNumber("-1", 0, 1_000_000));
+        assertEquals(null, DungeonRequirementsScreen.parseWholeNumber("1.5", 0, 1_000_000));
+        assertEquals(null, DungeonRequirementsScreen.parseWholeNumber("1000001", 0, 1_000_000));
+
+        assertEquals(450_000L, DungeonRequirementsScreen.parseDurationMs("07:30"));
+        assertEquals(3_599_000L, DungeonRequirementsScreen.parseDurationMs("59:59"));
+        assertEquals(null, DungeonRequirementsScreen.parseDurationMs("7:3"));
+        assertEquals(null, DungeonRequirementsScreen.parseDurationMs("07:60"));
+        assertEquals(null, DungeonRequirementsScreen.parseDurationMs("00:00"));
+        assertEquals("07:30", DungeonRequirementsScreen.formatDuration(450_999L));
+
+        assertEquals(8.5, DungeonRequirementsScreen.parseDecimal("8.5", 0.0, 1_000.0));
+        assertEquals(0.5, DungeonRequirementsScreen.parseDecimal(".5", 0.0, 1_000.0));
+        assertEquals(8.0375, DungeonRequirementsScreen.parseDecimal("8.0375", 0.0, 1_000.0));
+        assertEquals(0.000000000123456789,
+                DungeonRequirementsScreen.parseDecimal("0.000000000123456789", 0.0, 1_000.0));
+        assertEquals(null, DungeonRequirementsScreen.parseDecimal(
+                "1000.00000000000000000001", 0.0, 1_000.0));
+        assertEquals(null, DungeonRequirementsScreen.parseDecimal("NaN", 0.0, 1_000.0));
+        assertEquals(null, DungeonRequirementsScreen.parseDecimal("1,5", 0.0, 1_000.0));
+    }
+
+    @Test
     void partyAutoAcceptIsAnOptInGeneralFeatureWithModeAndOrderedWhitelist() {
         ModConfig config = new ModConfig();
         ConfigScreen.Feature feature = ConfigScreen.Feature.PARTY_AUTO_ACCEPT;

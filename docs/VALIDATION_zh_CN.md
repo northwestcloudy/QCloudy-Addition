@@ -1,3 +1,45 @@
+# QCloudy_Addition 0.3.10-alpha8 Dungeon 入队规则验证状态
+
+日期：2026-09-08<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha8` 在原有默认开启的 Profile 展示之外，加入必须明确确认且默认关闭的 Dungeon Party Finder 入队操作总开关。配置 schema 30/规则版本 1 精确包含 14 份相互独立的 F1–F7/M1–M7 规则，不存在 Entrance 规则。每层各有九项开关：最低本层完成次数、禁止重复职业、最快完成时间上限、平均 Secrets 下限、Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon。数值规则分别保留开关与数值；关闭某层全部规则仍输出普通 Profile，不会关闭 Dungeon Quick View。
+
+预期输出采用三态。PASS 只输出 Profile。UNKNOWN 输出 Profile 与全部无法确认原因，绝不踢人；若传输失败导致没有快照，则显示有界的无法取得提示。FAIL 先输出全部确认失败项，随后可在同一个客户端判定回合立即发送 `party kick <已校验新成员>`。Profile 卡继续保留红色下划线手动踢人操作。任何路径都不显示 PASS、“未发送踢人指令”或“已发送踢人指令”，也不会声称服务器已经接受指令。
+
+## 已完成的源码与静态检查
+
+- 源码检查确认固定 F1–F7/M1–M7 enum/map、每层独立分配对象、默认关闭、开启确认、数值开关+值、关闭保留值，以及对缺失、错误共享、版本不支持与越界配置的防御修复。Entrance 没有设置对象或规则查询。
+- 源码检查确认精确加入解析器携带玩家/职业/等级；由归属证明的 Party Finder 条目捕获发布楼层与现有玩家/职业 lore；计分板只作请求/展示回退，不能授权操作。
+- 无副作用判定器使用最低值 `>=`、最快时间上限 `<=`、物品/宠物仅确认不存在才失败，以及重复职业仅具名冲突才失败。已确认失败可以与 UNKNOWN 同时存在，但 UNKNOWN 绝不会升级成 FAIL。
+- 规则证据版本 1 绑定查询/解析身份、恰好一个 selected Profile 的确定性、请求/返回楼层、新鲜度与来源覆盖。缺失/私密/过旧/不匹配/版本不支持、零个或多个 selected Profile，以及背包、宠物或职业表不完整都会安全停止。当前平均 Secrets 的账号范围分子与所选 Profile 分母不一致，因此证据明确返回 `SCOPE_MISMATCH`；小数阈值与实际值的显示会保留超过一位小数的区别。MP 规则读取历史最高 `highest_magical_power`，并非实时当前总值。
+- 源码检查确认：符合条件的规则会通过 Hypixel 官方 Mod API 请求新鲜 PartyInfo。QCA 用唯一票据串行处理自己的请求；必需 Mixin 会把共享 API 中包括其他 Mod 在内的每次成功 PartyInfo 发送，按物理连接记录为带归属的 FIFO。每个包/错误在注册 handler 之前精确消费一个位置，只保留完全匹配 QCA 会话/票据的快照，时间戳取自网络解码而不是延迟后的主线程处理。缺失、外部、无法匹配、错误、已淘汰、旧世界或进入安全封锁的响应都不能冒充最新回包。自动指令前立即重读实时计分板，并重查同一权威 SkyBlock 会话/世界、排队与自己的发布 generation/楼层、policy revision 和数值均未改变、精确票据截止时间、本机 `LEADER`、目标 UUID 的成员/Tab 身份、连接存在及单次动作键。失败原因先于紧邻的指令调用输出。
+- 自动判定绕过用于 Profile 展示的 60 秒成功缓存，但仍会合并同一份正在进行的网络读取。返回的规则证据只有十秒本地单调时钟判定窗口，并按后端最长新鲜来源契约核对 epoch；任一时限超出都变成 UNKNOWN。精确离队处理会清除消息去重与旧 membership epoch，并覆盖离线踢出行，因此真实快速重进会开始新判定，不会被静默吞掉。
+- `QcaApiClient` 改用非阻塞且限制四 MiB 的正文订阅器。十五秒截止时间同时覆盖响应头和完整正文；正文永不结束时会取消底层请求/订阅并以服务超时完成，不会让入队判定永远挂起。
+- 英中当前态文档及 Alpha 8 changelog/validation 段落已更新，没有改写 Alpha 7 与更早历史段落。仓库空白检查记为 `git diff --check`；本地 Markdown 结构检查未发现未配对代码围栏或标题后缺少必需空行。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 最终 `clean test build prepareRelease` 已成功完成：65 个测试套件、422 项测试，0 failure、0 error、0 skipped。后端回归也已完成，48 项测试全部通过。
+- clean 后的 `build/26.1.2` 目标中，全部 496 个项目/测试 class 文件均使用 Java major version 69，且没有 Finder 风格的 `* 2.class` 或 `TEST-* 2.xml` 冲突副本。两个归档均通过 JDK 25 `jar --validate` 与 `unzip -t`，重复路径均为 0；可运行 JAR 精确声明 `0.3.10-alpha8+26.1.2`、纯客户端环境、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求及必需的 `hypixel-mod-api >=1.0`。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha8+26.1.2.jar` — 3,955,675 字节 — `c094b444d423e1914e38a065d0112ae493bc437fff7ff840d6d2c0f8376dbc62`
+- `release/QCloudy_Addition-0.3.10-alpha8+26.1.2-sources.jar` — 3,184,328 字节 — `458b505d329f386fe538dc9ac0d88cc760730c765db5678efc278693c6ab2847`
+
+## 部署与实服验证边界
+
+- Alpha 8 规则证据后端源码尚未部署生产环境。线上 quick-view 响应包含受支持证据版本 1 之前，已开启规则会变成 UNKNOWN/仅展示，不能授权自动移除。
+- 没有在已登录 Hypixel 的实服中执行真实自己的 Party Finder 发布、结构化新成员行、新鲜 PartyInfo、PASS/UNKNOWN/FAIL 展示、队长/目标竞态或实际 `party kick` 服务器响应。静态、单元或构建检查不能证明服务器接受、成功移除、规则许可、真实菜单文字、延迟行为或未来绝无误判。
+- 自己的发布条目上下文被清除/替换、Entrance 或只靠计分板楼层、私密/缺失/过旧/网络/证据不确定、PartyInfo 超时/过旧、不在队伍、失去队长、目标离队、规则改变、会话/世界变化、重复交付与连接缺失，均应无自动操作，仍需已登录实服/人工验证。
+- 本段不声称已制作 Minecraft 26.2 Alpha 产物、部署生产环境、安装进游戏目录、执行 Git commit/push、GitHub Release 或 Modrinth 发布。公开 Beta 0.3.10 与稳定 Release/更新检查基线 0.3.9 均未改变。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha7 楼层、职业、指令权限与下拉框验证
 
 日期：2026-09-08<br>

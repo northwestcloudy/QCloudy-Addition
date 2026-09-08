@@ -6,9 +6,7 @@ import org.junit.jupiter.api.Test;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
@@ -17,6 +15,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,21 +79,45 @@ final class QcaApiClientTest {
     }
 
     @Test
-    void boundedReaderRejectsOversizeAndChangedResponseUrisAndClosesBodies() {
-        URI requested = URI.create("https://api.qcloudy.net/v1/dungeons/quick-view/Test");
-        TrackingInputStream oversized = new TrackingInputStream(new byte[17]);
-        CompletionException tooLarge = assertThrows(CompletionException.class,
-                () -> QcaApiClient.readResponse(requested,
-                        new StubResponse(requested, oversized), 16));
-        assertInstanceOf(QcaApiClient.ResponseTooLargeException.class, tooLarge.getCause());
-        assertTrue(oversized.closed);
+    void boundedSubscriberRejectsOversizeResponsesAndCancelsTheBody() {
+        URI requested = URI.create(
+                "https://api.qcloudy.net/v1/dungeons/quick-view/Test?floor=F7");
+        StreamingClient transport = new StreamingClient(new byte[1025], true, null);
+        QcaApiClient client = new QcaApiClient(transport, "QCA-Test/1", 1024);
 
-        TrackingInputStream changed = new TrackingInputStream("{}".getBytes(StandardCharsets.UTF_8));
+        CompletionException tooLarge = assertThrows(CompletionException.class,
+                () -> client.fetchDungeonQuickView("Test", "F7").join());
+
+        assertInstanceOf(QcaApiClient.ResponseTooLargeException.class, rootCause(tooLarge));
+        assertTrue(transport.subscription.cancelled);
+        assertEquals(requested, transport.request.uri());
+    }
+
+    @Test
+    void rejectsChangedResponseUris() {
+        URI requested = URI.create("https://api.qcloudy.net/v1/dungeons/quick-view/Test");
         CompletionException redirected = assertThrows(CompletionException.class,
                 () -> QcaApiClient.readResponse(requested,
-                        new StubResponse(URI.create("https://api.qcloudy.net/other"), changed), 16));
+                        new StubResponse<>(URI.create("https://api.qcloudy.net/other"),
+                                "{}".getBytes(StandardCharsets.UTF_8))));
         assertInstanceOf(IOException.class, redirected.getCause());
-        assertTrue(changed.closed);
+    }
+
+    @Test
+    void hangingResponseBodyFailsAtTheFullRequestDeadline() throws Exception {
+        StreamingClient transport = new StreamingClient(
+                "{".getBytes(StandardCharsets.UTF_8), false, null);
+        QcaApiClient client = new QcaApiClient(
+                transport, "QCA-Test/1", 1024, Duration.ofMillis(75));
+
+        CompletableFuture<QcaApiClient.Response> request =
+                client.fetchDungeonQuickView("NorthwestCloudy", "M7");
+        ExecutionException timeout = assertThrows(ExecutionException.class,
+                () -> request.get(2, TimeUnit.SECONDS));
+
+        assertInstanceOf(HttpTimeoutException.class, rootCause(timeout));
+        assertTrue(transport.subscription.cancelled);
+        assertTrue(transport.future.isCancelled());
     }
 
     @Test
@@ -114,25 +140,17 @@ final class QcaApiClientTest {
         assertTrue(transport.future.isCancelled());
     }
 
-    private static final class TrackingInputStream extends ByteArrayInputStream {
-        private boolean closed;
-
-        private TrackingInputStream(byte[] buffer) {
-            super(buffer);
-        }
-
-        @Override
-        public void close() throws IOException {
-            closed = true;
-            super.close();
-        }
+    private static Throwable rootCause(Throwable failure) {
+        Throwable result = failure;
+        while (result.getCause() != null) result = result.getCause();
+        return result;
     }
 
-    private static final class StubResponse implements HttpResponse<InputStream> {
+    private static final class StubResponse<T> implements HttpResponse<T> {
         private final URI uri;
-        private final InputStream body;
+        private final T body;
 
-        private StubResponse(URI uri, InputStream body) {
+        private StubResponse(URI uri, T body) {
             this.uri = uri;
             this.body = body;
         }
@@ -148,7 +166,7 @@ final class QcaApiClientTest {
         }
 
         @Override
-        public Optional<HttpResponse<InputStream>> previousResponse() {
+        public Optional<HttpResponse<T>> previousResponse() {
             return Optional.empty();
         }
 
@@ -158,7 +176,7 @@ final class QcaApiClientTest {
         }
 
         @Override
-        public InputStream body() {
+        public T body() {
             return body;
         }
 
@@ -178,23 +196,97 @@ final class QcaApiClientTest {
         }
     }
 
-    private static final class CapturingClient extends HttpClient {
+    private static final class CapturingClient extends TestHttpClient {
         private HttpRequest request;
-        private final CompletableFuture<HttpResponse<InputStream>> future;
+        private final CompletableFuture<HttpResponse<byte[]>> pendingFuture;
+        private CompletableFuture<?> future;
 
         private CapturingClient() {
             this(false);
         }
 
         private CapturingClient(boolean pending) {
-            HttpResponse<InputStream> response = new StubResponse(
-                    URI.create("https://api.qcloudy.net/"),
-                    new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8)));
-            this.future = pending
-                    ? new CompletableFuture<>()
-                    : CompletableFuture.completedFuture(response);
+            this.pendingFuture = pending ? new CompletableFuture<>() : null;
         }
 
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> CompletableFuture<HttpResponse<T>> sendAsync(
+                HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            this.request = request;
+            if (pendingFuture != null) {
+                future = pendingFuture;
+                return (CompletableFuture<HttpResponse<T>>) (CompletableFuture<?>) pendingFuture;
+            }
+            CompletableFuture<HttpResponse<byte[]>> completed = CompletableFuture.completedFuture(
+                    new StubResponse<>(request.uri(), "{}".getBytes(StandardCharsets.UTF_8)));
+            future = completed;
+            return (CompletableFuture<HttpResponse<T>>) (CompletableFuture<?>) completed;
+        }
+    }
+
+    private static final class StreamingClient extends TestHttpClient {
+        private static final HttpResponse.ResponseInfo RESPONSE_INFO =
+                new HttpResponse.ResponseInfo() {
+                    @Override
+                    public int statusCode() {
+                        return 200;
+                    }
+
+                    @Override
+                    public HttpHeaders headers() {
+                        return HttpHeaders.of(Map.of(), (name, value) -> true);
+                    }
+
+                    @Override
+                    public Version version() {
+                        return Version.HTTP_2;
+                    }
+                };
+
+        private final byte[] bytes;
+        private final boolean completes;
+        private final URI finalUri;
+        private HttpRequest request;
+        private TrackingSubscription subscription;
+        private CompletableFuture<?> future;
+
+        private StreamingClient(byte[] bytes, boolean completes, URI finalUri) {
+            this.bytes = bytes;
+            this.completes = completes;
+            this.finalUri = finalUri;
+        }
+
+        @Override
+        public <T> CompletableFuture<HttpResponse<T>> sendAsync(
+                HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            this.request = request;
+            HttpResponse.BodySubscriber<T> subscriber = responseBodyHandler.apply(RESPONSE_INFO);
+            subscription = new TrackingSubscription();
+            subscriber.onSubscribe(subscription);
+            if (bytes.length > 0) subscriber.onNext(List.of(ByteBuffer.wrap(bytes)));
+            if (completes) subscriber.onComplete();
+            CompletableFuture<HttpResponse<T>> response = subscriber.getBody().toCompletableFuture()
+                    .thenApply(body -> new StubResponse<>(
+                            finalUri == null ? request.uri() : finalUri, body));
+            future = response;
+            return response;
+        }
+    }
+
+    private static final class TrackingSubscription implements Flow.Subscription {
+        private volatile boolean cancelled;
+
+        @Override
+        public void request(long amount) { }
+
+        @Override
+        public void cancel() {
+            cancelled = true;
+        }
+    }
+
+    private abstract static class TestHttpClient extends HttpClient {
         @Override
         public Optional<CookieHandler> cookieHandler() {
             return Optional.empty();
@@ -248,20 +340,6 @@ final class QcaApiClientTest {
         public <T> HttpResponse<T> send(HttpRequest request,
                                         HttpResponse.BodyHandler<T> responseBodyHandler) {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> CompletableFuture<HttpResponse<T>> sendAsync(
-                HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
-            this.request = request;
-            if (!future.isDone()) {
-                return (CompletableFuture<HttpResponse<T>>) (CompletableFuture<?>) future;
-            }
-            HttpResponse<InputStream> response = new StubResponse(request.uri(),
-                    new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8)));
-            return (CompletableFuture<HttpResponse<T>>) (CompletableFuture<?>)
-                    CompletableFuture.completedFuture(response);
         }
 
         @Override

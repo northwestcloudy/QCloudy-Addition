@@ -2,13 +2,14 @@ package cloudy.autume.addition.network;
 
 import cloudy.autume.addition.market.shard.ShardBazaarSide;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -17,6 +18,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -28,10 +35,12 @@ public final class QcaApiClient {
     public static final int MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
     public static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
     public static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
+    private static final ScheduledThreadPoolExecutor DEADLINES = deadlineExecutor();
 
     private final HttpClient httpClient;
     private final String userAgent;
     private final int maxResponseBytes;
+    private final Duration requestTimeout;
 
     public static QcaApiClient createDefault(String userAgent) {
         HttpClient client = HttpClient.newBuilder()
@@ -42,6 +51,11 @@ public final class QcaApiClient {
     }
 
     public QcaApiClient(HttpClient httpClient, String userAgent, int maxResponseBytes) {
+        this(httpClient, userAgent, maxResponseBytes, REQUEST_TIMEOUT);
+    }
+
+    QcaApiClient(HttpClient httpClient, String userAgent, int maxResponseBytes,
+                 Duration requestTimeout) {
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         if (httpClient.followRedirects() != HttpClient.Redirect.NEVER) {
             throw new IllegalArgumentException("QCA API client must not follow redirects");
@@ -51,6 +65,11 @@ public final class QcaApiClient {
             throw new IllegalArgumentException("Invalid maximum response size");
         }
         this.maxResponseBytes = maxResponseBytes;
+        this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout");
+        if (requestTimeout.isZero() || requestTimeout.isNegative()
+                || requestTimeout.compareTo(Duration.ofMinutes(2)) > 0) {
+            throw new IllegalArgumentException("Invalid request timeout");
+        }
     }
 
     public CompletableFuture<Response> fetchDungeonQuickView(String target, String floor) {
@@ -73,7 +92,7 @@ public final class QcaApiClient {
     private HttpRequest buildGet(String relativePath) {
         URI uri = checkedUri(BASE_URI.resolve(relativePath));
         return HttpRequest.newBuilder(uri)
-                .timeout(REQUEST_TIMEOUT)
+                .timeout(requestTimeout)
                 .header("Accept", "application/json")
                 .header("User-Agent", userAgent)
                 .GET()
@@ -83,54 +102,75 @@ public final class QcaApiClient {
 
     private CompletableFuture<Response> send(HttpRequest request) {
         checkedUri(request.uri());
-        CompletableFuture<HttpResponse<InputStream>> transport = httpClient.sendAsync(
-                request, HttpResponse.BodyHandlers.ofInputStream());
         CompletableFuture<Response> result = new CompletableFuture<>();
-        AtomicReference<InputStream> activeBody = new AtomicReference<>();
+        AtomicBoolean settled = new AtomicBoolean();
+        AtomicReference<BoundedBodySubscriber> activeBody = new AtomicReference<>();
+        CompletableFuture<HttpResponse<byte[]>> transport;
+        try {
+            transport = httpClient.sendAsync(request, responseInfo -> {
+                BoundedBodySubscriber subscriber = new BoundedBodySubscriber(maxResponseBytes);
+                activeBody.set(subscriber);
+                if (result.isDone()) {
+                    subscriber.abort(new IOException("QCA API request already finished"));
+                    activeBody.compareAndSet(subscriber, null);
+                }
+                return subscriber;
+            });
+        } catch (RuntimeException exception) {
+            return CompletableFuture.failedFuture(exception);
+        }
+
+        ScheduledFuture<?> deadline = DEADLINES.schedule(() -> {
+            java.net.http.HttpTimeoutException timeout =
+                    new java.net.http.HttpTimeoutException("QCA API request timed out");
+            if (!settled.compareAndSet(false, true)) return;
+            BoundedBodySubscriber subscriber = activeBody.getAndSet(null);
+            transport.cancel(true);
+            if (subscriber != null) subscriber.abort(timeout);
+            result.completeExceptionally(timeout);
+        }, requestTimeout.toNanos(), TimeUnit.NANOSECONDS);
+
         transport.whenComplete((response, failure) -> {
+            activeBody.set(null);
+            if (!settled.compareAndSet(false, true)) return;
             if (failure != null) {
                 result.completeExceptionally(failure);
                 return;
             }
-            InputStream body = response == null ? null : response.body();
-            activeBody.set(body);
-            if (result.isCancelled()) {
-                closeQuietly(body);
-                return;
-            }
             try {
-                result.complete(readResponse(request.uri(), response, maxResponseBytes));
+                result.complete(readResponse(request.uri(), response));
             } catch (RuntimeException exception) {
                 result.completeExceptionally(exception);
-            } finally {
-                activeBody.set(null);
             }
         });
         result.whenComplete((ignored, failure) -> {
-            if (!result.isCancelled()) return;
-            transport.cancel(true);
-            closeQuietly(activeBody.getAndSet(null));
+            deadline.cancel(false);
+            if (result.isCancelled()) {
+                if (!settled.compareAndSet(false, true)) return;
+                transport.cancel(true);
+                BoundedBodySubscriber subscriber = activeBody.getAndSet(null);
+                if (subscriber != null) subscriber.abort(
+                        new java.util.concurrent.CancellationException(
+                                "QCA API request was cancelled"));
+            }
         });
         return result;
     }
 
-    static Response readResponse(URI requestedUri,
-                                 HttpResponse<InputStream> response,
-                                 int maxResponseBytes) {
+    static Response readResponse(URI requestedUri, HttpResponse<byte[]> response) {
+        if (response == null) {
+            throw new CompletionException(new IOException("QCA API response was missing"));
+        }
         URI finalUri = checkedUri(response.uri());
         if (!requestedUri.equals(finalUri)) {
-            closeQuietly(response.body());
             throw new CompletionException(new IOException("QCA API response URI changed"));
         }
-        try (InputStream body = response.body()) {
-            if (body == null) throw new IOException("QCA API response had no body");
-            byte[] bytes = body.readNBytes(maxResponseBytes + 1);
-            if (bytes.length > maxResponseBytes) throw new ResponseTooLargeException();
-            return new Response(response.statusCode(),
-                    new String(bytes, StandardCharsets.UTF_8), response.headers().map());
-        } catch (IOException exception) {
-            throw new CompletionException(exception);
+        byte[] body = response.body();
+        if (body == null) {
+            throw new CompletionException(new IOException("QCA API response had no body"));
         }
+        return new Response(response.statusCode(),
+                new String(body, StandardCharsets.UTF_8), response.headers().map());
     }
 
     private static URI checkedUri(URI uri) {
@@ -166,11 +206,109 @@ public final class QcaApiClient {
         return candidate;
     }
 
-    private static void closeQuietly(InputStream body) {
-        if (body == null) return;
-        try {
-            body.close();
-        } catch (IOException ignored) {
+    private static ScheduledThreadPoolExecutor deadlineExecutor() {
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, runnable -> {
+            Thread thread = new Thread(runnable, "qca-api-deadline");
+            thread.setDaemon(true);
+            return thread;
+        });
+        executor.setRemoveOnCancelPolicy(true);
+        executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
+
+    /** Collects response buffers without blocking an HTTP callback thread. */
+    private static final class BoundedBodySubscriber implements HttpResponse.BodySubscriber<byte[]> {
+        private final int maxBytes;
+        private final ByteArrayOutputStream output;
+        private final CompletableFuture<byte[]> body = new CompletableFuture<>();
+        private Flow.Subscription subscription;
+        private boolean finished;
+
+        private BoundedBodySubscriber(int maxBytes) {
+            this.maxBytes = maxBytes;
+            this.output = new ByteArrayOutputStream(Math.min(maxBytes, 8192));
+        }
+
+        @Override
+        public CompletionStage<byte[]> getBody() {
+            return body;
+        }
+
+        @Override
+        public void onSubscribe(Flow.Subscription newSubscription) {
+            Objects.requireNonNull(newSubscription, "subscription");
+            synchronized (this) {
+                if (subscription != null || finished) {
+                    newSubscription.cancel();
+                    return;
+                }
+                subscription = newSubscription;
+            }
+            newSubscription.request(1);
+        }
+
+        @Override
+        public void onNext(List<ByteBuffer> items) {
+            Objects.requireNonNull(items, "items");
+            Flow.Subscription current;
+            ResponseTooLargeException tooLarge = null;
+            synchronized (this) {
+                if (finished) return;
+                long incoming = 0;
+                for (ByteBuffer item : items) {
+                    incoming += Objects.requireNonNull(item, "body buffer").remaining();
+                }
+                if ((long) output.size() + incoming > maxBytes) {
+                    finished = true;
+                    tooLarge = new ResponseTooLargeException();
+                } else {
+                    byte[] copyBuffer = new byte[Math.min(8192,
+                            Math.max(1, (int) incoming))];
+                    for (ByteBuffer item : items) {
+                        while (item.hasRemaining()) {
+                            int length = Math.min(item.remaining(), copyBuffer.length);
+                            item.get(copyBuffer, 0, length);
+                            output.write(copyBuffer, 0, length);
+                        }
+                    }
+                }
+                current = subscription;
+            }
+            if (tooLarge != null) {
+                if (current != null) current.cancel();
+                body.completeExceptionally(tooLarge);
+            } else if (current != null) {
+                current.request(1);
+            }
+        }
+
+        @Override
+        public void onError(Throwable failure) {
+            abort(Objects.requireNonNull(failure, "failure"));
+        }
+
+        @Override
+        public void onComplete() {
+            byte[] bytes;
+            synchronized (this) {
+                if (finished) return;
+                finished = true;
+                bytes = output.toByteArray();
+            }
+            body.complete(bytes);
+        }
+
+        private void abort(Throwable failure) {
+            Flow.Subscription current;
+            synchronized (this) {
+                if (finished) return;
+                finished = true;
+                current = subscription;
+            }
+            if (current != null) current.cancel();
+            body.completeExceptionally(failure);
         }
     }
 

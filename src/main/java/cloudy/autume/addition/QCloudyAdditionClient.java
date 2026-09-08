@@ -40,6 +40,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
@@ -101,6 +102,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ShardWarehouseManager.load();
         CenturyCakeManager.load();
         HypixelSessionTracker.init();
+        DungeonQuickViewManager.init();
         ItemTimestampTooltip.register();
         SafariBeltTooltip.register();
         HuntingWorldRenderer.register();
@@ -138,7 +140,10 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             HuntingTracker.tick(client);
             FishingBiteAlert.tick(client);
             DeployableExpiryAlert.tick(client);
+            DungeonQuickViewManager.tick(client);
         });
+
+        ClientSendMessageEvents.COMMAND.register(DungeonQuickViewManager::onOutgoingCommand);
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             onPartyMessage(message, overlay);
@@ -169,6 +174,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((client, level) -> {
             HypixelSessionTracker.onWorldChange();
             LocationTracker.clearWorldContext();
+            DungeonQuickViewManager.onWorldChange();
         });
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.OVERLAY_MESSAGE,
@@ -678,6 +684,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
 
     private static void sendServerCommand(Minecraft client, String payload) {
         if (payload == null || payload.isBlank()) return;
+        DungeonQuickViewManager.onOutgoingCommand(payload);
         var connection = client.getConnection();
         if (connection != null) connection.sendCommand(payload);
     }

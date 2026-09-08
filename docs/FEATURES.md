@@ -1,6 +1,6 @@
 # QCloudy_Addition feature specification
 
-## Unified settings and HUD control — 0.3.10-alpha7 development snapshot
+## Unified settings and HUD control — 0.3.10-alpha8 development snapshot
 
 > This source tree contains unpublished Alpha work. The current public test remains Beta 0.3.10, and Release 0.3.9 remains the latest stable build.
 
@@ -209,16 +209,46 @@ Broad numeric ranges use draggable sliders: HUD opacity and scale, cursor-memory
 
 **What it does:** the master feature and both teleport types default to original audio. Instant Transmission and Etherwarp can independently switch from the received original sound to one of six local Minecraft presets: Chorus Teleport, Enderman Teleport, Amethyst Chime, Experience Orb, End Portal Fill, or Shulker Teleport. Each custom sound has its own 0–100% volume slider at the 64% default; pitch is not altered. QCA replaces only a recognized nearby sound while the local player is holding `ASPECT_OF_THE_END` or `ASPECT_OF_THE_VOID`; it does not change packets, item use, cooldown, distance, or movement. Version-3 muting settings migrate to original audio.
 
-## 11. Dungeon Player Quick View
+## 11. Dungeon Player Quick View and admission rules
 
 ### 11.1 Trigger and presentation
 
-The independent **Dungeon Player Quick View** listens only for the exact Dungeon Finder line announcing that a new player joined the dungeon group. It analyzes that newcomer, not the existing party, and does not browse Party Finder listings. The feature has its own default-on toggle under Dungeons and does not share an enable switch, command, cache, or screen with the removed generic Profile Viewer.
+The independent **Dungeon Player Quick View** listens only for the exact Dungeon Finder line announcing that a new player joined the dungeon group. The structured join event retains the newcomer name, selected class, and displayed class level. It analyzes that newcomer, not the existing party, and does not browse Party Finder listings. The feature has its own default-on toggle under Dungeons and does not share an enable switch, command, cache, or screen with the removed generic Profile Viewer.
 
-One colored chat card shows Catacombs level, total Secrets and average Secrets across all completed dungeon runs, all five class levels plus a one-decimal Class Average, the advertised floor's completion count and fastest time, four armor slots, Withered Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. The compact Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, separated by `/`; each number identifies its class and exact XP on hover. The floor tracker accepts only the local player's own Party Finder entry when the same menu exposes the delist control, caches its paired `Dungeon:`/`Floor:` lore, and retains the queued scoreboard only as a fallback. Other parties and search filters cannot become the request floor. Recognized armor, weapon, and pet entries construct Minecraft's native item hover; absent equipment shows a cross, while unavailable/private/incomplete data says `Missing` rather than zero.
+One colored chat card shows Catacombs level, total Secrets and average Secrets across all completed dungeon runs, all five class levels plus a one-decimal Class Average, the advertised floor's completion count and fastest time, four armor slots, Wither Blade/Terminator and Golden Dragon/Ender Dragon presence, and Magical Power. The compact Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, separated by `/`; each number identifies its class and exact XP on hover. The floor tracker accepts only the local player's own Party Finder entry when the same menu exposes the delist control and caches its paired `Dungeon:`/`Floor:` lore. Other parties and search filters cannot become the request floor. The queued scoreboard remains a display/request fallback, but never proves ownership and therefore cannot authorize automatic removal. Recognized armor, weapon, and pet entries construct Minecraft's native item hover; absent equipment shows a cross, while unavailable/private/incomplete data says `Missing` rather than zero.
 
-The title is centered inside a measured top separator. The lower separator uses measured normal and bold line-glyph advances from the active Minecraft font to match the top line's endpoints exactly. The final red, bold, natively underlined action is the only kick path: a physical click runs `/party kick <validated player>`. QCA never kicks automatically and makes no class-conflict decision.
+The title is centered inside a measured top separator. The lower separator uses measured normal and bold line-glyph advances from the active Minecraft font to match the top line's endpoints exactly. Profile cards retain the final red, bold, natively underlined manual action; a physical click still runs `/party kick <validated player>` independently of automatic admission rules.
 
-### 11.2 Request and cache rules
+### 11.2 Per-floor settings and decision output
 
-The mod makes one bounded asynchronous HTTPS request to fixed `https://api.qcloudy.net` for the whole card. Redirects are disabled; connection/request timeouts are five/fifteen seconds and the response cap is four MiB. The client contains no Hypixel API key, coalesces identical in-flight requests, and caches successful results for 60 seconds. Session changes cancel pending work. The backend loads player and Profile data in parallel, caches each for two minutes, and permits a stale value for at most ten minutes only after a technical upstream failure. Missing/private results remain explicit and are not resurrected as successful old data.
+Automatic admission handling has a separate master switch. It defaults off, and changing it from off to on opens an explicit confirmation. Turning off Dungeon Quick View stops both the request/Profile and admission paths. Leaving the admission master off or all rules for the current floor off still prints the ordinary Profile; Entrance is likewise Profile-only. Configuration schema 30 stores rules format version 1 and exactly 14 independent policies: F1–F7 and M1–M7. Entrance has no policy, and one floor never inherits, falls back to, or modifies another floor.
+
+Each floor owns these nine independently switchable rules:
+
+1. Minimum completions for that exact floor.
+2. Disallow a class already represented in the current party.
+3. Maximum fastest completion time.
+4. Minimum average Secrets.
+5. Minimum Magical Power.
+6. Require a Wither Blade.
+7. Require a Terminator.
+8. Require a Golden Dragon.
+9. Require an Ender Dragon.
+
+The four numeric rules each have an enable toggle and a separately saved value; disabling one does not erase its value. The five Boolean rules are direct toggles. All rules default off after migration, so an empty policy still prints the ordinary Profile. Enabled rules are combined with AND semantics, and equality satisfies either a minimum or maximum boundary.
+
+The result is deliberately simple:
+
+- **PASS:** print only the Profile card. There is no PASS line and no “no kick command” line.
+- **UNKNOWN:** print the Profile card followed by every unavailable-evidence reason; never kick. Missing/private fields, stale or mismatched evidence, uncertain Profile selection, incomplete weapon/pet coverage, incomplete party classes, an unsupported evidence version, or unavailable PartyInfo all fail closed as UNKNOWN rather than zero or FAIL. A transport/network failure that produces no snapshot shows the bounded unavailable notice and likewise cannot kick.
+- **FAIL:** print one failure header and every confirmed failed rule first. If the final action guard still passes, issue `party kick <validated newcomer>` immediately afterward in the same client-thread decision turn. The message does not claim that the server accepted the command, and there is no countdown, Party Chat warning, PASS line, no-kick line, or kick-sent line. Confirmed failures take precedence even if another enabled rule is UNKNOWN, but an UNKNOWN rule is not misreported as a failure.
+
+### 11.3 Request, evidence, and action guards
+
+The mod makes one bounded asynchronous HTTPS request to fixed `https://api.qcloudy.net` for the whole card. Redirects are disabled; the connection timeout is five seconds, the fifteen-second deadline covers headers and the complete body, and a non-blocking subscriber caps the response at four MiB. A body that never finishes is cancelled. The client contains no Hypixel API key, coalesces identical in-flight requests, and caches successful results for Profile display for 60 seconds. An enabled automatic decision bypasses that completed cache and has a separate ten-second local evidence window. Session changes cancel pending work. The source backend loads player and Profile data in parallel, caches each for two minutes, and permits a stale value for at most ten minutes only after a technical upstream failure. Missing/private results remain explicit and are not resurrected as successful old data.
+
+Requirements evidence is tied to the resolved UUID, selected Profile, requested and returned floor, freshness, and source coverage. The currently displayed average uses account-wide Secrets divided by selected-Profile dungeon completions; those scopes do not match. The source backend therefore marks the average-Secrets rule `SCOPE_MISMATCH`, so that rule remains UNKNOWN until a matching evidence source exists. The MP criterion uses the selected Profile's historical `highest_magical_power`, not a live-current total, because no trustworthy current-total field is available from this source.
+
+An automatic command is authorized only from the same cached, ownership-proven listing context that supplied an F1–F7 or M1–M7 policy. QCA first requests fresh PartyInfo through the official Hypixel Mod API; after a confirmed FAIL it requests a second final snapshot, for at most two requests per admission. Because PartyInfo has no request ID and the API is shared, QCA records every successful QCA/foreign PartyInfo send in physical-connection FIFO order and accepts only the exact QCA session/ticket; missing or ambiguous attribution fails closed. DUPE additionally requires a complete own-listing roster reread after the final request, including the target's current class. Immediately before sending, it rereads the live scoreboard and rechecks that the local UUID has `LEADER` role, the resolved target UUID is still a member/Tab identity, and the session, world, queue/listing generation, floor, policy revision and values, exact member snapshot, target, deadlines, and one-shot action key are unchanged. Entrance, scoreboard-only floor detection, partial/departed/active-dungeon context, a cleared/replaced listing, stale PartyInfo/GUI evidence, lost leadership, an absent target, a changed policy, or a session/world change prevents the command.
+
+The Alpha 8 backend evidence source is present in this repository but has not been deployed to production, and this path has not been authenticated-live tested on Hypixel. A deployed service that does not yet return requirements evidence makes enabled rules UNKNOWN/display-only; it cannot authorize automatic removal.

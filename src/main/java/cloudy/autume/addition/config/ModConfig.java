@@ -1,6 +1,7 @@
 package cloudy.autume.addition.config;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -214,6 +215,13 @@ public final class ModConfig {
             chat.migratePartyCommandPermissions();
             configVersion = 29;
         }
+        if (configVersion < 30) {
+            // Party Finder admission rules can issue a party command. Existing
+            // installations must explicitly opt in, and every supported floor
+            // starts with its own disabled rule set.
+            dungeons.partyFinderAutoKick = new PartyFinderAutoKick();
+            configVersion = 30;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
@@ -228,6 +236,7 @@ public final class ModConfig {
         hunting.normalize();
         pets.normalize();
         chat.normalize();
+        dungeons.normalize();
         inventory.normalize();
         integrations.normalize();
         keybinds.normalize();
@@ -235,6 +244,185 @@ public final class ModConfig {
 
     public static final class Dungeons {
         public boolean playerQuickView = true;
+        public PartyFinderAutoKick partyFinderAutoKick = new PartyFinderAutoKick();
+
+        private void normalize() {
+            if (partyFinderAutoKick == null) partyFinderAutoKick = new PartyFinderAutoKick();
+            partyFinderAutoKick.normalize();
+        }
+    }
+
+    /**
+     * The automatic action is one explicit opt-in master switch. It is kept
+     * separate from Dungeon Player Quick View so disabling all rules never
+     * disables the existing profile card.
+     */
+    public static final class PartyFinderAutoKick {
+        public static final int SUPPORTED_RULES_VERSION = 1;
+
+        public boolean enabled;
+        public int rulesVersion = SUPPORTED_RULES_VERSION;
+        public Map<String, DungeonFloorRequirements> floors = createFloors();
+
+        public DungeonFloorRequirements rulesFor(String floor) {
+            DungeonFloor parsed = DungeonFloor.fromId(floor);
+            return parsed == null || floors == null ? null : floors.get(parsed.id());
+        }
+
+        public DungeonFloorRequirements rulesFor(DungeonFloor floor) {
+            return floor == null || floors == null ? null : floors.get(floor.id());
+        }
+
+        public void normalize() {
+            if (rulesVersion != SUPPORTED_RULES_VERSION) {
+                enabled = false;
+                if (rulesVersion < 1) rulesVersion = SUPPORTED_RULES_VERSION;
+            }
+
+            Map<String, DungeonFloorRequirements> source = floors;
+            LinkedHashMap<String, DungeonFloorRequirements> repaired = new LinkedHashMap<>();
+            IdentityHashMap<DungeonFloorRequirements, Boolean> claimed = new IdentityHashMap<>();
+            for (DungeonFloor floor : DungeonFloor.values()) {
+                DungeonFloorRequirements requirements = find(source, floor.id());
+                if (requirements == null) requirements = new DungeonFloorRequirements();
+                else if (claimed.put(requirements, Boolean.TRUE) != null) requirements = requirements.copy();
+                requirements.normalize();
+                repaired.put(floor.id(), requirements);
+            }
+            floors = repaired;
+        }
+
+        private static DungeonFloorRequirements find(Map<String, DungeonFloorRequirements> source, String id) {
+            if (source == null || source.isEmpty()) return null;
+            DungeonFloorRequirements exact = source.get(id);
+            if (exact != null) return exact;
+            for (Map.Entry<String, DungeonFloorRequirements> entry : source.entrySet()) {
+                if (entry.getKey() != null && id.equalsIgnoreCase(entry.getKey())) return entry.getValue();
+            }
+            return null;
+        }
+
+        private static Map<String, DungeonFloorRequirements> createFloors() {
+            LinkedHashMap<String, DungeonFloorRequirements> defaults = new LinkedHashMap<>();
+            for (DungeonFloor floor : DungeonFloor.values()) {
+                defaults.put(floor.id(), new DungeonFloorRequirements());
+            }
+            return defaults;
+        }
+    }
+
+    /** The only floors that may own admission rules. Entrance is deliberately absent. */
+    public enum DungeonFloor {
+        F1, F2, F3, F4, F5, F6, F7,
+        M1, M2, M3, M4, M5, M6, M7;
+
+        public String id() {
+            return name();
+        }
+
+        public static DungeonFloor fromId(String value) {
+            if (value == null) return null;
+            String normalized = value.trim().toUpperCase(Locale.ROOT);
+            for (DungeonFloor floor : values()) {
+                if (floor.name().equals(normalized)) return floor;
+            }
+            return null;
+        }
+    }
+
+    public static final class DungeonFloorRequirements {
+        public NumericLongRule minFloorCompletions = new NumericLongRule(false, 1);
+        public boolean disallowDuplicateClass;
+        public NumericLongRule maxFastestCompletionMs = new NumericLongRule(false, 600_000);
+        public NumericDoubleRule minAverageSecrets = new NumericDoubleRule(false, 5.0);
+        public NumericLongRule minMagicalPower = new NumericLongRule(false, 500);
+        public boolean requireWitherBlade;
+        public boolean requireTerminator;
+        public boolean requireGoldenDragon;
+        public boolean requireEnderDragon;
+
+        public boolean anyRuleEnabled() {
+            return (minFloorCompletions != null && minFloorCompletions.enabled)
+                    || disallowDuplicateClass
+                    || (maxFastestCompletionMs != null && maxFastestCompletionMs.enabled)
+                    || (minAverageSecrets != null && minAverageSecrets.enabled)
+                    || (minMagicalPower != null && minMagicalPower.enabled)
+                    || requireWitherBlade || requireTerminator
+                    || requireGoldenDragon || requireEnderDragon;
+        }
+
+        public void normalize() {
+            if (minFloorCompletions == null) minFloorCompletions = new NumericLongRule(false, 1);
+            if (maxFastestCompletionMs == null) maxFastestCompletionMs = new NumericLongRule(false, 600_000);
+            if (minAverageSecrets == null) minAverageSecrets = new NumericDoubleRule(false, 5.0);
+            if (minMagicalPower == null) minMagicalPower = new NumericLongRule(false, 500);
+            minFloorCompletions.normalize(0, 1_000_000, 1);
+            maxFastestCompletionMs.normalize(1_000, 86_400_000, 600_000);
+            minAverageSecrets.normalize(0.0, 1_000.0, 5.0);
+            minMagicalPower.normalize(0, 100_000, 500);
+        }
+
+        private DungeonFloorRequirements copy() {
+            DungeonFloorRequirements copy = new DungeonFloorRequirements();
+            copy.minFloorCompletions = minFloorCompletions == null ? null : minFloorCompletions.copy();
+            copy.disallowDuplicateClass = disallowDuplicateClass;
+            copy.maxFastestCompletionMs = maxFastestCompletionMs == null ? null : maxFastestCompletionMs.copy();
+            copy.minAverageSecrets = minAverageSecrets == null ? null : minAverageSecrets.copy();
+            copy.minMagicalPower = minMagicalPower == null ? null : minMagicalPower.copy();
+            copy.requireWitherBlade = requireWitherBlade;
+            copy.requireTerminator = requireTerminator;
+            copy.requireGoldenDragon = requireGoldenDragon;
+            copy.requireEnderDragon = requireEnderDragon;
+            return copy;
+        }
+    }
+
+    public static final class NumericLongRule {
+        public boolean enabled;
+        public long value;
+
+        public NumericLongRule() {
+        }
+
+        public NumericLongRule(boolean enabled, long value) {
+            this.enabled = enabled;
+            this.value = value;
+        }
+
+        private void normalize(long minimum, long maximum, long fallback) {
+            if (value < minimum || value > maximum) {
+                enabled = false;
+                value = fallback;
+            }
+        }
+
+        private NumericLongRule copy() {
+            return new NumericLongRule(enabled, value);
+        }
+    }
+
+    public static final class NumericDoubleRule {
+        public boolean enabled;
+        public double value;
+
+        public NumericDoubleRule() {
+        }
+
+        public NumericDoubleRule(boolean enabled, double value) {
+            this.enabled = enabled;
+            this.value = value;
+        }
+
+        private void normalize(double minimum, double maximum, double fallback) {
+            if (!Double.isFinite(value) || value < minimum || value > maximum) {
+                enabled = false;
+                value = fallback;
+            }
+        }
+
+        private NumericDoubleRule copy() {
+            return new NumericDoubleRule(enabled, value);
+        }
     }
 
     public static final class Keybinds {

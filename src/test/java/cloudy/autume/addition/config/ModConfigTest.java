@@ -3,7 +3,11 @@ package cloudy.autume.addition.config;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ModConfigTest {
     @Test
@@ -49,7 +53,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(29, config.configVersion);
+        assertEquals(30, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -190,7 +194,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(29, migrated.configVersion);
+        assertEquals(30, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -236,7 +240,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(29, migrated.configVersion);
+        assertEquals(30, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
@@ -264,7 +268,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(29, migrated.configVersion);
+        assertEquals(30, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(false, migrated.chat.directMessagePartyRequest);
@@ -283,7 +287,7 @@ final class ModConfigTest {
     @Test
     void currentSchemaPreservesCommandChoicesAndRepairsNullPermissionsFailClosed() {
         ModConfig config = new ModConfig();
-        config.configVersion = 29;
+        config.configVersion = 30;
         config.chat.directMessagePartyRequest = true;
         config.chat.quickPrivatePartyRequest = true;
         config.chat.fastPartyCommands = true;
@@ -317,7 +321,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(29, config.configVersion);
+        assertEquals(30, config.configVersion);
         assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
                 config.chat.fastPartyWarpPermission);
         assertEquals(ModConfig.PartyCommandPermission.NONE,
@@ -360,7 +364,7 @@ final class ModConfigTest {
     @Test
     void fastPartyWhitelistIsIndependentValidatedAndCaseInsensitive() {
         ModConfig config = new ModConfig();
-        config.configVersion = 29;
+        config.configVersion = 30;
         config.chat.partyAutoAcceptWhitelist.add("InviteOnly");
         config.chat.fastPartyCommandWhitelist.add("  CommandUser  ");
         config.chat.fastPartyCommandWhitelist.add("commanduser");
@@ -374,6 +378,114 @@ final class ModConfigTest {
         assertEquals(true, config.chat.addFastPartyCommandWhitelist("SecondUser"));
         assertEquals(true, config.chat.replaceFastPartyCommandWhitelist("seconduser", "ThirdUser"));
         assertEquals(true, config.chat.removeFastPartyCommandWhitelist("thirduser"));
+    }
+
+    @Test
+    void migration30CreatesFourteenIndependentDisabledFloorPolicies() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 29;
+        config.dungeons.partyFinderAutoKick.enabled = true;
+        config.dungeons.partyFinderAutoKick.rulesFor("F7").requireTerminator = true;
+
+        config.normalize();
+
+        assertEquals(30, config.configVersion);
+        assertFalse(config.dungeons.partyFinderAutoKick.enabled);
+        assertEquals(1, config.dungeons.partyFinderAutoKick.rulesVersion);
+        assertEquals(14, config.dungeons.partyFinderAutoKick.floors.size());
+        assertEquals(java.util.Arrays.stream(ModConfig.DungeonFloor.values())
+                        .map(ModConfig.DungeonFloor::id).toList(),
+                new java.util.ArrayList<>(config.dungeons.partyFinderAutoKick.floors.keySet()));
+        assertNull(config.dungeons.partyFinderAutoKick.rulesFor("Entrance"));
+        assertNull(config.dungeons.partyFinderAutoKick.rulesFor((String) null));
+        for (ModConfig.DungeonFloor floor : ModConfig.DungeonFloor.values()) {
+            assertFalse(config.dungeons.partyFinderAutoKick.rulesFor(floor).anyRuleEnabled());
+        }
+        assertNotSame(config.dungeons.partyFinderAutoKick.rulesFor("F7"),
+                config.dungeons.partyFinderAutoKick.rulesFor("M7"));
+    }
+
+    @Test
+    void currentFloorPoliciesPreserveValuesWithoutLeakingAcrossFloors() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 30;
+        ModConfig.DungeonFloorRequirements shared = new ModConfig.DungeonFloorRequirements();
+        shared.minFloorCompletions.enabled = true;
+        shared.minFloorCompletions.value = 50;
+        shared.disallowDuplicateClass = true;
+        shared.maxFastestCompletionMs.enabled = true;
+        shared.maxFastestCompletionMs.value = 450_000;
+        shared.minAverageSecrets.enabled = true;
+        shared.minAverageSecrets.value = 8.5;
+        shared.minMagicalPower.enabled = true;
+        shared.minMagicalPower.value = 1_400;
+        shared.requireWitherBlade = true;
+        shared.requireTerminator = true;
+        shared.requireGoldenDragon = true;
+        shared.requireEnderDragon = true;
+        config.dungeons.partyFinderAutoKick.floors.put("F7", shared);
+        config.dungeons.partyFinderAutoKick.floors.put("M7", shared);
+        config.dungeons.partyFinderAutoKick.floors.put("Entrance", shared);
+
+        config.normalize();
+
+        ModConfig.DungeonFloorRequirements f7 = config.dungeons.partyFinderAutoKick.rulesFor("f7");
+        ModConfig.DungeonFloorRequirements m7 = config.dungeons.partyFinderAutoKick.rulesFor("M7");
+        assertNotSame(f7, m7);
+        assertTrue(f7.anyRuleEnabled());
+        assertTrue(m7.anyRuleEnabled());
+        assertEquals(50, f7.minFloorCompletions.value);
+        assertEquals(450_000, f7.maxFastestCompletionMs.value);
+        assertEquals(8.5, f7.minAverageSecrets.value);
+        assertEquals(1_400, f7.minMagicalPower.value);
+        m7.minFloorCompletions.value = 200;
+        m7.requireTerminator = false;
+        assertEquals(50, f7.minFloorCompletions.value);
+        assertTrue(f7.requireTerminator);
+        assertFalse(config.dungeons.partyFinderAutoKick.floors.containsKey("Entrance"));
+
+        f7.minFloorCompletions.enabled = false;
+        config.normalize();
+        assertEquals(50, config.dungeons.partyFinderAutoKick.rulesFor("F7").minFloorCompletions.value);
+        assertFalse(config.dungeons.partyFinderAutoKick.rulesFor("F7").minFloorCompletions.enabled);
+    }
+
+    @Test
+    void invalidDungeonRuleValuesDisableOnlyTheirOwnNumericRules() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 30;
+        ModConfig.DungeonFloorRequirements f3 = config.dungeons.partyFinderAutoKick.rulesFor("F3");
+        f3.minFloorCompletions = new ModConfig.NumericLongRule(true, -1);
+        f3.maxFastestCompletionMs = new ModConfig.NumericLongRule(true, Long.MAX_VALUE);
+        f3.minAverageSecrets = new ModConfig.NumericDoubleRule(true, Double.NaN);
+        f3.minMagicalPower = new ModConfig.NumericLongRule(true, 100_001);
+        f3.requireGoldenDragon = true;
+
+        config.normalize();
+
+        assertFalse(f3.minFloorCompletions.enabled);
+        assertEquals(1, f3.minFloorCompletions.value);
+        assertFalse(f3.maxFastestCompletionMs.enabled);
+        assertEquals(600_000, f3.maxFastestCompletionMs.value);
+        assertFalse(f3.minAverageSecrets.enabled);
+        assertEquals(5.0, f3.minAverageSecrets.value);
+        assertFalse(f3.minMagicalPower.enabled);
+        assertEquals(500, f3.minMagicalPower.value);
+        assertTrue(f3.requireGoldenDragon);
+        assertTrue(f3.anyRuleEnabled());
+    }
+
+    @Test
+    void unsupportedDungeonRulesVersionDisablesAutomaticCommands() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 30;
+        config.dungeons.partyFinderAutoKick.enabled = true;
+        config.dungeons.partyFinderAutoKick.rulesVersion = 2;
+
+        config.normalize();
+
+        assertEquals(2, config.dungeons.partyFinderAutoKick.rulesVersion);
+        assertFalse(config.dungeons.partyFinderAutoKick.enabled);
     }
 
     @Test

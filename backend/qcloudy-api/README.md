@@ -12,7 +12,7 @@ English summary: a cache-first backend for QCA's Dungeon newcomer quick view and
 - 所有认证请求共用每分钟预算与短时 burst；预算耗尽或收到 429 时进入有界退避，不持续消耗 Key。
 - API Key 不写入仓库、日志或客户端。生产环境应通过权限为 `0600` 的 systemd 环境文件注入。
 - 部署模板关闭会记录完整玩家路径的访问日志。技术日志不得包含 API Key、请求正文或完整上游玩家响应。
-- Kick 不属于 API 行为。客户端仅在玩家点击聊天卡底部操作时发送 `/party kick <player>`，服务端不会自动决定或执行踢人。
+- Kick 不属于 API 行为。服务端只返回显示数据和有明确完整性边界的判定证据，不决定或执行踢人；客户端是否发送 `/party kick <player>` 仍取决于本地逐层规则、实时 Party 状态、权限和发送前复核。
 
 参考：[Hypixel 官方 API Reference](https://api.hypixel.net/) 与 [API Policy](https://developer.hypixel.net/policies)。公开生产服务应使用经过 Hypixel 审核的 Production application/key。
 
@@ -47,11 +47,47 @@ Redis 是可选的共享缓存层；Redis 不可用时退回有条目数和字�
 
 - `schemaVersion` 固定为 `1`。
 - 单个响应包含：玩家 identity、Catacombs 等级/XP、五职业等级/XP、指定层数 runs/fastest、Secrets 总数/全地牢 run 平均、Magical Power、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与新鲜度。
+- 顶层旧显示字段保持兼容；`identity` 只以新增字段的方式加入原始查询值 `queryName`。
 - Catacombs 与职业 XP 保留精确数值；客户端仅将等级显示到一位小数，并把 XP 放入悬停。
 - 护甲按 Helmet、Chestplate、Leggings、Boots 输出。后端从有限 NBT 摘要提供格式化名称与最多 80 行 lore，供客户端构造 Minecraft 原生 item hover。
-- 武器和宠物使用 `present/absent/missing` 三态。只有数据源完整时才把未找到的物品标记为 absent；解码或字段不可用时显示 missing。
-- 当前楼层最快时间取该层可用的 S+、S 或普通完成时间中的最小正值。Secrets 平均值使用总 Secrets 除以普通与 Master 所有楼层完成次数之和，排除聚合 `total` 字段。
+- 旧 Profile 卡片的武器和宠物字段继续使用 `present` 配合 `complete`。只有完整数据才能把未找到的物品解释为 absent；解码、字段或来源不可用时客户端应显示 missing。
+- 当前楼层最快时间取该层可用的 S+、S 或普通完成时间中的最小正值。旧 Profile 卡片的 Secrets 平均显示值仍使用账号总 Secrets 除以所选 Profile 普通与 Master 所有楼层完成次数之和，并排除聚合 `total` 字段。
 - 私密、缺失与异常数据不会变成 0；API 使用统一错误响应，客户端仍可生成全字段 `Missing` 卡片。
+
+### `requirementsEvidence` v1
+
+`requirementsEvidence` 是独立于全局 `schemaVersion` 的附加契约。当前版本为 `requirementsEvidence.version = 1`，因此加入或升级该证据结构不会把其他 v1 API 的全局 schema 改成 2。该版本已写入仓库并通过本地测试，**尚未部署**；生产 API 在部署前可能完全没有这个字段。缺少该字段或版本不受支持时，客户端只能显示旧 Profile，不能据此自动执行踢人。
+
+根字段：
+
+- `version`：证据契约版本，当前为 `1`。
+- `fresh`、`fetchedAt`：三个来源是否全部 fresh，以及其中最早的抓取时间。
+- `identity`：`queryName`、规范 UUID 和规范玩家名。
+- `profile`：所选 Profile 的 `id`、选择方式 `SELECTED|LATEST_SAVE`、以及 `selectionCertain`。只有恰好一个 Profile 被标记为 selected 时才确定；没有 selected 时使用最近保存的 Profile、多个 selected 时只在这些 selected 中选择最近保存的一份，二者都仅供展示，判定证据为 `UNAVAILABLE`。
+- `request`：`floor`、`responseFloor`、`floorMatches`，用于把证据绑定到实际请求楼层。
+- `sources.identity|player|profile`：每个来源的 `status=fresh|stale`、布尔值 `fresh` 和 `fetchedAt`。
+
+数值证据只使用：
+
+- `KNOWN`：值已取得，且身份、Profile 选择和所有来源满足新鲜度要求。
+- `UNAVAILABLE`：字段缺失、没有有效完成时间、没有请求楼层、楼层不匹配、Profile 选择不确定、Profile ID 缺失或任一来源 stale。`UNAVAILABLE` 绝不能转换成数值 0。
+
+具体数值字段：
+
+- `floorCompletions`：`state` 与 `value`，只表示请求楼层的完成次数。
+- `fastestCompletion`：`state`、`valueMs`、`kind=ANY_COMPLETION`。它是该层 S+、S 或普通完成记录中的最小正值，不等同于只看 S+ PB。
+- `magicalPower`：`state`、`value`、`kind=HIGHEST`。目前数据源是所选 Profile 的 `highest_magical_power`，不是实时当前 MP。
+- `averageSecrets`：当前固定为 `state=UNAVAILABLE`、`reason=SCOPE_MISMATCH`，同时返回旧计算的 `numerator`、`denominator`、`scope=ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS` 和 `complete=false`。原因是账号 lifetime Secrets 与所选 Profile runs 的统计范围不同；旧卡片显示值保留，但不能成为自动判定依据。
+
+武器和宠物证据只使用：
+
+- `PRESENT`：在 fresh、明确选择的 Profile 数据中找到目标。
+- `ABSENT`：没有找到目标，并且相应数据源已被确认完整。
+- `UNAVAILABLE`：stale、Profile 选择不确定、数据缺失、partial 或解析失败。它不能当作 `ABSENT`。
+
+`weapons` 会分别返回 `witherBlade` 和 `terminator` 的状态，并附带 `complete`、`containersExpected`、`containersPresent`、`containersDecoded`、`containersFailed`、`containersMissing` 与 `truncated`。只有 `inv_contents`、`ender_chest_contents`、`backpack_contents`、`personal_vault_contents` 全部存在，所有返回容器均成功解析且没有截断时，未找到的武器才能成为 `ABSENT`。在 partial inventory 中已找到的武器仍可为 `PRESENT`，但未找到的另一把必须为 `UNAVAILABLE`。
+
+`pets` 会分别返回 `goldenDragon` 和 `enderDragon` 的状态，并附带有效 `complete` 与原始列表完整性 `sourceComplete`。只有 fresh、明确选择的 Profile 返回了完整 pets list 时，未找到的宠物才能成为 `ABSENT`。
 
 统一错误格式：
 

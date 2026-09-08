@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha7` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha8` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
@@ -26,11 +26,12 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha7` 源码快照；不包含在公开 Beta 0.3.10 中。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha8` 源码快照；不包含在公开 Beta 0.3.10 中。规则证据后端尚未部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
 
-- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色聊天卡；不浏览 Party Finder 列表。
-- 聊天卡显示 Catacombs、Secrets、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、四件护甲、指定武器/宠物与 Magical Power；楼层只取本机自己的已证明 Party Finder 条目，排队计分板仅作回退。XP 与原生物品详情放在悬停中，缺失值明确标注。
-- 按像素测量的上下线端点完全对齐；类似 Odin 的职业行按 Archer/Berserk/Healer/Mage/Tank 顺序显示带颜色的等级数字，末尾显示一位小数平均值。绝不自动踢人，只有玩家真实点击红色下划线操作才执行 `/party kick <玩家>`。
+- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。卡片显示 Catacombs、Secrets、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
+- F1–F7 与 M1–M7 共 14 层规则完全独立，Entrance 无规则。每层可分别开启最低完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；数值规则各自保留开关和值。全部规则与自动操作总开关默认关闭，开启总开关必须确认。
+- PASS 只输出 Profile；UNKNOWN 输出 Profile 与原因并绝不踢人；FAIL 先完整列出全部确认失败，再仅在新鲜官方 PartyInfo 证明本机仍是队长、目标 UUID 仍在队内，并且自己的发布条目、楼层、规则、会话与单次动作均未变化时，才在同一客户端判定回合发送 `party kick <已校验玩家>`。只靠计分板识别楼层、Entrance、资料缺失/私密/过旧/不匹配/不完整、PartyInfo 不确定或网络失败，都不能授权踢人。Profile 卡仍保留红色下划线手动操作。
+- 当前平均 Secrets 展示混用账号 Secrets 与所选 Profile 完成次数，所以规则证据会标记 `SCOPE_MISMATCH`/UNKNOWN。Alpha 8 证据后端部署前，缺少该证据的生产响应只能展示，不能授权自动移除。
 - 此源码快照已删除通用 `//pv`、`/qpv` 玩家档案浏览及其源码与后端路由。
 
 ### HUD、宠物与计时
@@ -66,7 +67,7 @@ Beta 0.3.10 是首个公开包含此检查器的版本。Release 更新提醒永
 
 ## 纯客户端边界
 
-QCA 读取客户端已经收到的 Tab/计分板/聊天/标题文字、已打开菜单、本地背包、已加载实体/方块，以及发送到固定转换数据源的有界 Dungeon 新成员与 Shard 价格请求。它不会自动移动、点击、战斗、钓鱼、捕捉、Fusion 或循环重连；也没有遥测、自动下载/安装更新器或隐藏区块请求。模组中没有 Hypixel API Key，也不会直接请求需要认证的 Hypixel Profile 路由；只使用固定 `https://api.qcloudy.net` 路由（禁止跳转、限制响应大小）和上面披露的稳定版 Release manifest。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选排队楼层，但不会发送 Minecraft 会话凭据、服务器地址、模组列表、聊天、坐标、Cookie 或遥测标识。
+QCA 读取客户端已经收到的 Tab/计分板/聊天/标题文字、已打开菜单、本地背包、已加载实体/方块，以及发送到固定转换数据源的有界 Dungeon 新成员与 Shard 价格请求。它不会自动移动、点击、战斗、钓鱼、捕捉、Fusion 或循环重连；也没有遥测、自动下载/安装更新器或隐藏区块请求。模组中没有客户端 Hypixel API Key，也不会直接请求需要认证的 Hypixel Profile 路由；只使用固定 `https://api.qcloudy.net` 路由（禁止跳转、限制响应大小）、官方 Mod API 的 Hello/Location 与仅供入队判定的 PartyInfo，以及上面披露的稳定版 Release manifest。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选发布/排队楼层，但不会发送 Minecraft 会话凭据、服务器地址、模组列表、聊天、坐标、Cookie、队伍成员表或遥测标识。单独选择开启的入队规则是原本手动移除边界的明确例外：确认 FAIL 且全部最终保护通过后，可以向 Minecraft 服务器发送一次 `party kick <已校验新成员>`。
 
 永久可用的本地 `/th` 与 `/helia` 只会在玩家输入这些快捷命令时发送 `warp torrhus` 与 `chapter torrhus`；Century Cake 续效果操作只会在玩家点击对应聊天操作时发送 `visit northwestcloudy`。另外，玩家单独开启的组队/聊天工具可以在各自总开关、子开关、发送者范围、精确解析、玩家解析与冷却门控全部允许后，发送文档列出的 Party、私信、Stream、坐标、地牢与 Kuudra 指令。这些工具不会模拟点击、移动玩家或使用物品。
 

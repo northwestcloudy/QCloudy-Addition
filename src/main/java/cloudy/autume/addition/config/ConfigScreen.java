@@ -1,6 +1,7 @@
 package cloudy.autume.addition.config;
 
 import cloudy.autume.addition.compat.MinecraftClientCompat;
+import cloudy.autume.addition.dungeon.DungeonQuickViewManager;
 import cloudy.autume.addition.i18n.ModText;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -832,7 +833,10 @@ public final class ConfigScreen extends Screen {
                         !config.chat.quickPrivatePartyRequest;
                 case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands = !config.chat.fastPartyCommands;
                 case PARTY_COMMANDS -> config.chat.partyCommands = !config.chat.partyCommands;
-                case DUNGEON_QUICK_VIEW -> config.dungeons.playerQuickView = !config.dungeons.playerQuickView;
+                case DUNGEON_QUICK_VIEW -> {
+                    config.dungeons.playerQuickView = !config.dungeons.playerQuickView;
+                    DungeonQuickViewManager.onAdmissionPolicyChanged();
+                }
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert = !config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines = !config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels = !config.maps.glaciteTunnels;
@@ -935,8 +939,7 @@ public final class ConfigScreen extends Screen {
             if (this == HUD_ANIMATIONS || this == HUNTING_ALERT_SOUND
                     || this == MANUAL_RECONNECT || this == DEATH_SAVE_ALERTS
                     || this == DIRECT_MESSAGE_PARTY_REQUEST
-                    || this == QUICK_PRIVATE_PARTY_REQUEST
-                    || this == DUNGEON_QUICK_VIEW) return false;
+                    || this == QUICK_PRIVATE_PARTY_REQUEST) return false;
             if (this == FAIRY_SOUL_WAYPOINTS) return false;
             if (huntingFeature()) return hudType() != null || !HuntingOption.forFeature(this).isEmpty();
             return true;

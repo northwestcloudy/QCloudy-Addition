@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha7` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha8` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
@@ -26,11 +26,12 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha7` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha8` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its requirements-evidence backend is not deployed and the automatic-action path has not been authenticated-live tested on Hypixel.
 
-- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored chat card; it does not browse Party Finder listings.
-- The card shows Catacombs, Secrets, five class levels plus Class Average, advertised-floor completions/fastest time, four armor pieces, selected weapons/pets, and Magical Power. The floor is taken only from the local player's own proven Party Finder listing, with queued scoreboard fallback. XP and native item details appear on hover; missing data is labelled.
-- Measured top and bottom lines share exact endpoints. The Odin-style class row shows class-colored numeric levels in Archer/Berserk/Healer/Mage/Tank order, followed by a one-decimal average. Kicking is never automatic: only a physical click on the red underlined action runs `/party kick <player>`.
+- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. The card shows Catacombs, Secrets, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and Magical Power. XP and native item details appear on hover; missing data is labelled.
+- F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.
+- PASS prints only Profile. UNKNOWN prints Profile plus reasons and never kicks. FAIL lists every confirmed failure first, then may send `party kick <validated player>` in the same client-thread decision turn only while a fresh official PartyInfo snapshot proves local-leader role and target UUID membership and the own listing, floor, rules, session, and one-shot action are unchanged. A scoreboard-only floor, Entrance, missing/private/stale/mismatched/incomplete evidence, PartyInfo uncertainty, or network failure cannot authorize a kick. The red underlined manual action remains on Profile cards.
+- Current average-Secrets display mixes account Secrets with selected-Profile completions, so requirements evidence marks it `SCOPE_MISMATCH`/UNKNOWN. Until the Alpha 8 evidence backend is deployed, production responses without that evidence remain display-only and cannot authorize automatic removal.
 - The generic `//pv` and `/qpv` Profile Viewer, its source, and its backend routes are removed from this snapshot.
 
 ### HUDs, pets, and timers
@@ -66,7 +67,7 @@ The request sends no Minecraft username, UUID, server address, profile, mod list
 
 ## Client-only boundary
 
-QCA reads information already delivered to the client plus bounded Dungeon-newcomer and Shard-price requests to its fixed transformed-data origin. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, automatic downloader/updater, or hidden chunk request. The mod has no Hypixel API key and never directly calls authenticated Hypixel profile routes. It uses only fixed `https://api.qcloudy.net` routes (no redirects, bounded response) and the stable Release-manifest request disclosed above. A Dungeon request reveals the connecting IP, QCA User-Agent, newcomer name, and optional queued floor to QCloudy's server, but sends no Minecraft session credential, server address, mod list, chat, coordinates, cookie, or telemetry identifier.
+QCA reads information already delivered to the client plus bounded Dungeon-newcomer and Shard-price requests to its fixed transformed-data origin. It does not automate movement, clicks, combat, fishing, captures, Fusions, or reconnect loops; it has no telemetry, automatic downloader/updater, or hidden chunk request. The mod has no client Hypixel API key and never directly calls authenticated Hypixel profile routes. It uses only fixed `https://api.qcloudy.net` routes (no redirects, bounded response), the official Mod API's Hello/Location and admission-only PartyInfo packets, and the stable Release-manifest request disclosed above. A Dungeon request reveals the connecting IP, QCA User-Agent, newcomer name, and optional advertised/queued floor to QCloudy's server, but sends no Minecraft session credential, server address, mod list, chat, coordinates, cookie, party roster, or telemetry identifier. The separately opt-in admission rule is the documented exception to otherwise manual party removal: after confirmed FAIL and all final guards, it can send one `party kick <validated newcomer>` to the Minecraft server.
 
 The always-available local `/th` and `/helia` shortcuts send `warp torrhus` and `chapter torrhus` only when the player enters those shortcuts; the Century Cake renewal action sends `visit northwestcloudy` only when its chat action is clicked. Separately enabled party/chat tools can send their documented Party, private-message, Stream, coordinate, Dungeon, and Kuudra command payloads only after their own master/child switches, sender scope, exact parser, player resolution, and cooldown gates permit them. These tools never simulate a click, move the player, or use an item.
 

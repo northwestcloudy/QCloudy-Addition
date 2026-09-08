@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha7` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha8` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -45,7 +45,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 `IntegrationCompatibilityScreen` 与 `Feature`、`UnifiedFeature` 的功能开关完全分离。它读取最近一次完成的扫描快照；某个已命名功能的主控制、二级设置、分类或已识别 HUD 坐标契约不可用时，会分别标记“设置”或“HUD 编辑”，可完整管理的功能会被过滤。配置根为空或无法读取时显示提供方级缺失，不会错误显示“全部支持”。报告不会调用 setter 或保存路径。提供方分组在每次打开报告时只计算一次，已经换行的行布局会缓存到内容宽度改变，不会每个渲染帧重复生成。
 
-`HypixelSessionTracker` 是唯一环境权威：Hypixel 官方 Mod API 的 `ClientboundHelloPacket` 脱离服务器列表地址确认网络身份，`ClientboundLocationPacket` 权威区分 SkyBlock 与其他游戏，并提供 server、mode、map 和 lobby。世界变化立即清空实例字段直到下一次 Location 事件，断线则清空完整会话；地址文字不再作为启用门控。Location 尚未到达时，只有精确 Hypixel 代理 Brand 加严格 `SKYBLOCK` 计分板标题及 Profile/Purse/地点/Dungeon/Rift 结构行，才能临时允许被动显示，绝不能授权发送命令。之后计分板与 Tab 只补充 Profile、子区域、Dungeon、Rift、任务、粉尘和宠物状态，宽松文字子串不能再证明服务器身份。
+`HypixelSessionTracker` 是唯一环境权威：Hypixel 官方 Mod API 的 `ClientboundHelloPacket` 脱离服务器列表地址确认网络身份，`ClientboundLocationPacket` 权威区分 SkyBlock 与其他游戏，并提供 server、mode、map 和 lobby。世界变化立即清空实例字段直到下一次 Location 事件，断线则清空完整会话；地址文字不再作为启用门控。Location 尚未到达时，只有精确 Hypixel 代理 Brand 加严格 `SKYBLOCK` 计分板标题及 Profile/Purse/地点/Dungeon/Rift 结构行，才能临时允许被动显示，绝不能授权发送命令。之后计分板与 Tab 只补充 Profile、子区域、Dungeon、Rift、任务、粉尘和宠物状态，宽松文字子串不能再证明服务器身份。另有 `DungeonPartyAuthorityTracker` 只在活动中的入队判定需要动作时，通过同一官方实现发送 `ServerboundPartyInfoPacket` 并接收 `ClientboundPartyInfoPacket`；它的新鲜 UUID→`PartyRole` 成员表只作为最终操作权威，不能取代 Location 或自己的发布条目归属证明。
 
 ### 1.2 永久开启的 Release 更新提醒
 
@@ -400,7 +400,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ## 13. 本地保存内容
 
-- `config/qcloudy_addition.json`：语言、功能开关、HUD外观/位置/缩放、宠物确认信息、Hunting资源/Chapter/Benefactor/Safari Belt状态、已确认Fairy Soul，以及 Shard Planner 设置/速率/图节点。旧 `autumecloudyaddition.json` 只用于迁移。
+- `config/qcloudy_addition.json`：语言、功能开关、默认关闭的 Dungeon 入队总开关与 14 份 F1–F7/M1–M7 独立规则、HUD外观/位置/缩放、宠物确认信息、Hunting资源/Chapter/Benefactor/Safari Belt状态、已确认Fairy Soul，以及 Shard Planner 设置/速率/图节点。旧 `autumecloudyaddition.json` 只用于迁移。Schema 30 会建立规则格式 1，全部规则均关闭且没有 Entrance 条目。
 - `config/qcloudy_addition_shard_warehouse.json`：玩家实际打开的 Hunting Box 页面中观察到的按本地 Profile Shard 数量与最后观察时间；不包含隐藏背包或服务器拉取数据。
 - 配置先写临时文件，再尽可能原子替换。
 
@@ -410,13 +410,21 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 
 QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qpv`、`//pv` 处理器、档案界面/模型/缓存、物品价格悬停客户端、`/v1/pv/*` 路由或 `/v1/market/tooltip-prices` 路由。Shard Bazaar 传输类型已迁移到 `market.shard`，因此现有 Shard Planner 不依赖被删除的包。
 
-`DungeonJoinParser` 只接受 Dungeon Finder 的精确新成员消息，拒绝普通 Party 加入与 Kuudra 消息。`DungeonFloor` 只读取本机排队计分板中的 `E`、`F1-F7` 或 `M1-M7`，不浏览 Party Finder 列表。只有 Mod API 的权威 Location 已确认 SkyBlock 且独立 Dungeons 开关开启时，才会进入 `DungeonQuickViewManager`；它对两秒内重复加入行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。
+`DungeonJoinParser` 只接受 Dungeon Finder 的精确新成员消息，返回包含玩家/职业/等级的结构化事件，并拒绝普通 Party 加入与 Kuudra 消息。只有 Mod API 的权威 Location 已确认 SkyBlock，且独立、默认开启的 Dungeon Quick View 开关已开启时，才会进入 `DungeonQuickViewManager`；它对两秒内重复加入行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。`DungeonPartyFinderFloorTracker` 只接受玩家已打开、底部取消发布控件能证明属于本机的 Party Finder 容器；它解析成对的 Catacombs `Dungeon:`/`Floor:` lore 与自己队伍的玩家/职业 lore，在发布身份变化时增加 generation，并移除观察到已经离队的成员。排队计分板只保留为请求/展示回退，不能作为自动操作权威。
 
-`DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅在进程内缓存 60 秒。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒/十五秒超时和 4 MiB 响应上限。`DungeonQuickViewSnapshot` 只接受有界 schema 1，并使用三态装备模型，使不完整来源显示 `Missing` 而不是错误的叉。
+`DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅用于 Profile 展示、在进程内缓存 60 秒。存在已启用规则的自动入队判定会绕过这份已完成缓存，改用新读取或同一份正在进行的网络读取；响应只有十秒本地单调时钟判定窗口，并按后端最长新鲜来源契约检查来源 epoch。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒连接超时、覆盖响应头和完整正文的十五秒截止时间，以及非阻塞、限制 4 MiB 的正文订阅器。永不结束的正文会被取消并以超时完成。`DungeonQuickViewSnapshot` 只接受有界 quick-view schema 1。可选的规则证据版本 1 会绑定查询名称、解析后的 UUID、所选 Profile ID/确定性、请求与返回的 F1–F7/M1–M7 楼层、新鲜度和来源覆盖。证据缺失、畸形、版本不支持、过旧、身份/楼层不符或 Profile 不确定时，结果只能是 UNKNOWN，绝不会被转成失败的 0；装备与宠物也保留“存在/确认不存在/未知”三态。
 
-`DungeonQuickViewMessage` 构造一条彩色多行聊天 Component。Catacombs 通过 `SHOW_TEXT` 悬停显示精确 XP。职业行按类似 Odin 的顺序显示五个带颜色的一位小数等级，并在末尾加入一位小数 Class Average；任一职业缺失时平均值保持 `Missing`。`DungeonPartyFinderFloorTracker` 只扫描玩家已经打开的 Party Finder 容器，要求底部书架取消发布控件作为归属证明，再选择底部自己的组队头或本机队长对应的搜索结果，并解析成对的 Catacombs `Dungeon:`/`Floor:` lore。缓存的发布楼层优先于排队计分板回退，用于现有 API 请求。护甲、武器和宠物仍使用 Minecraft 原生物品 Tooltip；底部红色下划线点击仍是唯一踢人路径。
+`ModConfig.PartyFinderAutoKick` 与 Profile 展示分离，默认关闭；开启时先进入 `DungeonAutoKickConfirmScreen`。规则格式版本 1 的 Map 只包含 F1–F7 与 M1–M7，且每层使用单独分配的 `DungeonFloorRequirements`。Normalize 会删除未知/Entrance 条目，补齐缺失规则，深复制错误共享的对象，限制非法数值，同时保留已关闭规则的已填值。四项数值开关+值分别是最低本层完成次数、最快时间上限、平均 Secrets 下限和 Magical Power 下限；五项布尔开关分别是禁止重复职业及必须拥有 Wither Blade、Terminator、Golden Dragon、Ender Dragon。全部规则默认关闭。设置页一次只编辑一层，因此修改 F7 不会影响 M7 或其他层；Entrance 没有规则对象，也不会回退到其他层。修改总开关、任一规则开关/阈值或父级 Quick View 时，都会增加内存中的 policy revision 并取消当前判定；后来把值恢复原样也不能让旧 revision 创建的异步判定复活。
 
-可部署 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles，选择当前或最近保存的可见 Profile，只投影 Catacombs/职业 XP、指定层完成次数/最快时间、总 Secrets 与全部 run 平均值、Magical Power、四个护甲槽、指定武器和两个龙宠。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；服务器 Key 只存在环境中，接口不是通用代理。
+`DungeonRequirementEvaluator` 是无副作用判定器，按固定九项顺序处理已开启规则。最低值使用 `>=`，最快时间上限使用 `<=`；装备/宠物只有“确认不存在”才 FAIL；重复职业只有找到具名冲突玩家才 FAIL。没有规则时沿用普通 Profile 路径。至少一项已确认失败时总结果为 FAIL；否则至少一项证据不权威时为 UNKNOWN；否则为 PASS。因此确认失败可以与另一项 UNKNOWN 同时存在，但 UNKNOWN 本身绝不会变成失败。
+
+`DungeonQuickViewMessage` 构造彩色多行 Profile Component。Catacombs 通过 `SHOW_TEXT` 悬停显示精确 XP；职业行按类似 Odin 的顺序显示五个带颜色的一位小数等级，并加入 Class Average。护甲、武器和宠物使用 Minecraft 原生物品 Tooltip。PASS 只输出 Profile，不添加 PASS 或“未发送踢人指令”。UNKNOWN 输出同一张 Profile，并在后面完整列出本地化未知原因，绝不发送指令；网络/传输失败导致没有快照时只显示有界的无法取得提示，不能进入判定。Profile 卡仍保留红色、粗体、下划线的手动 `/party kick <已校验玩家>` 点击操作。
+
+当自己的发布条目对应某份已启用规则时，Manager 会冻结加入事件、排队/发布 generation、精确楼层规则与 policy revision、刚在加入前从自己的发布 GUI 看见的成员名字、membership 身份和权威会话，然后请求第一次新鲜 PartyInfo。QCA 会串行处理自己的重叠判定，并给每次刷新分配唯一且单调递增的票据。PartyInfo 本身没有请求 ID，`HypixelModAPI` 又会被其他 Mod 共用，因此必需 Mixin 会包住整个共享 `sendPacket` 调用：每次成功 PartyInfo 发送都会按当前物理连接进入 FIFO，并标记为精确的 QCA `(权威会话, 票据)` 或外部 Mod 请求。PartyInfo 包或错误会在共享 API handler 入口、任何第三方 callback 可能抛错或返回之前，精确消费最早的一个位置；只有当前完全匹配的 QCA 位置才能生成快照。包构造阶段记录网络解码 `nanoTime` 并带入稍后的客户端线程处理，精确快照数量有界，缺失、无法匹配、错误、外部、旧世界或已淘汰回包都不能被一份“最新快照”替代。归属一旦不明确，自动权威会持续安全封锁到物理连接变化，普通换世界不会解除。
+
+计分板入队状态还会单独区分已确认 Hub/排队，与空白/残缺、已离开和正在地牢内；强地牢内证据优先于残留排队行。QCA 会在最终 PartyInfo 请求前及最终保护内部再次读取 Vanilla 实时计分板，不能只靠周期缓存授权操作。聊天缓存的职业绝不能授权 DUPE。DUPE 必须在本次加入后重新读取完整的自己的发布 GUI 职业表，并把仍适用的冻结成员名字与目标名字通过实时 Tab UUID 对应到精确 PartyInfo 成员。任一规则确认失败后，Manager 会再请求一次最终 PartyInfo，并在这次最终请求后再次读取 GUI 职业表；两份来源都必须在两秒内且没有超过硬截止时间。随后先输出一个失败标题与全部仍然确认失败项；紧邻下一步、在同一个客户端判定回合内最多执行一次 `sendCommand("party kick <已校验新成员>")`。最终保护会再次检查：权威 SkyBlock、同一会话/世界、排队与缓存中自己的发布 generation/楼层、policy revision 与数值均未改变、精确第二张 PartyInfo 票据、本机角色为 `LEADER`、目标 UUID/Tab 成员身份、启用 DUPE 时的目标当前职业，以及动作键唯一。发布条目被清除/替换、Entrance 或仅计分板楼层、残缺/已离开/地牢内状态、PartyInfo/GUI 超时或过旧、不在队伍、失去队长、目标离队、身份/证据不确定、配置改变、会话/世界改变、重复交付或连接缺失，都会阻止自动指令。客户端不会显示 PASS、“未发送踢人指令”或“已发送踢人指令”，不会倒计时或先发 Party Chat，也不会声称服务器真的移除了玩家。
+
+源码中的 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles；只有恰好一个 Profile 被标记为 selected 时才把选择视为确定。零个 selected 时显示最近保存的可见 Profile，多个 selected 时只在这些 selected 中显示最近保存的一份，但两种情况的全部入队证据都保持 UNKNOWN。随后只投影 Catacombs/职业 XP、指定层完成次数/最快时间、总 Secrets 与旧版展示用全部 run 平均值、Magical Power、四个护甲槽、指定武器和两个龙宠。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；私密/缺失保持不可用。规则证据会报告来源新鲜度与覆盖；尤其当前平均值使用“账号 Secrets ÷ 所选 Profile 完成次数”，范围不一致，所以证据明确返回 `SCOPE_MISMATCH`/UNKNOWN；Magical Power 使用所选 Profile 的 `highest_magical_power`，表示历史最高值而不是实时当前值。服务器 Key 只存在环境中，接口不是通用代理。Alpha 8 的后端改动目前只有源码，尚未部署生产环境；证据响应与自动操作也都没有在已登录 Hypixel 的实服验证。若生产响应没有证据版本 1，客户端只能展示/UNKNOWN，不能授权自动踢人。
 
 `MarketManager` 继续供 Shard Planner 与固定市场 API 使用。Bazaar 每 60 秒、active AH 每 120 秒、ended auctions 每 30 秒、静态资源每六小时刷新；Dungeon 查询不会启动或加速采集器。
 Release 检查状态和已经确认的远端结果只保存在本次进程内；不会持久化更新响应、提醒历史、用户名、UUID 或服务器地址。
@@ -428,7 +436,9 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 | `/qca`、`/qc` | 打开本地QCA设置 | 无服务器载荷 |
 | `/qshard [英文查询]` | 打开本地离线 Shard Fusion Guide 并预填搜索 | 无服务器载荷 |
 | `/cake`、`/centurycakeeffect` | 打开本地 Century Cake 效果/计时界面 | 无服务器载荷 |
-| 开启 Dungeon Quick View 时收到 Dungeon Finder 精确新成员行 | 为该新成员发出一次有界、可合并的 HTTPS 快速查看请求，并输出本地聊天卡 | 自动只读展示；无 Minecraft 服务器载荷 |
+| 开启 Dungeon Quick View 时收到 Dungeon Finder 精确新成员行 | 为该新成员发出一次有界、可合并的 HTTPS 快速查看请求，并输出/判定本地结果 | 自动 QCloudy HTTPS 读取；通常无 Minecraft 指令 |
+| 自己的 F1–F7/M1–M7 发布条目存在已开启的入队规则 | 先发送一个官方 `ServerboundPartyInfoPacket`；确认 FAIL 后再发送一次最终包，因此每名新成员最多取得两份新鲜 PartyInfo UUID/角色快照 | 自动刷新权威；不是聊天或玩法指令 |
+| 至少一条规则确认 FAIL 且全部最终保护仍通过 | 先输出全部确认失败原因，再在同一客户端判定回合调用 `sendCommand("party kick <已校验新成员>")` | 是；仅在默认关闭、再次确认的总开关、精确本层规则、新鲜本机队长/目标成员与不变的自己的发布条目/会话/规则门控之后 |
 | 玩家悬停 Dungeon 快速查看中的数值或物品 | 显示已加载的本地 XP 文字或原生 ItemStack Tooltip | 无网络或服务器载荷 |
 | 玩家点击 Dungeon 快速查看中带下划线的踢人操作 | 通过 Minecraft 聊天 `RUN_COMMAND` 发送 `party kick <已校验新成员>` | 否；必须真实点击 |
 | 玩家打开 Shard Planner 并加载价格快照 | 从固定 `api.qcloudy.net` 发出一次有界异步 Shard 价格 HTTPS 读取；不会启动市场采集器 | 无 Minecraft 服务器载荷；玩家明确触发 |
@@ -443,8 +453,8 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 | 已开启的快速私信 `!p` 收到本机 `//invited …` 或 `//i …` 输入 | `sendCommand("msg <玩家> !p")` | 否；来自本机输入 |
 | 已开启的组队指令收到本机已识别 `//` 别名 | 用已记录的 Party/Stream/`joininstance` 载荷调用 `sendCommand` | 否；来自本机输入 |
 
-`sendChat`：无。唯一生成的消息载荷是独立开启的快速私信 `!p` 功能通过 `sendCommand` 发送的 `msg <玩家> !p`。自动移动、战斗、捕捉、物品使用、方块交互或重连：无。
+`sendChat`：无。自动生成的 `sendCommand` 载荷包括独立开启的快速私信 `!p` 消息，以及只在上方入队条件全部满足时发送的 `party kick <已校验新成员>`。自动移动、战斗、捕捉、物品使用、方块交互或重连：无。
 
 ## 15. 应如何验收
 
-自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与已审核参考模组组合。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境、提供方更新或规则解释。因此 Release `0.3.9` 仍明确把统一设置和统一 HUD 编辑器标为实验性；登录 Hypixel 与真实整合包回归仍是独立的验证边界。
+自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与已审核参考模组组合。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境、提供方更新或规则解释。Alpha 8 的生产后端部署，以及登录 Hypixel 后真实 Party Finder/PartyInfo/指令流程，仍是尚未完成的验证边界。因此 Release `0.3.9` 仍明确把统一设置和统一 HUD 编辑器标为实验性；登录 Hypixel 与真实整合包回归仍是独立的验证边界。

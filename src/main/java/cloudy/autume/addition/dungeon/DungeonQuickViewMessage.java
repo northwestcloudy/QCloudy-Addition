@@ -1,5 +1,11 @@
 package cloudy.autume.addition.dungeon;
 
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirement;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementCriterion;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvaluation;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidenceValue;
+import cloudy.autume.addition.dungeon.requirements.RequirementFinding;
+import cloudy.autume.addition.i18n.ModText;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.core.component.DataComponents;
@@ -13,6 +19,7 @@ import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -39,7 +46,18 @@ public final class DungeonQuickViewMessage {
         int boldLineGlyphWidth = font.width(Component.literal(LINE_GLYPH)
                 .withStyle(ChatFormatting.BOLD));
         return build(snapshot, font::width, font.width(styledTitle), boldLineGlyphWidth,
-                DungeonQuickViewMessage::itemHover);
+                DungeonQuickViewMessage::itemHover, null);
+    }
+
+    public static Component buildWithUnknowns(DungeonQuickViewSnapshot snapshot,
+                                              DungeonRequirementEvaluation evaluation,
+                                              Font font) {
+        Component styledTitle = Component.literal(TITLE)
+                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
+        int boldLineGlyphWidth = font.width(Component.literal(LINE_GLYPH)
+                .withStyle(ChatFormatting.BOLD));
+        return build(snapshot, font::width, font.width(styledTitle), boldLineGlyphWidth,
+                DungeonQuickViewMessage::itemHover, evaluation);
     }
 
     /** A request failure is not player data, so it must never be rendered as an all-Missing profile card. */
@@ -61,15 +79,53 @@ public final class DungeonQuickViewMessage {
         return build(snapshot, width, DungeonQuickViewMessage::itemHover);
     }
 
+    static Component buildWithUnknowns(DungeonQuickViewSnapshot snapshot,
+                                       DungeonRequirementEvaluation evaluation,
+                                       ToIntFunction<String> width) {
+        return build(snapshot, width, DungeonQuickViewMessage::itemHover, evaluation);
+    }
+
+    static Component buildWithUnknowns(DungeonQuickViewSnapshot snapshot,
+                                       DungeonRequirementEvaluation evaluation,
+                                       ToIntFunction<String> width,
+                                       ItemHoverFactory hoverFactory) {
+        return build(snapshot, width, hoverFactory, evaluation);
+    }
+
+    static Component failures(String playerName, String floor,
+                              DungeonRequirementEvaluation evaluation) {
+        MutableComponent output = Component.literal("[QCA] ")
+                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD);
+        output.append(Component.literal(ModText.get(
+                "dungeon.requirements.failed_header", playerName, floor))
+                .withStyle(ChatFormatting.RED));
+        if (evaluation != null) {
+            for (RequirementFinding finding : evaluation.failures()) {
+                output.append("\n").append(Component.literal("- ")
+                        .withStyle(ChatFormatting.DARK_GRAY));
+                output.append(findingText(finding, floor).withStyle(ChatFormatting.RED));
+            }
+        }
+        return output;
+    }
+
     static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width,
                            ItemHoverFactory hoverFactory) {
+        return build(snapshot, width, hoverFactory, null);
+    }
+
+    private static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width,
+                                   ItemHoverFactory hoverFactory,
+                                   DungeonRequirementEvaluation evaluation) {
         int lineGlyphWidth = Math.max(1, width.applyAsInt(LINE_GLYPH));
-        return build(snapshot, width, width.applyAsInt(TITLE), lineGlyphWidth + 1, hoverFactory);
+        return build(snapshot, width, width.applyAsInt(TITLE), lineGlyphWidth + 1,
+                hoverFactory, evaluation);
     }
 
     private static Component build(DungeonQuickViewSnapshot snapshot, ToIntFunction<String> width,
                                    int styledTitleWidth, int boldLineGlyphWidth,
-                                   ItemHoverFactory hoverFactory) {
+                                   ItemHoverFactory hoverFactory,
+                                   DungeonRequirementEvaluation evaluation) {
         Lines separators = separators(width, styledTitleWidth, boldLineGlyphWidth);
         MutableComponent output = Component.empty();
         output.append(Component.literal(separators.left()).withStyle(ChatFormatting.DARK_AQUA));
@@ -84,7 +140,7 @@ public final class DungeonQuickViewMessage {
                 : String.format(Locale.ROOT, "%,d", snapshot.totalSecrets())));
         output.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY));
         output.append(value(snapshot.averageSecrets() == null ? "Missing"
-                : String.format(Locale.ROOT, "%.1f", snapshot.averageSecrets())));
+                : formatDecimal(snapshot.averageSecrets())));
 
         output.append("\n").append(label("Classes: "));
         int classIndex = 0;
@@ -146,6 +202,21 @@ public final class DungeonQuickViewMessage {
                     .withHoverEvent(new HoverEvent.ShowText(detail))));
         }
 
+        if (evaluation != null && !evaluation.unknowns().isEmpty()) {
+            output.append("\n").append(Component.literal(
+                    ModText.get("dungeon.requirements.unknown_header"))
+                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+            for (RequirementFinding finding : evaluation.unknowns()) {
+                output.append("\n").append(Component.literal("- ")
+                        .withStyle(ChatFormatting.DARK_GRAY));
+                output.append(Component.literal(requirementLabel(
+                                finding.requirement(), snapshot.floor().id()) + ": ")
+                        .withStyle(ChatFormatting.YELLOW));
+                output.append(Component.literal(unknownReason(finding.unavailableReason()))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+        }
+
         output.append("\n").append(Component.literal(separators.bottomNormal())
                 .withStyle(ChatFormatting.DARK_AQUA));
         output.append(Component.literal(separators.bottomBold())
@@ -156,6 +227,88 @@ public final class DungeonQuickViewMessage {
                                 "Click to run /party kick " + snapshot.playerName()).withStyle(ChatFormatting.RED)))
                         .withClickEvent(new ClickEvent.RunCommand("/party kick " + snapshot.playerName()))));
         return output;
+    }
+
+    private static MutableComponent findingText(RequirementFinding finding, String floor) {
+        String label = requirementLabel(finding.requirement(), floor);
+        DungeonRequirementEvidenceValue evidence = finding.evidence();
+        DungeonRequirementCriterion criterion = finding.criterion();
+        String detail;
+        if (evidence instanceof DungeonRequirementEvidenceValue.LongValue actual
+                && criterion instanceof DungeonRequirementCriterion.LongThreshold required) {
+            String actualText = finding.requirement() == DungeonRequirement.MAXIMUM_FASTEST_COMPLETION
+                    ? formatRequirementActualTime(actual.value())
+                    : String.format(Locale.ROOT, "%,d", actual.value());
+            String requiredText = finding.requirement() == DungeonRequirement.MAXIMUM_FASTEST_COMPLETION
+                    ? formatRequirementTime(required.value()) : String.format(Locale.ROOT, "%,d", required.value());
+            String key = required.comparison() == DungeonRequirementCriterion.Comparison.AT_MOST
+                    ? "dungeon.requirements.required_at_most"
+                    : "dungeon.requirements.required_at_least";
+            detail = actualText + " / " + ModText.get(key, requiredText);
+        } else if (evidence instanceof DungeonRequirementEvidenceValue.DecimalValue actual
+                && criterion instanceof DungeonRequirementCriterion.DecimalThreshold required) {
+            detail = formatDecimal(actual.value()) + " / "
+                    + ModText.get("dungeon.requirements.required_at_least",
+                    formatDecimal(required.value()));
+        } else if (evidence instanceof DungeonRequirementEvidenceValue.DuplicateClass duplicate) {
+            detail = ModText.get("dungeon.requirements.duplicate_with",
+                    duplicate.newcomerClass().displayName(),
+                    String.join(", ", duplicate.conflictingPlayers()));
+        } else {
+            detail = ModText.get("dungeon.requirements.not_owned") + " / "
+                    + ModText.get("dungeon.requirements.required_present");
+        }
+        return Component.literal(label + ": " + detail);
+    }
+
+    private static String requirementLabel(DungeonRequirement requirement, String floor) {
+        String key = switch (requirement) {
+            case MINIMUM_FLOOR_COMPLETIONS -> "dungeon.requirements.rule.floor_completions";
+            case DISALLOW_DUPLICATE_CLASS -> "dungeon.requirements.rule.duplicate_class";
+            case MAXIMUM_FASTEST_COMPLETION -> "dungeon.requirements.rule.fastest_completion";
+            case MINIMUM_AVERAGE_SECRETS -> "dungeon.requirements.rule.average_secrets";
+            case MINIMUM_MAGICAL_POWER -> "dungeon.requirements.rule.magical_power";
+            case REQUIRE_WITHER_BLADE -> "dungeon.requirements.rule.wither_blade";
+            case REQUIRE_TERMINATOR -> "dungeon.requirements.rule.terminator";
+            case REQUIRE_GOLDEN_DRAGON -> "dungeon.requirements.rule.golden_dragon";
+            case REQUIRE_ENDER_DRAGON -> "dungeon.requirements.rule.ender_dragon";
+        };
+        return requirement == DungeonRequirement.MINIMUM_FLOOR_COMPLETIONS
+                ? ModText.get(key, floor) : ModText.get(key);
+    }
+
+    private static String unknownReason(String reason) {
+        String normalized = reason == null ? "" : reason.trim().toUpperCase(Locale.ROOT)
+                .replace(' ', '_');
+        String key = switch (normalized) {
+            case "SOURCE_STALE", "PROFILE_EVIDENCE_IS_STALE", "DATA_IS_STALE" ->
+                    "dungeon.requirements.unknown.stale";
+            case "INVENTORY_INCOMPLETE" -> "dungeon.requirements.unknown.inventory_incomplete";
+            case "PETS_UNAVAILABLE" -> "dungeon.requirements.unknown.pets_unavailable";
+            case "PETS_INCOMPLETE" -> "dungeon.requirements.unknown.pets_incomplete";
+            case "PARTY_CLASSES_UNAVAILABLE", "PARTY_CLASSES_NOT_EVALUATED_YET",
+                    "PARTY_CLASSES_INCOMPLETE", "PARTY_CLASS_DATA_IS_INCOMPLETE" ->
+                    "dungeon.requirements.unknown.party_classes_incomplete";
+            case "SCOPE_MISMATCH", "CALCULATION_UNAVAILABLE" ->
+                    "dungeon.requirements.unknown.calculation_unavailable";
+            case "NO_VALID_COMPLETION_TIME", "NO_COMPLETION_TIME" ->
+                    "dungeon.requirements.unknown.no_completion_time";
+            case "PARTY_AUTHORITY_UNAVAILABLE" ->
+                    "dungeon.requirements.unknown.party_authority";
+            case "PLAYER_IDENTITY_EVIDENCE_DOES_NOT_MATCH", "IDENTITY_MISMATCH" ->
+                    "dungeon.requirements.unknown.identity_mismatch";
+            case "DUNGEON_FLOOR_EVIDENCE_DOES_NOT_MATCH", "FLOOR_MISMATCH",
+                    "FLOOR_NOT_REQUESTED" -> "dungeon.requirements.unknown.floor_mismatch";
+            case "BACKEND_REQUIREMENTS_EVIDENCE_VERSION_IS_UNSUPPORTED",
+                    "BACKEND_REQUIREMENTS_EVIDENCE_IS_UNAVAILABLE",
+                    "REQUIREMENTS_EVIDENCE_IS_UNAVAILABLE",
+                    "REQUIREMENTS_EVIDENCE_IS_INVALID", "UNSUPPORTED_EVIDENCE" ->
+                    "dungeon.requirements.unknown.unsupported_evidence";
+            case "PROFILE_SELECTION_UNCERTAIN", "PROFILE_ID_MISSING" ->
+                    "dungeon.requirements.unknown.profile_uncertain";
+            default -> "dungeon.requirements.unknown.missing_value";
+        };
+        return ModText.get(key);
     }
 
     static Lines separators(ToIntFunction<String> width) {
@@ -216,6 +369,13 @@ public final class DungeonQuickViewMessage {
     private static Component value(String text) {
         return Component.literal(text).withStyle("Missing".equals(text)
                 ? ChatFormatting.RED : ChatFormatting.GRAY);
+    }
+
+    /** Round-trip-safe human-facing form for validated decimal requirement values. */
+    static String formatDecimal(double number) {
+        if (!Double.isFinite(number)) throw new IllegalArgumentException("Decimal must be finite");
+        String plain = BigDecimal.valueOf(number).stripTrailingZeros().toPlainString();
+        return plain.indexOf('.') >= 0 ? plain : plain + ".0";
     }
 
     private static Component stat(DungeonQuickViewSnapshot.Stat stat, boolean oneDecimal) {
@@ -330,6 +490,19 @@ public final class DungeonQuickViewMessage {
         long seconds = (milliseconds / 1_000) % 60;
         long millis = milliseconds % 1_000;
         return String.format(Locale.ROOT, "%d:%02d.%03d", minutes, seconds, millis);
+    }
+
+    private static String formatRequirementTime(long milliseconds) {
+        long minutes = milliseconds / 60_000;
+        long seconds = (milliseconds / 1_000) % 60;
+        return String.format(Locale.ROOT, "%02d:%02d", minutes, seconds);
+    }
+
+    private static String formatRequirementActualTime(long milliseconds) {
+        long minutes = milliseconds / 60_000;
+        long seconds = (milliseconds / 1_000) % 60;
+        long millis = milliseconds % 1_000;
+        return String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, millis);
     }
 
     record Lines(String left, String right, String bottomNormal, String bottomBold,

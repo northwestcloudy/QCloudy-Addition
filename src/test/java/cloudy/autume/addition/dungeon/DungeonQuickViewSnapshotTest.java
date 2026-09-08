@@ -1,5 +1,8 @@
 package cloudy.autume.addition.dungeon;
 
+import cloudy.autume.addition.dungeon.requirements.DungeonFloorKey;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidence;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidenceValue.PresenceState;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -12,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,7 +23,7 @@ final class DungeonQuickViewSnapshotTest {
     static final String JSON = """
             {
               "schemaVersion":1,
-              "identity":{"uuid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"GhostsTM"},
+              "identity":{"queryName":"GhostsTM","uuid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"GhostsTM"},
               "catacombs":{"level":40.2,"xp":51359640},
               "classes":{
                 "healer":{"level":30.1,"xp":3084640},
@@ -47,6 +51,36 @@ final class DungeonQuickViewSnapshotTest {
             }
             """;
 
+    static final String REQUIREMENTS_EVIDENCE = """
+            {
+                "version":1,
+                "fresh":true,
+                "fetchedAt":900,
+                "identity":{"source":"requirements","queryName":"GhostsTM","uuid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"GhostsTM"},
+                "profile":{"id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","selection":"SELECTED","selectionCertain":true},
+                "request":{"floor":"M7","responseFloor":"M7","floorMatches":true},
+                "sources":{},
+                "floorCompletions":{"state":"KNOWN","value":312},
+                "fastestCompletion":{"state":"KNOWN","valueMs":298321,"kind":"ANY_COMPLETION"},
+                "averageSecrets":{"state":"UNAVAILABLE","value":null,"numerator":2432,"denominator":213,"scope":"ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS","complete":false,"reason":"SCOPE_MISMATCH"},
+                "magicalPower":{"state":"KNOWN","value":1330,"kind":"HIGHEST"},
+                "weapons":{
+                    "complete":true,
+                    "witherBlade":{"state":"PRESENT"},
+                    "terminator":{"state":"ABSENT"}
+                },
+                "pets":{
+                    "complete":true,
+                    "goldenDragon":{"state":"PRESENT"},
+                    "enderDragon":{"state":"ABSENT"}
+                }
+            }
+            """;
+
+    static final String JSON_WITH_REQUIREMENTS = JSON.replace(
+            "\"metadata\":",
+            "\"requirementsEvidence\":" + REQUIREMENTS_EVIDENCE + ",\n\"metadata\":");
+
     @Test
     void parsesTheDedicatedBoundedContractAndTriState() {
         DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(JSON);
@@ -57,6 +91,96 @@ final class DungeonQuickViewSnapshotTest {
         assertEquals(DungeonQuickViewSnapshot.PresenceState.PRESENT, view.witherBlade().state());
         assertEquals(DungeonQuickViewSnapshot.PresenceState.ABSENT, view.terminator().state());
         assertEquals("§6Ancient Golden Necron Head", view.armor().getFirst().name());
+    }
+
+    @Test
+    void parsesCompleteTypedRequirementsEvidenceWithoutPromotingUnavailableValues() {
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(JSON_WITH_REQUIREMENTS);
+        DungeonRequirementEvidence evidence = view.requirementsEvidence();
+
+        assertNotNull(evidence);
+        assertEquals(DungeonFloorKey.M7, evidence.floor());
+        assertEquals(312L, evidence.floorCompletions().value());
+        assertEquals(298_321L, evidence.fastestCompletionMs().value());
+        assertEquals(1_330L, evidence.magicalPower().value());
+        assertNull(evidence.averageSecrets().value());
+        assertEquals("SCOPE_MISMATCH", evidence.averageSecrets().unavailableReason());
+        assertEquals(PresenceState.PRESENT, evidence.witherBlade().state());
+        assertEquals(PresenceState.CONFIRMED_ABSENT, evidence.terminator().state());
+        assertEquals(PresenceState.PRESENT, evidence.goldenDragon().state());
+        assertEquals(PresenceState.CONFIRMED_ABSENT, evidence.enderDragon().state());
+        assertNull(evidence.duplicateClass().newcomerClass());
+        assertFalse(evidence.duplicateClass().authoritativeWithoutDuplicate());
+        assertEquals("PARTY_CLASSES_INCOMPLETE",
+                evidence.duplicateClass().unavailableReason());
+        assertEquals("GhostsTM", view.queryName());
+        assertEquals("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", view.playerUuid().toString());
+        assertEquals(900L, view.evidenceFetchedAt());
+        assertTrue(view.requirementsEvidenceTrusted());
+        assertEquals("", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void missingLegacyRequirementsProtocolBecomesUnknownInsteadOfAbsentOrZero() {
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(JSON);
+
+        assertAllRequirementsUnknown(view.requirementsEvidence(),
+                "UNSUPPORTED_EVIDENCE");
+        assertEquals(0L, view.evidenceFetchedAt());
+        assertFalse(view.requirementsEvidenceTrusted());
+        assertEquals("UNSUPPORTED_EVIDENCE", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void staleProfileDowngradesEveryRequirementToUnknown() {
+        String stale = JSON_WITH_REQUIREMENTS.replace(
+                "\"metadata\":{\"status\":\"fresh\",\"fetchedAt\":1000}",
+                "\"metadata\":{\"status\":\"stale\",\"fetchedAt\":1000}");
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(stale);
+
+        assertTrue(view.stale());
+        assertAllRequirementsUnknown(view.requirementsEvidence(), "SOURCE_STALE");
+        assertFalse(view.requirementsEvidenceTrusted());
+        assertEquals("SOURCE_STALE", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void identityMismatchDowngradesEveryRequirementToUnknown() {
+        String mismatched = JSON_WITH_REQUIREMENTS.replace(
+                "\"source\":\"requirements\",\"queryName\":\"GhostsTM\",\"uuid\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"name\":\"GhostsTM\"",
+                "\"source\":\"requirements\",\"queryName\":\"GhostsTM\",\"uuid\":\"cccccccccccccccccccccccccccccccc\",\"name\":\"GhostsTM\"");
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(mismatched);
+
+        assertAllRequirementsUnknown(view.requirementsEvidence(),
+                "IDENTITY_MISMATCH");
+        assertFalse(view.requirementsEvidenceTrusted());
+        assertEquals("IDENTITY_MISMATCH", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void floorMismatchDowngradesEveryRequirementToUnknown() {
+        String mismatched = JSON_WITH_REQUIREMENTS.replace(
+                "\"request\":{\"floor\":\"M7\",\"responseFloor\":\"M7\",\"floorMatches\":true}",
+                "\"request\":{\"floor\":\"M7\",\"responseFloor\":\"F7\",\"floorMatches\":false}");
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(mismatched);
+
+        assertAllRequirementsUnknown(view.requirementsEvidence(),
+                "FLOOR_MISMATCH");
+        assertFalse(view.requirementsEvidenceTrusted());
+        assertEquals("FLOOR_MISMATCH", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void uncertainProfileSelectionKeepsItsOwnGlobalBlocker() {
+        String uncertain = JSON_WITH_REQUIREMENTS.replace(
+                "\"selectionCertain\":true", "\"selectionCertain\":false");
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(uncertain);
+
+        assertAllRequirementsUnknown(view.requirementsEvidence(),
+                "PROFILE_SELECTION_UNCERTAIN");
+        assertFalse(view.requirementsEvidenceTrusted());
+        assertEquals("PROFILE_SELECTION_UNCERTAIN",
+                view.requirementsEvidenceBlocker());
     }
 
     @Test
@@ -146,6 +270,30 @@ final class DungeonQuickViewSnapshotTest {
         Component warning = parts.stream().filter(part -> part.getString().equals(" ⚠"))
                 .findFirst().orElseThrow();
         assertNotNull(warning.getStyle().getHoverEvent());
+        assertRemovedStatusLinesAreAbsent(message);
+    }
+
+    private static void assertAllRequirementsUnknown(
+            DungeonRequirementEvidence evidence, String reason) {
+        assertNotNull(evidence);
+        assertNull(evidence.floorCompletions().value());
+        assertNull(evidence.fastestCompletionMs().value());
+        assertNull(evidence.averageSecrets().value());
+        assertNull(evidence.magicalPower().value());
+        assertEquals(PresenceState.UNKNOWN, evidence.witherBlade().state());
+        assertEquals(PresenceState.UNKNOWN, evidence.terminator().state());
+        assertEquals(PresenceState.UNKNOWN, evidence.goldenDragon().state());
+        assertEquals(PresenceState.UNKNOWN, evidence.enderDragon().state());
+        assertFalse(evidence.duplicateClass().authoritativeWithoutDuplicate());
+        assertTrue(evidence.duplicateClass().conflictingPlayers().isEmpty());
+        assertEquals(reason, evidence.floorCompletions().unavailableReason());
+        assertEquals(reason, evidence.duplicateClass().unavailableReason());
+        assertEquals(reason, evidence.witherBlade().unavailableReason());
+    }
+
+    private static void assertRemovedStatusLinesAreAbsent(Component message) {
+        assertFalse(message.getString().contains("PASSED"));
+        assertFalse(message.getString().contains("No kick command was sent"));
     }
 
     private static List<Component> flatten(Component root) {

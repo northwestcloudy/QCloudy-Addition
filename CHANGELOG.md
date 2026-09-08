@@ -2,6 +2,42 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha8] - 2026-09-08
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Added
+
+- Added a separate, default-off Dungeon Party Finder admission-action master. Turning it on requires an explicit confirmation; schema 30/rules version 1 migration leaves the master and every rule disabled.
+- Added exactly 14 independent policies for F1–F7 and M1–M7. Entrance has no policy, and no floor inherits, falls back to, or shares another floor's rule object.
+- Added nine separately switchable rules per floor: minimum exact-floor completions, disallow duplicate class, maximum fastest completion time, minimum average Secrets, minimum Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules each retain an independent toggle and saved value; disabling one does not erase its value.
+- Added a structured Dungeon Finder join event carrying validated player, selected class, and displayed class level; the own-listing tracker also captures existing player/class lore for duplicate-class evidence.
+- Added requirements evidence version 1 to the source backend, binding resolved UUID, selected Profile, request/response floor, source freshness, and coverage. Unknown/private/incomplete data remains unavailable rather than becoming a failing zero.
+- Added admission-only official Hypixel Mod API PartyInfo refreshes: one initial snapshot for an enabled decision and, only after confirmed FAIL, one second final snapshot (at most two per admission). QCA serializes its own overlapping refreshes and gives every request a unique ticket. Because PartyInfo has no request ID and the API is shared by other mods, required mixins also serialize every successful shared-API PartyInfo send into a per-physical-connection FIFO of QCA-owned or foreign markers; each response/error consumes exactly one marker before third-party handlers run, and only the exact QCA session/ticket can produce authority. Decode-time timestamps, bounded exact snapshots, and persistent fail-closed poisoning prevent foreign, late, missing, unmatched, or old-world traffic from authorizing a kick. Fresh member UUID/role responses prove the local player is leader and the target UUID is still in the party.
+
+### Decision and output behavior
+
+- PASS prints the existing Profile card only. It adds no PASS line and no “no kick command was sent” line.
+- UNKNOWN prints the Profile card followed by all unavailable-evidence reasons and never kicks. Missing/private/stale or mismatched data, uncertain Profile selection, incomplete inventory/pets/classes, unsupported evidence, PartyInfo uncertainty, and network/transport failure all fail closed. If no snapshot exists, QCA prints only its bounded unavailable notice instead of fabricating a Profile.
+- FAIL prints one header and every confirmed failed rule before, in the same client-thread decision turn, sending `party kick <validated newcomer>` when all final action guards still pass. A confirmed FAIL can coexist with another UNKNOWN rule; UNKNOWN is never listed as a failure. QCA prints no countdown, Party Chat warning, PASS/no-kick/kick-sent line, or claim that the server accepted the command.
+- Profile cards for PASS/UNKNOWN retain the red underlined manual `/party kick <validated player>` action.
+
+### Fixed
+
+- Automatic admission decisions no longer reuse the 60-second Profile-display cache. They use a fresh/coalesced network acquisition, a ten-second local decision-age limit, and a backend-epoch sanity check; expired evidence becomes UNKNOWN rather than authorizing an action.
+- The bounded QCA HTTP client no longer waits synchronously and indefinitely for response-body EOF after headers arrive. Its four-MiB subscriber and full fifteen-second deadline cancel a hanging body and surface the existing service-unavailable path.
+- Exact party-departure handling now includes `Kicked <player> because they were offline.`, clears the two-second join de-duplication entry and old membership epoch, and invalidates the cached class roster. A legitimate rapid rejoin therefore receives a new admission/action identity.
+- Every admission-relevant edit now increments a policy revision and permanently cancels decisions created under the previous values. Turning a rule or master off and back on, or changing a number away and back, cannot revive an old asynchronous result.
+- Queue context now distinguishes a confirmed Hub/queue from partial, departed, and active-dungeon scoreboards. Strong active-run evidence wins over lingering queue rows, and the live vanilla scoreboard is reread both before the final PartyInfo request and immediately beside the command boundary.
+- Multiple upstream Profiles marked selected are no longer treated as a certain selection: one may still be chosen for display, but all rules become UNKNOWN. Decimal average-Secrets values and thresholds retain round-trip-safe display precision so nearby values are not printed as the same number.
+
+### Safety and validation boundary
+
+- Automatic action requires the same cached, ownership-proven listing context that supplied the F1–F7/M1–M7 floor. DUPE uses only a complete pre-join name set plus post-final-request GUI roster, including the target's current class, reconciled against live Tab UUIDs and the second PartyInfo snapshot; chat-cached classes cannot authorize it. Immediately before sending, QCA rereads the live scoreboard and rechecks authoritative SkyBlock state, session/world, queue/listing generation and floor, unchanged policy revision and values, fresh exact-ticket GUI/PartyInfo evidence, local `LEADER` role, target UUID membership, connection, and a unique action key. Entrance, scoreboard-only floor detection, partial/departed/active-dungeon queue context, a cleared/replaced listing, stale or unattributable authority, lost leadership, a departed target, configuration change, or session/world change prevents the command.
+- Current average-Secrets display divides account-wide Secrets by selected-Profile completions. Because those scopes do not align, requirements evidence deliberately reports `SCOPE_MISMATCH`; the average-Secrets rule remains UNKNOWN until a matching source exists. The MP rule deliberately uses the selected Profile's `highest_magical_power` historical maximum because the source does not expose a trustworthy live-current total.
+- Config/evaluator/message/authority/backend regression sources cover independent floors, normalization, tri-state comparisons, evidence parsing, join/class capture, PartyInfo readiness, output contents, and final-guard behavior. Completed execution evidence is recorded separately in `docs/VALIDATION.md`.
+- The Alpha 8 backend evidence changes have not been deployed to production, and the complete Party Finder/PartyInfo/command flow has not been authenticated-live tested on Hypixel. A production response without evidence version 1 is display-only/UNKNOWN and cannot authorize automatic removal. Local Alpha 8 JARs were built and verified as recorded in `docs/VALIDATION.md`; they were not installed, committed, pushed, published as a GitHub Release, or published to Modrinth.
+
 ## [0.3.10-alpha7] - 2026-09-08
 
 Unpublished Alpha development build for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

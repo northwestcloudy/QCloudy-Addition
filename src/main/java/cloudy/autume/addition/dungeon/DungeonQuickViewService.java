@@ -43,15 +43,32 @@ public final class DungeonQuickViewService {
     }
 
     public synchronized CompletableFuture<DungeonQuickViewSnapshot> load(String playerName, String floor) {
+        return load(playerName, floor, true);
+    }
+
+    /**
+     * Loads evidence for an automatic admission decision without reusing the
+     * successful Profile-display cache. A request already in flight may still
+     * be coalesced because it represents the same current network acquisition.
+     */
+    synchronized CompletableFuture<DungeonQuickViewSnapshot> loadForAdmission(
+            String playerName, String floor) {
+        return load(playerName, floor, false);
+    }
+
+    private CompletableFuture<DungeonQuickViewSnapshot> load(
+            String playerName, String floor, boolean allowSuccessfulCache) {
         String target = normalizedPlayer(playerName);
         String normalizedFloor = normalizedFloor(floor);
         String key = cacheKey(target, normalizedFloor);
         Instant now = clock.instant();
-        Entry existingCache = cache.get(key);
-        if (existingCache != null && now.isBefore(existingCache.validUntil)) {
-            return CompletableFuture.completedFuture(existingCache.snapshot);
+        if (allowSuccessfulCache) {
+            Entry existingCache = cache.get(key);
+            if (existingCache != null && now.isBefore(existingCache.validUntil)) {
+                return CompletableFuture.completedFuture(existingCache.snapshot);
+            }
+            cache.remove(key);
         }
-        cache.remove(key);
         CompletableFuture<DungeonQuickViewSnapshot> existing = inFlight.get(key);
         if (existing != null) return existing;
 
@@ -69,6 +86,11 @@ public final class DungeonQuickViewService {
             if (!snapshot.playerName().equalsIgnoreCase(target)) {
                 throw new DungeonQuickViewException(
                         "The Dungeon quick-view response named a different player.");
+            }
+            if (!snapshot.queryName().isBlank()
+                    && !snapshot.queryName().equalsIgnoreCase(target)) {
+                throw new DungeonQuickViewException(
+                        "The Dungeon quick-view response was for a different query.");
             }
             synchronized (DungeonQuickViewService.this) {
                 cache.put(key, new Entry(snapshot, clock.instant().plus(SESSION_CACHE_TTL)));

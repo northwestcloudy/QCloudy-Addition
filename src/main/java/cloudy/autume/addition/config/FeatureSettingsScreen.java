@@ -307,6 +307,11 @@ final class FeatureSettingsScreen extends Screen {
             }
             return rows;
         }
+        if (feature == ConfigScreen.Feature.DUNGEON_QUICK_VIEW) {
+            rows.add(new Setting(Kind.OPEN_DUNGEON_REQUIREMENTS,
+                    "config.setting.dungeon_requirements"));
+            return rows;
+        }
         rows.add(new Setting(Kind.PROVIDER, "config.integration.provider"));
         UnifiedModIntegration.Provider provider = unifiedFeature.selectedProvider();
         if (provider != UnifiedModIntegration.Provider.QCLOUDY) {
@@ -635,6 +640,8 @@ final class FeatureSettingsScreen extends Screen {
             case FAST_PARTY_ALLOW_SELF -> config.chat.fastPartyAllowSelf = !config.chat.fastPartyAllowSelf;
             case OPEN_FAST_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
                     new PartyWhitelistScreen(this, PartyWhitelistScreen.Target.FAST_PARTY_COMMANDS));
+            case OPEN_DUNGEON_REQUIREMENTS -> MinecraftClientCompat.setScreen(minecraft,
+                    new DungeonRequirementsScreen(this));
             case OPEN_SHARD_GUIDE -> QCloudyAdditionClient.openShardFusionGuide(minecraft, this, "");
             case OPEN_SHARD_PLANNER -> MinecraftClientCompat.setScreen(minecraft, new ShardPlanningScreen(this,
                     ConfigManager.get().inventory.shardPlannerTarget));
@@ -883,7 +890,8 @@ final class FeatureSettingsScreen extends Screen {
         CHAT_PEEK_KEY, CHAT_SCROLL_TARGET,
         PARTY_FRIEND_MODE, OPEN_PARTY_WHITELIST,
         FAST_PARTY_WARP_PERMISSION, FAST_PARTY_OTHER_PERMISSION,
-        FAST_PARTY_ALLOW_SELF, OPEN_FAST_PARTY_WHITELIST
+        FAST_PARTY_ALLOW_SELF, OPEN_FAST_PARTY_WHITELIST,
+        OPEN_DUNGEON_REQUIREMENTS
     }
 
     static boolean shardGuideEntryEnabled(ModConfig config) {
@@ -988,6 +996,7 @@ final class FeatureSettingsScreen extends Screen {
                 case OPEN_FAST_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
                         config.chat.fastPartyCommandWhitelist.size(),
                         ModConfig.Chat.FAST_PARTY_WHITELIST_LIMIT);
+                case OPEN_DUNGEON_REQUIREMENTS -> ModText.get("config.open");
                 case OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER ->
                         ModText.get(available() ? "config.open" : "config.disabled");
                 case SHARD_GUIDE_KEY, OPEN_CONFIG_KEY, CHAT_PEEK_KEY -> {
