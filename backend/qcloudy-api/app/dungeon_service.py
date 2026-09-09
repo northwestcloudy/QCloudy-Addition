@@ -32,7 +32,7 @@ CATA_XP = (
     360559640, 453559640, 569809640,
 )
 WITHER_BLADES = {"HYPERION", "ASTRAEA", "SCYLLA", "VALKYRIE"}
-REQUIREMENTS_EVIDENCE_VERSION = 1
+REQUIREMENTS_EVIDENCE_VERSION = 2
 
 # A negative weapon claim is only safe when every storage location that may
 # hold a weapon was present and decoded. Hypixel can omit these fields when
@@ -463,15 +463,16 @@ class DungeonQuickViewService:
                 missing_reason="NO_VALID_COMPLETION_TIME",
                 extra={"kind": "ANY_COMPLETION"},
             ),
-            "averageSecrets": {
-                "state": "UNAVAILABLE",
-                "value": None,
-                "numerator": inputs["secretsNumerator"],
-                "denominator": inputs["secretsDenominator"],
-                "scope": "ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS",
-                "complete": False,
-                "reason": "SCOPE_MISMATCH",
-            },
+            "averageSecrets": number(
+                inputs["averageSecrets"],
+                missing_reason=inputs["averageSecretsReason"],
+                extra={
+                    "numerator": inputs["secretsNumerator"],
+                    "denominator": inputs["secretsDenominator"],
+                    "scope": "SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS",
+                    "complete": inputs["averageSecretsComplete"],
+                },
+            ),
             "magicalPower": number(
                 inputs["magicalPower"], extra={"kind": "HIGHEST"}
             ),
@@ -536,21 +537,49 @@ class DungeonQuickViewService:
                     candidates.append(value)
             fastest = int(min(candidates)) if candidates else None
 
+        # Average Secrets must use one selected-Profile scope on both sides.
+        # Hypixel omits untouched floor keys, so an absent F1-F7/M1-M7 key is
+        # zero; a malformed parent/value is unavailable rather than zero.
         total_runs = 0
-        has_runs = False
-        for dungeon_key in ("catacombs", "master_catacombs"):
-            floor_data = types.get(dungeon_key) if isinstance(types.get(dungeon_key), dict) else {}
-            completions = floor_data.get("tier_completions") if isinstance(floor_data.get("tier_completions"), dict) else {}
-            for key, value in completions.items():
-                if key == "total":
+        runs_complete = isinstance(member.get("dungeons"), dict) and isinstance(
+            dungeons.get("dungeon_types"), dict
+        )
+        if runs_complete:
+            for dungeon_key in ("catacombs", "master_catacombs"):
+                raw_floor_data = types.get(dungeon_key)
+                if raw_floor_data is None:
                     continue
-                number = _number(value)
-                if number is not None:
+                if not isinstance(raw_floor_data, dict):
+                    runs_complete = False
+                    break
+                raw_completions = raw_floor_data.get("tier_completions")
+                if raw_completions is None:
+                    continue
+                if not isinstance(raw_completions, dict):
+                    runs_complete = False
+                    break
+                for floor_key in ("1", "2", "3", "4", "5", "6", "7"):
+                    raw_value = raw_completions.get(floor_key)
+                    if raw_value is None:
+                        continue
+                    number = _number(raw_value)
+                    if number is None or not number.is_integer():
+                        runs_complete = False
+                        break
                     total_runs += int(number)
-                    has_runs = True
-        achievements = raw_player.get("achievements") if isinstance(raw_player.get("achievements"), dict) else {}
-        secrets = _number(achievements.get("skyblock_treasure_hunter"))
-        average = secrets / total_runs if secrets is not None and has_runs and total_runs > 0 else None
+                if not runs_complete:
+                    break
+
+        secrets = _number(dungeons.get("secrets")) if isinstance(member.get("dungeons"), dict) else None
+        secrets_complete = secrets is not None and secrets.is_integer()
+        average_complete = runs_complete and secrets_complete and total_runs > 0
+        average = secrets / total_runs if average_complete else None
+        if not runs_complete or not secrets_complete:
+            average_reason = "AVERAGE_SECRETS_UNAVAILABLE"
+        elif total_runs <= 0:
+            average_reason = "NO_COMPLETED_DUNGEON_RUNS"
+        else:
+            average_reason = ""
 
         accessory = member.get("accessory_bag_storage") if isinstance(member.get("accessory_bag_storage"), dict) else {}
         magical_power = _number(accessory.get("highest_magical_power"))
@@ -595,7 +624,10 @@ class DungeonQuickViewService:
                 "floorRuns": runs,
                 "fastestMs": fastest,
                 "secretsNumerator": int(secrets) if secrets is not None else None,
-                "secretsDenominator": total_runs if has_runs else None,
+                "secretsDenominator": total_runs if runs_complete else None,
+                "averageSecrets": average,
+                "averageSecretsComplete": average_complete,
+                "averageSecretsReason": average_reason,
                 "magicalPower": int(magical_power) if magical_power is not None else None,
                 "inventoryCoverage": inventory_coverage,
                 "witherBladePresent": wither_blade is not None,

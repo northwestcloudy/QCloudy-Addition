@@ -48,16 +48,17 @@ async def test_dungeon_quick_view_contract_is_selected_profile_scoped_and_cached
 ) -> None:
     _, client = app_client
     upstream.player_payload["player"]["achievements"] = {
-        "skyblock_treasure_hunter": 2432
+        "skyblock_treasure_hunter": 9999
     }
     member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
     member.update(
         {
             "dungeons": {
+                "secrets": 2432,
                 "dungeon_types": {
                     "catacombs": {
                         "experience": 51_359_640,
-                        "tier_completions": {"7": 100},
+                        "tier_completions": {"0": 50, "7": 100, "total": 999},
                     },
                     "master_catacombs": {
                         "tier_completions": {"7": 100},
@@ -115,7 +116,7 @@ async def test_dungeon_quick_view_contract_is_selected_profile_scoped_and_cached
     assert body["pets"]["goldenDragon"]["present"] is True
     assert body["pets"]["enderDragon"]["present"] is False
     evidence = body["requirementsEvidence"]
-    assert evidence["version"] == 1
+    assert evidence["version"] == 2
     assert evidence["identity"] == {
         "queryName": "NorthwestCloudy",
         "uuid": PLAYER_UUID,
@@ -138,13 +139,12 @@ async def test_dungeon_quick_view_contract_is_selected_profile_scoped_and_cached
         "kind": "ANY_COMPLETION",
     }
     assert evidence["averageSecrets"] == {
-        "state": "UNAVAILABLE",
-        "value": None,
+        "state": "KNOWN",
+        "value": pytest.approx(12.16),
         "numerator": 2432,
         "denominator": 200,
-        "scope": "ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS",
-        "complete": False,
-        "reason": "SCOPE_MISMATCH",
+        "scope": "SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS",
+        "complete": True,
     }
     assert evidence["magicalPower"] == {
         "state": "KNOWN",
@@ -159,6 +159,71 @@ async def test_dungeon_quick_view_contract_is_selected_profile_scoped_and_cached
     assert evidence["pets"]["enderDragon"] == {"state": "ABSENT"}
     assert upstream.calls["player"] == 1
     assert upstream.calls["profiles"] == 1
+
+
+@pytest.mark.asyncio
+async def test_average_secrets_uses_only_selected_profile_f1_f7_and_m1_m7_runs(
+    app_client, upstream
+) -> None:
+    _, client = app_client
+    upstream.player_payload["player"]["achievements"] = {
+        "skyblock_treasure_hunter": 9000
+    }
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    member["dungeons"] = {
+        "secrets": 120,
+        "dungeon_types": {
+            "catacombs": {
+                "tier_completions": {"0": 80, "1": 5, "7": 5, "total": 999},
+            },
+            "master_catacombs": {
+                "tier_completions": {"1": 10, "total": 10},
+            },
+        },
+    }
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["secrets"] == {"total": 120, "averagePerRun": 6.0}
+    assert body["requirementsEvidence"]["averageSecrets"] == {
+        "state": "KNOWN",
+        "value": 6.0,
+        "numerator": 120,
+        "denominator": 20,
+        "scope": "SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS",
+        "complete": True,
+    }
+
+
+def test_average_secrets_missing_or_zero_denominator_is_unavailable() -> None:
+    missing = DungeonQuickViewService._project({}, {"inventory": {}}, "F1")
+    assert missing["secrets"] == {"total": None, "averagePerRun": None}
+    assert missing["_requirements"]["averageSecrets"] is None
+    assert missing["_requirements"]["averageSecretsComplete"] is False
+    assert missing["_requirements"]["averageSecretsReason"] == "AVERAGE_SECRETS_UNAVAILABLE"
+
+    no_runs = DungeonQuickViewService._project({}, {
+        "dungeons": {
+            "secrets": 120,
+            "dungeon_types": {"catacombs": {"tier_completions": {}}},
+        },
+        "inventory": {},
+    }, "F1")
+    assert no_runs["secrets"] == {"total": 120, "averagePerRun": None}
+    assert no_runs["_requirements"]["averageSecretsReason"] == "NO_COMPLETED_DUNGEON_RUNS"
+
+    malformed_count = DungeonQuickViewService._project({}, {
+        "dungeons": {
+            "secrets": 120,
+            "dungeon_types": {
+                "catacombs": {"tier_completions": {"1": 1.5}},
+            },
+        },
+        "inventory": {},
+    }, "F1")
+    assert malformed_count["_requirements"]["averageSecrets"] is None
+    assert malformed_count["_requirements"]["averageSecretsReason"] == "AVERAGE_SECRETS_UNAVAILABLE"
 
 
 def test_catacombs_level_and_tooltip_projection_are_bounded() -> None:
@@ -316,6 +381,9 @@ def test_stale_sources_make_numeric_and_ownership_evidence_unavailable() -> None
             "fastestMs": 300_000,
             "secretsNumerator": 2000,
             "secretsDenominator": 200,
+            "averageSecrets": 10.0,
+            "averageSecretsComplete": True,
+            "averageSecretsReason": "",
             "magicalPower": 1500,
             "inventoryCoverage": {
                 "complete": True,

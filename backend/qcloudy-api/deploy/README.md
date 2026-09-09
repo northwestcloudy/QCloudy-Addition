@@ -60,6 +60,36 @@ curl --fail https://api.qcloudy.net/ready
 
 ## 3. 更新与回滚
 
+### Alpha 9 平均 Secrets 补丁（宝塔文件面板）
+
+本次后端改动只有一个生产文件：
+
+```text
+/opt/qcloudy-api/app/dungeon_service.py
+```
+
+仓库根目录生成的 `release/qcloudy-api-0.3.10-alpha9-evidence-v2-patch.zip` 内部已经保留 `app/dungeon_service.py` 这层路径。在宝塔中执行：
+
+1. 打开 `/opt/qcloudy-api/app`，把现有 `dungeon_service.py` 下载留存，或复制成 `dungeon_service.py.alpha8-backup`。不要删除 `.venv`、其他 `app` 文件、`/etc/qcloudy-api.env` 或 `/var/lib/qcloudy-api`。
+2. 回到 `/opt/qcloudy-api`，上传上述 ZIP。不要把 ZIP 上传到 `/opt/qcloudy-api/app`，否则会多套一层 `app/app`。
+3. 在 `/opt/qcloudy-api` 右键 ZIP 并选择解压到当前目录。确认覆盖目标只有 `/opt/qcloudy-api/app/dungeon_service.py`；不要选择“清空目标目录”或删除原目录后再解压。
+4. 打开宝塔“终端”，依次执行下面的停止、语法检查、启动与验证命令。只上传或解压不会让正在运行的 Python 进程自动读取新代码。
+
+```bash
+sudo systemctl stop qcloudy-api
+/opt/qcloudy-api/.venv/bin/python -m py_compile /opt/qcloudy-api/app/dungeon_service.py
+sudo systemctl start qcloudy-api
+sudo systemctl is-active qcloudy-api
+curl --fail https://api.qcloudy.net/ready
+curl --fail 'https://api.qcloudy.net/v1/dungeons/quick-view/NorthwestCloudy?floor=F7'
+```
+
+最后一个响应必须能找到 `"requirementsEvidence":{"version":2`，并且 `averageSecrets.scope` 应为 `SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS`。若仍是版本 1，说明服务没有加载新文件；若服务启动失败，先执行 `journalctl -u qcloudy-api -n 100 --no-pager` 查看错误，再把备份文件改回 `dungeon_service.py` 并重启。测试玩家恰好没有可用 runs/Secrets 时，`averageSecrets` 可以是 `UNAVAILABLE`，但 evidence 版本仍必须为 2。
+
+不要把 `.env.example` 覆盖到 `/etc/qcloudy-api.env`，也不需要修改 Nginx、域名、HTTPS 证书、SQLite 或重装 `.venv` 依赖。本补丁没有依赖文件变化。
+
+### 通用更新流程
+
 ```bash
 sudo systemctl stop qcloudy-api
 # 替换 /opt/qcloudy-api 中的应用文件，但保留 /etc/qcloudy-api.env 和 /var/lib/qcloudy-api

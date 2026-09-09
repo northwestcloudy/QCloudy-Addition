@@ -46,21 +46,21 @@ Redis 是可选的共享缓存层；Redis 不可用时退回有条目数和字�
 ## Dungeon Quick View 契约
 
 - `schemaVersion` 固定为 `1`。
-- 单个响应包含：玩家 identity、Catacombs 等级/XP、五职业等级/XP、指定层数 runs/fastest、Secrets 总数/全地牢 run 平均、Magical Power、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与新鲜度。
+- 单个响应包含：玩家 identity、Catacombs 等级/XP、五职业等级/XP、指定层数 runs/fastest、所选 Profile 的 Dungeon Secrets/F1–F7 与 M1–M7 run 平均、历史最高 Magical Power、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与新鲜度。
 - 顶层旧显示字段保持兼容；`identity` 只以新增字段的方式加入原始查询值 `queryName`。
 - Catacombs 与职业 XP 保留精确数值；客户端仅将等级显示到一位小数，并把 XP 放入悬停。
 - 护甲按 Helmet、Chestplate、Leggings、Boots 输出。后端从有限 NBT 摘要提供格式化名称与最多 80 行 lore，供客户端构造 Minecraft 原生 item hover。
 - 旧 Profile 卡片的武器和宠物字段继续使用 `present` 配合 `complete`。只有完整数据才能把未找到的物品解释为 absent；解码、字段或来源不可用时客户端应显示 missing。
-- 当前楼层最快时间取该层可用的 S+、S 或普通完成时间中的最小正值。旧 Profile 卡片的 Secrets 平均显示值仍使用账号总 Secrets 除以所选 Profile 普通与 Master 所有楼层完成次数之和，并排除聚合 `total` 字段。
+- 当前楼层最快时间取该层可用的 S+、S 或普通完成时间中的最小正值。Secrets 平均值使用同一 selected Profile 的 `member.dungeons.secrets`，除以该 Profile 明确的普通 F1–F7 与 Master M1–M7 完成次数之和；Entrance `0`、聚合 `total`、账号 Achievement 与 blood-mob 补偿均不参与。
 - 私密、缺失与异常数据不会变成 0；API 使用统一错误响应，客户端仍可生成全字段 `Missing` 卡片。
 
-### `requirementsEvidence` v1
+### `requirementsEvidence` v2
 
-`requirementsEvidence` 是独立于全局 `schemaVersion` 的附加契约。当前版本为 `requirementsEvidence.version = 1`，因此加入或升级该证据结构不会把其他 v1 API 的全局 schema 改成 2。该版本已写入仓库并通过本地测试，**尚未部署**；生产 API 在部署前可能完全没有这个字段。缺少该字段或版本不受支持时，客户端只能显示旧 Profile，不能据此自动执行踢人。
+`requirementsEvidence` 是独立于全局 `schemaVersion` 的附加契约。当前版本为 `requirementsEvidence.version = 2`，因此升级该证据结构不会把其他 v1 API 的全局 schema 改成 2。该版本已写入仓库并通过本地测试，**不会随 Mod JAR 自动部署**；生产 API 仍需单独更新并重启。部署过渡期客户端接受证据版本 1 和 2，但版本 1 的平均 Secrets 会被强制视为 UNKNOWN。缺少该字段或版本不受支持时，客户端只能显示旧 Profile，不能据此自动执行踢人。
 
 根字段：
 
-- `version`：证据契约版本，当前为 `1`。
+- `version`：证据契约版本，当前为 `2`。
 - `fresh`、`fetchedAt`：三个来源是否全部 fresh，以及其中最早的抓取时间。
 - `identity`：`queryName`、规范 UUID 和规范玩家名。
 - `profile`：所选 Profile 的 `id`、选择方式 `SELECTED|LATEST_SAVE`、以及 `selectionCertain`。只有恰好一个 Profile 被标记为 selected 时才确定；没有 selected 时使用最近保存的 Profile、多个 selected 时只在这些 selected 中选择最近保存的一份，二者都仅供展示，判定证据为 `UNAVAILABLE`。
@@ -76,8 +76,8 @@ Redis 是可选的共享缓存层；Redis 不可用时退回有条目数和字�
 
 - `floorCompletions`：`state` 与 `value`，只表示请求楼层的完成次数。
 - `fastestCompletion`：`state`、`valueMs`、`kind=ANY_COMPLETION`。它是该层 S+、S 或普通完成记录中的最小正值，不等同于只看 S+ PB。
-- `magicalPower`：`state`、`value`、`kind=HIGHEST`。目前数据源是所选 Profile 的 `highest_magical_power`，不是实时当前 MP。
-- `averageSecrets`：当前固定为 `state=UNAVAILABLE`、`reason=SCOPE_MISMATCH`，同时返回旧计算的 `numerator`、`denominator`、`scope=ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS` 和 `complete=false`。原因是账号 lifetime Secrets 与所选 Profile runs 的统计范围不同；旧卡片显示值保留，但不能成为自动判定依据。
+- `magicalPower`：`state`、`value`、`kind=HIGHEST`。数据源是所选 Profile 的 `highest_magical_power`，表示历史最高值，不是实时当前 MP。
+- `averageSecrets`：`state`、`value`、`numerator`、`denominator`、`scope=SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS` 与 `complete`。分子是 selected Profile 的 `member.dungeons.secrets`，分母只加该 Profile 的 F1–F7/M1–M7 明确完成次数。任一父结构/计数/Secrets 缺失或异常时返回 `AVERAGE_SECRETS_UNAVAILABLE`；分母为 0 时返回 `NO_COMPLETED_DUNGEON_RUNS`，两者均为 `UNAVAILABLE`，不能转换成 0。
 
 武器和宠物证据只使用：
 
