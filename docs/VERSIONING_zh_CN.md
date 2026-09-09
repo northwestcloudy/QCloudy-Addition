@@ -7,6 +7,7 @@ QCloudy_Addition 将模组核心版本、Minecraft 目标版本、发布通道�
 - 只有用户在当前任务中明确要求 Beta 或 Release，才使用对应通道。
 - 没有明确要求 Beta 或 Release 时，默认产出 Alpha；不能继承上一次任务的通道。
 - Alpha 是不公开的开发产物，默认只构建、测试、打包并交付 Minecraft 26.1.2。除非用户明确要求，否则不得处理 26.2 Alpha。
+- 每一次新的 Alpha 产物交付都必须在构建前把 `alpha_iteration` 精确递增一次。即使只是纠正后重新构建，也不得复用上一份交付的 Alpha 编号。
 - Beta 是公开测试通道，但不是稳定更新候选；Release 是游戏内更新检查追踪的稳定通道。
 
 ## Alpha 序号重置

@@ -1,6 +1,6 @@
 # QCloudy_Addition implementation and data-flow reference
 
-This document explains what each feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the unpublished `0.3.10-alpha9` source snapshot for Minecraft 26.1.2 only. The current public test remains Beta `0.3.10`; the latest stable Release remains `0.3.9`.
+This document explains what each feature is for, which client-visible information it consumes, how QCA processes that information, what the player should see, and whether the feature can produce an outbound action. It tracks the unpublished `0.3.10-alpha10` source snapshot for Minecraft 26.1.2 only. The current public test remains Beta `0.3.10`; the latest stable Release remains `0.3.9`.
 
 ## 1. Runtime architecture
 

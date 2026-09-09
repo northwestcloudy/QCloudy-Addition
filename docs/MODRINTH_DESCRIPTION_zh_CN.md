@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha9` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha10` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
@@ -26,7 +26,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha9` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha10` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
 
 - Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
 - F1–F7 与 M1–M7 共 14 层规则完全独立，Entrance 无规则。每层可分别开启最低完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；数值规则各自保留开关和值。全部规则与自动操作总开关默认关闭，开启总开关必须确认。

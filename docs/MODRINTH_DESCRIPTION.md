@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha9` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha10` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
@@ -26,7 +26,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha9` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha10` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
 
 - When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. The card shows Catacombs, selected-Profile Secrets/average, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. XP and native item details appear on hover; missing data is labelled.
 - F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum historical-highest Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.

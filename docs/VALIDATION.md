@@ -1,3 +1,31 @@
+# QCloudy_Addition 0.3.10-alpha10 corrected-output validation status
+
+Date: 2026-09-09<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha10` is the correctly incremented Alpha handoff for the latest source. It replaces the mistakenly reused `alpha9` handoff number without changing the floor-retention, one-decimal average-Secrets display, evidence-v2, chat-channel switcher, visual-toggle, or admission-safety behavior already present in the source. The project version rule now explicitly requires every new Alpha artifact handoff, including a corrected rebuild, to increment `alpha_iteration` exactly once before building.
+
+## Automated/build status
+
+- Minecraft 26.1.2/Java 25 `clean build prepareRelease` completed successfully: 67 test suites, 449 tests, 0 failures, 0 errors, and 0 skipped.
+- All 510 compiled project/test class files use Java major version 69. No Finder-style duplicate class/test copy was found, and both archives contain zero duplicate paths.
+- Both archives pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact internal version `0.3.10-alpha10+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+- The `release/` copies are byte-identical to their `build/libs/` counterparts.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha10+26.1.2.jar` — 3,986,535 bytes — `9725d9259033dcd2a500912108c08d4b9b738f9cfa524f13c188cf5e07b679c7`
+- `release/QCloudy_Addition-0.3.10-alpha10+26.1.2-sources.jar` — 3,197,326 bytes — `313499c503b0477acf96bc1663b75d59d279f37adb1859a0d2c8870305b6e0f6`
+
+## Boundary
+
+- This corrected Alpha output does not create or deploy a backend package, install the mod into a game directory, publish a GitHub Release/Modrinth version, or claim authenticated live Hypixel validation. Public Beta 0.3.10 and stable Release/update baseline 0.3.9 remain unchanged.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha9 roster and evidence-v2 validation status
 
 Date: 2026-09-09<br>

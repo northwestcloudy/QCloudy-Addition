@@ -1,3 +1,31 @@
+# QCloudy_Addition 0.3.10-alpha10 纠正输出验证状态
+
+日期：2026-09-09<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha10` 是最新源码正确递增后的 Alpha 交付。它纠正上一份交付误复用 `alpha9` 编号的问题，不改变源码中已经存在的楼层保留、平均 Secrets 一位小数、证据版本 2、聊天频道切换器、可视化开关或入队安全逻辑。项目版本规则现在明确要求：每一次新的 Alpha 产物交付（包括纠正后重新构建）都必须在构建前把 `alpha_iteration` 精确递增一次。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 的 `clean build prepareRelease` 成功完成：67 个测试套件、449 项测试，0 failure、0 error、0 skipped。
+- 全部 510 个项目/测试 class 文件均使用 Java major version 69；未发现 Finder 风格的重复 class/测试副本，两个归档的重复路径均为 0。
+- 两个归档均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 的内部版本精确声明为 `0.3.10-alpha10+26.1.2`，并声明纯客户端、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求与必需 `hypixel-mod-api >=1.0`。
+- `release/` 副本与对应的 `build/libs/` 文件逐字节一致。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha10+26.1.2.jar` — 3,986,535 字节 — `9725d9259033dcd2a500912108c08d4b9b738f9cfa524f13c188cf5e07b679c7`
+- `release/QCloudy_Addition-0.3.10-alpha10+26.1.2-sources.jar` — 3,197,326 字节 — `313499c503b0477acf96bc1663b75d59d279f37adb1859a0d2c8870305b6e0f6`
+
+## 边界
+
+- 本次纠正后的 Alpha 输出没有生成或部署后端包，没有安装进游戏目录，没有发布 GitHub Release/Modrinth 版本，也不声称已完成登录 Hypixel 的实服验证。公开 Beta 0.3.10 与稳定 Release/更新检查基线 0.3.9 均未改变。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha9 名单与证据版本 2 验证状态
 
 日期：2026-09-09<br>

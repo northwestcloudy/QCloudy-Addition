@@ -7,6 +7,7 @@ QCloudy_Addition separates the core mod version, Minecraft target, release chann
 - Use Beta or Release only when the user explicitly requests that channel for the current output.
 - If neither Beta nor Release is explicitly requested, the output is Alpha. Do not inherit the previous task's channel.
 - Alpha is an unpublished development output and defaults to Minecraft 26.1.2 only. Do not build, test, package, or deliver a 26.2 Alpha unless it is explicitly requested.
+- Every new Alpha artifact handoff increments `alpha_iteration` exactly once before building. Never reuse the previous handoff's Alpha number, even when the new output is only a corrected rebuild.
 - Beta is a public test channel but is not a stable-update candidate. Release is the stable channel tracked by the in-game updater.
 
 ## Alpha iteration reset

@@ -2,6 +2,15 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha10] - 2026-09-09
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Changed
+
+- Advanced the Alpha output iteration from `alpha9` to `alpha10` before rebuilding the latest source. This corrects the prior handoff's reused number; there is no functional change beyond the floor-retention and one-decimal average-Secrets fixes already present in the source.
+- Documented the rule that every new Alpha artifact handoff increments `alpha_iteration` exactly once, including corrected rebuilds, and that built JARs must never be renamed manually.
+
 ## [0.3.10-alpha9] - 2026-09-09
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
