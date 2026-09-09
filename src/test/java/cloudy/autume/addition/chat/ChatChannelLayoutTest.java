@@ -38,4 +38,19 @@ final class ChatChannelLayoutTest {
         assertEquals(List.of(), ChatChannelLayout.calculate(
                 4, 20, 60, ChatChannel.visibleChannels(false), channel -> 40, channel -> 18));
     }
+
+    @Test
+    void appliesSlotCoordinatesAndDimensionsToWidgetInTheCorrectOrder() {
+        ChatChannelLayout.Slot slot = new ChatChannelLayout.Slot(
+                ChatChannel.PARTY, 7, 151, 42, ChatChannelLayout.HEIGHT, false);
+        ChatChannelButton button = new ChatChannelButton(ChatChannel.PARTY, ignored -> {
+        });
+
+        button.applyLayout(slot);
+
+        assertEquals(7, button.getX());
+        assertEquals(151, button.getY());
+        assertEquals(42, button.getWidth());
+        assertEquals(ChatChannelLayout.HEIGHT, button.getHeight());
+    }
 }

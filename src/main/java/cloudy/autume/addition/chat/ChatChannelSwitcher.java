@@ -140,7 +140,7 @@ public final class ChatChannelSwitcher {
                         .findFirst().orElse(null);
                 button.visible = slot != null;
                 if (slot == null) continue;
-                button.setRectangle(slot.x(), slot.y(), slot.width(), slot.height());
+                button.applyLayout(slot);
                 boolean confirmed = snapshot.confirmed() == button.channel();
                 boolean pending = snapshot.pending() == button.channel();
                 boolean available = button.channel() != ChatChannel.COOP || !coopUnavailable;

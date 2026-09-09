@@ -33,6 +33,11 @@ final class ChatChannelButton extends AbstractButton {
         return channel;
     }
 
+    void applyLayout(ChatChannelLayout.Slot slot) {
+        setSize(slot.width(), slot.height());
+        setPosition(slot.x(), slot.y());
+    }
+
     void updateState(boolean confirmed, boolean pending) {
         this.confirmed = confirmed;
         this.pending = pending;
