@@ -94,9 +94,9 @@ public sealed interface DungeonRequirementEvidenceValue permits
     }
 
     /**
-     * Live party-class evidence. A known duplicate is conclusive even when the
-     * rest of the roster is incomplete. No duplicate is conclusive only when
-     * rosterComplete is true and every member class is known.
+     * Live party-class evidence. Neither a duplicate nor a non-duplicate may
+     * be concluded until the complete roster and every applicable class are
+     * known. Partial evidence is always UNKNOWN.
      */
     record DuplicateClass(
             DungeonClassKey newcomerClass,
@@ -138,8 +138,13 @@ public sealed interface DungeonRequirementEvidenceValue permits
             return List.copyOf(names);
         }
 
-        public boolean authoritativeWithoutDuplicate() {
+        public boolean authoritativeRoster() {
             return conclusiveWithoutDuplicate(newcomerClass, existingMembers, rosterComplete);
+        }
+
+        /** Retained as a readable compatibility alias for existing callers. */
+        public boolean authoritativeWithoutDuplicate() {
+            return authoritativeRoster() && conflictingPlayers().isEmpty();
         }
 
         private static boolean conclusiveWithoutDuplicate(

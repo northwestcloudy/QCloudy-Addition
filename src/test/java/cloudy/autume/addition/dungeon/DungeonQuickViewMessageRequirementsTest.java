@@ -57,7 +57,7 @@ final class DungeonQuickViewMessageRequirementsTest {
                 PresenceEvidence.confirmedAbsent(), PresenceEvidence.confirmedAbsent(),
                 PresenceEvidence.confirmedAbsent(), PresenceEvidence.confirmedAbsent());
         DungeonRequirementEvaluation evaluation =
-                DungeonRequirementEvaluator.evaluate(policy, evidence);
+                DungeonRequirementEvaluator.evaluate(policy, evidence, ARCHER);
 
         Component message = DungeonQuickViewMessage.failures("GhostsTM", "M7", evaluation);
         String text = message.getString();
@@ -70,7 +70,7 @@ final class DungeonQuickViewMessageRequirementsTest {
                 "Duplicate Class: Archer is already used by ExistingArcher",
                 "Fastest Completion: 04:58.321 / Required ≤ 04:10",
                 "Average Secrets: 8.0 / Required ≥ 12.0",
-                "Magical Power: 1,330 / Required ≥ 1,400",
+                "Highest Magical Power: 1,330 / Required ≥ 1,400",
                 "Wither Blade: Not owned / Required: Owned",
                 "Terminator: Not owned / Required: Owned",
                 "Golden Dragon: Not owned / Required: Owned",
@@ -98,12 +98,42 @@ final class DungeonQuickViewMessageRequirementsTest {
                 base.terminator(), base.goldenDragon(), base.enderDragon());
 
         DungeonRequirementEvaluation evaluation =
-                DungeonRequirementEvaluator.evaluate(policy, evidence);
+                DungeonRequirementEvaluator.evaluate(policy, evidence, ARCHER);
         String text = DungeonQuickViewMessage.failures("GhostsTM", "F7", evaluation).getString();
 
         assertEquals(RequirementStatus.FAIL, evaluation.status());
         assertTrue(text.contains("Average Secrets: 8.03 / Required ≥ 8.04"));
         assertFalse(text.contains("Average Secrets: 8.0 / Required ≥ 8.0"));
+    }
+
+    @Test
+    void confirmedFailureAlsoPrintsConcreteDupeAndActionErrorsBeforeAnyCommand() {
+        DungeonRequirementPolicy policy = new DungeonRequirementPolicy(DungeonFloorKey.F7,
+                LongRule.enabled(100), true,
+                LongRule.disabled(0), DecimalRule.disabled(0),
+                LongRule.disabled(0), false, false, false, false);
+        DungeonRequirementEvidence base = DungeonRequirementEvidence.unavailable(
+                DungeonFloorKey.F7, "Unused");
+        DungeonRequirementEvidence evidence = new DungeonRequirementEvidence(
+                DungeonFloorKey.F7, LongValue.known(50),
+                DuplicateClass.unknown(ARCHER,
+                        List.of(new PartyMemberClass("LocalPlayer", MAGE)),
+                        "PARTY_ROSTER_COUNT_MISMATCH|3|1"),
+                base.fastestCompletionMs(), base.averageSecrets(), base.magicalPower(),
+                base.witherBlade(), base.terminator(), base.goldenDragon(), base.enderDragon());
+        DungeonRequirementEvaluation evaluation = DungeonRequirementEvaluator.evaluate(
+                policy, evidence, ARCHER);
+
+        String text = DungeonQuickViewMessage.failures(
+                "GhostsTM", "F7", evaluation, "LOCAL_PLAYER_NOT_PARTY_LEADER").getString();
+
+        assertEquals(RequirementStatus.FAIL, evaluation.status());
+        assertInOrder(text,
+                "F7 Completions: 50 / Required ≥ 100",
+                "Duplicate Class: PartyInfo has 3 existing members, but QCA has 1 class records",
+                "Automatic party kick: You are no longer the party leader");
+        assertFalse(text.contains("QCA Player Quick View"));
+        assertRemovedStatusLinesAreAbsent(text);
     }
 
     @Test
@@ -138,7 +168,7 @@ final class DungeonQuickViewMessageRequirementsTest {
                 PresenceEvidence.unknown("INVENTORY_INCOMPLETE"),
                 base.goldenDragon(), base.enderDragon());
         DungeonRequirementEvaluation evaluation =
-                DungeonRequirementEvaluator.evaluate(policy, evidence);
+                DungeonRequirementEvaluator.evaluate(policy, evidence, ARCHER);
         DungeonQuickViewSnapshot snapshot = DungeonQuickViewSnapshot.parse(
                 DungeonQuickViewSnapshotTest.JSON_WITH_REQUIREMENTS);
 

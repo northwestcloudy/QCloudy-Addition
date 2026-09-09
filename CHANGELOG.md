@@ -2,6 +2,35 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha9] - 2026-09-09
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Changed
+
+- Average Secrets admission evidence is now computed entirely inside the exactly selected SkyBlock Profile: `member.dungeons.secrets` divided by the sum of that same Profile's explicit F1–F7 and M1–M7 completion counters. Entrance, aggregate `total`, account achievements, and Odin's `bloodMobKills / 4` adjustment are excluded. A zero/missing/malformed denominator or numerator stays UNKNOWN rather than becoming zero.
+- A newcomer confirmed as Mage by the exact Party Finder admission line skips the average-Secrets rule completely; it produces no PASS, FAIL, or UNKNOWN finding for that rule. An unavailable newcomer class makes that enabled rule UNKNOWN and cannot authorize a failure.
+- The backend evidence contract advances to version 2. The client accepts versions 1 and 2 during deployment transition, but deliberately forces version-1 average Secrets to UNKNOWN because only version 2 proves the matching selected-Profile scope.
+- The Profile card and admission rule now explicitly label `highest_magical_power` as historical **Highest Magical Power**, not live current MP.
+
+### Party and DUPE safety
+
+- Exact `Party Finder > Your party has been queued in the dungeon finder!` starts a new listing generation. The first complete, ownership-proven own-listing roster freezes players already in the party as trusted; they are never Profile-checked, rejected, kicked, or printed by this feature. Ordinary/manual party joins are also trusted and are used only as class context.
+- Exact Party Finder newcomers remain pending until their own admission passes. A newcomer who fails, leaves, is kicked, goes offline, or is cancelled never remains in the active DUPE roster. Exact leave/removal/disband/local-kick/new-party/delist/world/server/session/listing/floor changes remove the applicable state.
+- DUPE compares the frozen active QCA roster, excluding the current newcomer, against fresh official PartyInfo membership, also excluding the newcomer, with live Tab UUID identity mapping. Different counts, different identities, missing identities, missing/malformed/conflicting/stale classes, or an unknown newcomer class stop only the DUPE rule and print the concrete error. Every other enabled rule still runs; confirmed failures still appear and may authorize the kick when the independent final action guards pass.
+- If a Party Finder newcomer arrives before the first readable own-listing snapshot, the pending marker is preserved so that first GUI read cannot accidentally promote the newcomer into the trusted baseline.
+
+### Decision and output behavior
+
+- A full pass prints only the Profile card. It prints no PASS line and no no-kick line.
+- Confirmed failure prints every failed rule followed by any concrete evidence errors, then sends `party kick <validated newcomer>` only when final PartyInfo/listing/session/leader/target guards still pass. It prints no kick-sent line and does not claim that Hypixel accepted the command.
+- UNKNOWN-only results print the Profile plus concrete errors and do not kick. A confirmed failure can coexist with UNKNOWN rules; those errors remain visible without being mislabeled as failed requirements.
+
+### Validation boundary
+
+- Client and backend regression suites cover the version-2 average, Mage exemption, version-1 downgrade, trusted/pending roster lifecycle, exact DUPE reconciliation errors, independent remaining-rule evaluation, output ordering, and the pre-baseline newcomer race. Completed local build evidence is recorded in `docs/VALIDATION.md`.
+- The version-2 backend source is included here but is not deployed by the mod build itself. Production must be updated and restarted separately before live responses can provide version-2 average-Secrets evidence. The complete authenticated Hypixel Party Finder/PartyInfo/command flow remains a separate live-validation boundary.
+
 ## [0.3.10-alpha8] - 2026-09-08
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

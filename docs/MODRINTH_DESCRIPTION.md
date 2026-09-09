@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha8` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha9` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
@@ -26,12 +26,13 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha8` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its requirements-evidence backend is not deployed and the automatic-action path has not been authenticated-live tested on Hypixel.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha9` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
 
-- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. The card shows Catacombs, Secrets, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and Magical Power. XP and native item details appear on hover; missing data is labelled.
-- F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.
-- PASS prints only Profile. UNKNOWN prints Profile plus reasons and never kicks. FAIL lists every confirmed failure first, then may send `party kick <validated player>` in the same client-thread decision turn only while a fresh official PartyInfo snapshot proves local-leader role and target UUID membership and the own listing, floor, rules, session, and one-shot action are unchanged. A scoreboard-only floor, Entrance, missing/private/stale/mismatched/incomplete evidence, PartyInfo uncertainty, or network failure cannot authorize a kick. The red underlined manual action remains on Profile cards.
-- Current average-Secrets display mixes account Secrets with selected-Profile completions, so requirements evidence marks it `SCOPE_MISMATCH`/UNKNOWN. Until the Alpha 8 evidence backend is deployed, production responses without that evidence remain display-only and cannot authorize automatic removal.
+- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. The card shows Catacombs, selected-Profile Secrets/average, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. XP and native item details appear on hover; missing data is labelled.
+- F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum historical-highest Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.
+- Players already present at queue creation and ordinary/manual joins are trusted and never checked or kicked; their classes are used only for DUPE. Count, identity, or class uncertainty stops only DUPE with a concrete error while other rules continue. Departed/rejected players are removed from the tracked roster.
+- PASS prints only Profile. UNKNOWN prints Profile plus reasons and never kicks. FAIL lists every confirmed failure and concurrent concrete errors first, then may send `party kick <validated player>` in the same client-thread decision turn only while a fresh official PartyInfo snapshot proves local-leader role and target UUID membership and the own listing, floor, rules, session, and one-shot action are unchanged. A scoreboard-only floor, Entrance, missing/private/stale/mismatched/incomplete evidence, PartyInfo uncertainty, or network failure cannot authorize a kick. The red underlined manual action remains on Profile cards.
+- Evidence version 2 computes average Secrets from only the selected Profile's Dungeon Secrets and explicit F1–F7/M1–M7 completions. Entrance, totals, account achievements, and blood-mob compensation are excluded; confirmed Mage newcomers skip this rule. Until the Alpha 9 backend is separately deployed and restarted, version-1 production responses keep this rule UNKNOWN.
 - The generic `//pv` and `/qpv` Profile Viewer, its source, and its backend routes are removed from this snapshot.
 
 ### HUDs, pets, and timers

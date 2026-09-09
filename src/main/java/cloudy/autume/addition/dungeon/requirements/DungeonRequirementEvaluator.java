@@ -24,6 +24,18 @@ public final class DungeonRequirementEvaluator {
     public static DungeonRequirementEvaluation evaluate(
             DungeonRequirementPolicy policy,
             DungeonRequirementEvidence evidence) {
+        return evaluate(policy, evidence, null);
+    }
+
+    /**
+     * Evaluates one admission using the class frozen from the exact Party
+     * Finder join line. A confirmed Mage has no average-Secrets finding; an
+     * unknown admission class makes only that rule UNKNOWN.
+     */
+    public static DungeonRequirementEvaluation evaluate(
+            DungeonRequirementPolicy policy,
+            DungeonRequirementEvidence evidence,
+            DungeonClassKey admissionClass) {
         if (policy == null) throw new IllegalArgumentException("Policy is required");
         if (evidence == null) throw new IllegalArgumentException("Evidence is required");
         if (policy.floor() != evidence.floor()) {
@@ -33,6 +45,16 @@ public final class DungeonRequirementEvaluator {
         List<RequirementFinding> findings = new ArrayList<>(DungeonRequirement.values().length);
         for (DungeonRequirement requirement : DungeonRequirement.values()) {
             if (!policy.enabled(requirement)) continue;
+            if (requirement == DungeonRequirement.MINIMUM_AVERAGE_SECRETS
+                    && admissionClass == DungeonClassKey.MAGE) continue;
+            if (requirement == DungeonRequirement.MINIMUM_AVERAGE_SECRETS
+                    && admissionClass == null) {
+                findings.add(new RequirementFinding(requirement, UNKNOWN,
+                        new DungeonRequirementCriterion.DecimalThreshold(
+                                policy.minimumAverageSecrets().value(), AT_LEAST),
+                        DecimalValue.unknown("NEWCOMER_CLASS_MISSING")));
+                continue;
+            }
             findings.add(evaluate(requirement, policy, evidence));
         }
         return new DungeonRequirementEvaluation(findings);
@@ -91,8 +113,8 @@ public final class DungeonRequirementEvaluator {
     }
 
     private static RequirementFinding duplicateClass(DuplicateClass evidence) {
-        RequirementStatus status = !evidence.conflictingPlayers().isEmpty() ? FAIL
-                : evidence.authoritativeWithoutDuplicate() ? PASS : UNKNOWN;
+        RequirementStatus status = !evidence.authoritativeRoster() ? UNKNOWN
+                : !evidence.conflictingPlayers().isEmpty() ? FAIL : PASS;
         return new RequirementFinding(DungeonRequirement.DISALLOW_DUPLICATE_CLASS,
                 status, DISALLOW_DUPLICATE_CLASS, evidence);
     }

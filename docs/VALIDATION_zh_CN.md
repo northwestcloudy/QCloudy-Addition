@@ -1,3 +1,42 @@
+# QCloudy_Addition 0.3.10-alpha9 名单与证据版本 2 验证状态
+
+日期：2026-09-09<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha9` 完成要求中的 Party Finder 成员/职业生命周期，并替换范围不一致的平均 Secrets 证据。创建发布前已有成员与普通/手动加入成员均可信，绝不检查或踢出；只有精确 Party Finder 新人才进入判定。平均 Secrets 只使用唯一 selected Profile 的 Dungeon Secrets 与同一 Profile 明确 F1–F7/M1–M7 完成次数；确认 Mage 会跳过该规则。证据升级到版本 2，客户端仍安全读取版本 1，但其平均 Secrets 强制为 UNKNOWN。原有 14 份 F1–F7/M1–M7 独立规则、Entrance 排除、总开关/全部规则默认关闭、九项开关和三态输出保持不变。
+
+## 已完成的源码与静态检查
+
+- 精确排队确认会开始新的发布 generation。第一次完整、归属明确的自己的发布名单成为可信初始名单；普通/手动加入成员同样可信。精确 Party Finder 新人保持待判定直到通过；即使新人早于第一次名单读取出现，也不会被误并入可信初始名单。
+- 精确离队、移除、离线踢出、队伍解散、本机被踢、加入其他队伍、取消发布、发布/楼层替换、换世界/服务器/会话、判定失败或取消，都会清理对应跟踪状态。失败或离队新人不会残留到之后的 DUPE。
+- DUPE 从冻结 QCA 名单与新鲜 PartyInfo 同时排除当前新人，再通过实时 Tab UUID 映射所有剩余名字，并要求人数、成员集合与职业完整一致。人数、身份、映射或职业不确定时只生成具体 DUPE UNKNOWN；其他规则继续，已确认失败仍会显示并可进入独立最终操作保护。
+- 证据版本 2 返回 selected Profile 的 `member.dungeons.secrets`、明确 F1–F7/M1–M7 分母、`SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS` 范围与完整性。Entrance `0`、`total`、账号 Achievement 和 `bloodMobKills / 4` 均排除。数据缺失/异常或 0 次完成保持 UNKNOWN；确认 Mage 完整省略平均规则，职业未知时规则为 UNKNOWN。
+- 部署过渡期仍可解析版本 1 响应，但平均 Secrets 强制 UNKNOWN。Profile 与规则把 `highest_magical_power` 明确标为历史最高 Magical Power。
+- PASS 只输出 Profile；只有 UNKNOWN 时输出 Profile 与具体原因，不踢人；FAIL 在紧邻的受保护 `party kick <已校验新成员>` 指令前输出全部确认失败和同时存在的具体错误，不显示 PASS、“未发送”或“已发送”行。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 最终 `clean build prepareRelease` 成功完成：65 个测试套件、433 项测试，0 failure、0 error、0 skipped；后端回归 50 项全部通过。
+- 干净测试后的 `build prepareRelease` 成功完成。全部 497 个项目/测试 class 文件使用 Java major version 69；不存在 Finder 风格的 `* 2.class` 或 `TEST-* 2.xml` 冲突副本。
+- 两个归档均通过 JDK 25 `jar --validate` 与 `unzip -t`，重复路径为 0；可运行 JAR 精确声明 `0.3.10-alpha9+26.1.2`、纯客户端、Minecraft 26.1.2、Java 25、匹配 Fabric Loader/Fabric API 要求与必需 `hypixel-mod-api >=1.0`。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha9+26.1.2.jar` — 3,962,285 字节 — `ef1802e05a9d66f2af39832d4be634a270b512bdc92da4af2ee4a6a51fef2cd6`
+- `release/QCloudy_Addition-0.3.10-alpha9+26.1.2-sources.jar` — 3,187,610 字节 — `d5ff19e8dc3c235b1f65a2315fa6e5b9a8bbda8715a28db7d6d9f3fd1ed81574`
+- `release/qcloudy-api-0.3.10-alpha9-evidence-v2-patch.zip` — 7,115 字节 — `aae79ce49fb8076f7842d58f430a81f0ba78a65ebc63725d768cbf25c04eb022`；只含 `app/dungeon_service.py`，并通过 `unzip -t`。
+
+## 部署与实服验证边界
+
+- 构建 Mod 不会部署后端。单独交付的 Alpha 9 补丁 ZIP 必须上传到 `/opt/qcloudy-api`、在该目录解压并重启服务；在此之前，版本 1 响应会让平均 Secrets 保持 UNKNOWN，没有受支持证据时后端规则均为 UNKNOWN/仅展示。宝塔逐步操作与回滚方法记录在 `backend/qcloudy-api/deploy/README.md`。
+- 尚未在登录 Hypixel 的实服完成“真实自己的发布 → 新人 → PartyInfo → 输出 → 可选指令”全流程。自动测试不能证明实服菜单/聊天文字、队长竞态、服务器接受、成功移除或未来绝无误判。
+- 本段不声称 Minecraft 26.2 Alpha 产物、安装进游戏目录、生产部署、GitHub Release 或 Modrinth 发布。公开 Beta 0.3.10 与稳定 Release/更新检查基线 0.3.9 均未改变。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha8 Dungeon 入队规则验证状态
 
 日期：2026-09-08<br>

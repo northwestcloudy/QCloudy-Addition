@@ -52,7 +52,7 @@
 - 本地设置命令：`/qca`、`/qc`；若其他客户端命令已占用某个根名称，则跳过该别名。它们只打开 QCA 设置，不发送内容。
 - 可选提供方集成按能力探测，而不是精确版本白名单。第三方设置与 HUD 分别受两个默认关闭的总开关控制。每一次扫描都必须经过第二次本地确认：首次开启但没有有效快照时，以及每一次 Refresh，都会先明确显示具体扫描范围。取消首次确认会保持总开关关闭；取消 Refresh 会保留已校验快照；重启后恢复为开启的开关不会静默扫描。两个界面共用通过校验的快照，但设置/HUD 数量独立显示；只列出已安装并实际产出可读能力的提供方，两个开关都关闭时停止扫描。分类先用原生/已验证规则，之后才使用固定本地分类器，置信度不足时保持未分类。过程中没有云端模型、提供方下载、HTTP、服务器查询或直接编辑配置文件；之后玩家主动编辑时也只调用所选已安装提供方自己的保存/update 机制。
 - 本地 Shard 命令：`/qshard [英文查询]`；打开随模组打包的离线 Attribute Shard Fusion Guide，并可预填本地搜索。它不会发送聊天、服务器命令、数据包、菜单输入或网络请求。
-- QCA 不再注册通用档案命令 `//pv` 或 `/qpv`。Dungeon Quick View 没有命令入口，只对 Dungeon Finder 的精确新成员行响应。Profile 展示默认开启，但单独的入队操作总开关与全部规则默认关闭；开启总开关必须明确确认。F1–F7、M1–M7 各有九项独立规则：最低本层完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；Entrance 无规则，也没有跨层回退。PASS 只输出 Profile；UNKNOWN 输出 Profile 与原因，绝不踢人；FAIL 先列全部确认失败，再在同一判定回合发送 `party kick <已校验新成员>`，且新鲜官方 PartyInfo 必须仍证明本机为队长、目标 UUID 在队内，并且自己的发布条目、楼层、规则、会话与动作键未变。红色下划线手动操作继续保留。
+- QCA 不再注册通用档案命令 `//pv` 或 `/qpv`。Dungeon Quick View 没有命令入口，只对 Dungeon Finder 的精确新成员行响应。Profile 展示默认开启，但单独的入队操作总开关与全部规则默认关闭；开启总开关必须明确确认。F1–F7、M1–M7 各有九项独立规则：最低本层完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；Entrance 无规则，也没有跨层回退。排队前与普通/手动加入的队员均可信，绝不被本功能检查或自动移除。PASS 只输出 Profile；UNKNOWN 输出 Profile 与原因，绝不踢人；FAIL 先列全部确认失败与同时存在的具体错误，再在同一判定回合发送 `party kick <已校验新成员>`，且新鲜官方 PartyInfo 必须仍证明本机为队长、目标 UUID 在队内，并且自己的发布条目、楼层、规则、会话与动作键未变。红色下划线手动操作继续保留。
 - 本地 Century Cake 命令：`/cake`、`/centurycakeeffect`；只打开本地蛋糕效果菜单。过期提醒中的带下划线链接在玩家点击后发送精确 `/visit northwestcloudy`；未点击时不会发送，计时器也不会自动触发该指令。
 - 本地 Torrhus 快捷命令：`/th`；没有设置项且无法关闭。玩家明确输入时，QCA 发送精确内容 `warp torrhus`，等同手动输入 `/warp torrhus`；只有在其他客户端命令已经占用 `/th` 时才跳过注册。
 - 本地 Helia 快捷命令：`/helia`；没有设置项。玩家明确输入时，QCA 发送精确内容 `chapter torrhus`，等同手动输入 `/chapter torrhus`；只有在其他客户端命令已经占用 `/helia` 时才跳过注册。
@@ -87,9 +87,9 @@
 
 QCA 打包 Hypixel 官方 Mod API Fabric 实现，用于接收服务器的 Hello/Location plugin message、注册 Location 事件，并且只在活动中的已开启 Dungeon 入队判定时请求/接收 PartyInfo。QCA 不自行实现协议，不用 Public API 判断当前连接，不持有客户端 Hypixel API Key，不自动发送 `/locraw`，也不会直接请求需要认证的 Hypixel Profile 端点。模组不包含 WebSocket、遥测、坐标共享服务、自动下载/安装更新器、宏、模拟输入、自动点击/移动或方块交互。QCloudy 有界 API 客户端与下述 Release 提醒客户端是 QCA 自有的两条网页访问路径；对外网络包/指令仅限于上方逐项列出的官方 PartyInfo 权威刷新、快捷命令、点击动作、组队/聊天工具、受保护的入队指令，以及玩家点击“重新连接”后的一次普通服务器连接。重连没有倒计时、重试循环、后台尝试或自动加入。
 
-Dungeon/市场客户端只接受普通 HTTPS 端口的 `https://api.qcloudy.net`，禁止跳转，连接超时五秒、请求超时十五秒、响应上限 4 MiB。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选发布/排队楼层；它不会发送 Minecraft 会话凭据、Cookie、Hypixel API Key、服务器地址、模组列表、聊天记录、坐标或遥测标识。后端持有应用 Key，只提供固定转换端点而不是通用代理，会合并/缓存上游请求、限制解码 NBT 大小并保留私密/缺失/过旧状态。规则证据绑定目标 UUID、Profile 选择、楼层、新鲜度与来源覆盖；证据缺失/版本不支持、私密/缺失资料、身份/楼层过旧或不符、背包/宠物/职业不完整、PartyInfo 不确定或网络失败，均不能成为自动失败。当前平均 Secrets 混用账号 Secrets 与所选 Profile 完成次数，因此证据会明确返回 `SCOPE_MISMATCH`/UNKNOWN。模组只在进程内缓存成功 Quick View 60 秒；远程玩家数据和价格历史不会写入 QCA 本地配置。
+Dungeon/市场客户端只接受普通 HTTPS 端口的 `https://api.qcloudy.net`，禁止跳转，连接超时五秒、请求超时十五秒、响应上限 4 MiB。Dungeon 请求会让 QCloudy 服务器看到连接 IP、QCA User-Agent、新成员名称与可选发布/排队楼层；它不会发送 Minecraft 会话凭据、Cookie、Hypixel API Key、服务器地址、模组列表、聊天记录、坐标或遥测标识。后端持有应用 Key，只提供固定转换端点而不是通用代理，会合并/缓存上游请求、限制解码 NBT 大小并保留私密/缺失/过旧状态。规则证据绑定目标 UUID、Profile 选择、楼层、新鲜度与来源覆盖；证据缺失/版本不支持、私密/缺失资料、身份/楼层过旧或不符、背包/宠物/职业不完整、PartyInfo 不确定或网络失败，均不能成为自动失败。证据版本 2 只使用 selected Profile 的 Dungeon Secrets 与明确 F1–F7/M1–M7 完成次数计算平均值；版本 1 只作过渡兼容，其平均值保持 UNKNOWN；Mage 新人完整跳过该规则。模组只在进程内缓存成功 Quick View 60 秒；远程玩家数据和价格历史不会写入 QCA 本地配置。
 
-Alpha 8 证据后端尚未部署到生产环境，也没有在已登录 Hypixel 的实服执行“自己的发布条目 → PartyInfo → 判定 → 指令”全流程。生产环境返回受支持证据前，已开启规则只能 UNKNOWN/展示，不能授权自动移除。静态、单元或构建检查不能被表述为服务器接受、玩家已被移除、Hypixel 批准或实服验证。
+Alpha 9 的证据版本 2 后端不会随 Mod 构建自动部署，也没有在已登录 Hypixel 的实服执行“自己的发布条目 → PartyInfo → 判定 → 指令”全流程。生产服务器仍需单独更新并重启；返回版本 2 前平均 Secrets 保持 UNKNOWN，没有受支持证据时后端规则只能 UNKNOWN/展示。静态、单元或构建检查不能被表述为服务器接受、玩家已被移除、Hypixel 批准或实服验证。
 
 Release 更新提醒永久开启，没有功能卡片或配置项。Alpha 构建会在安排任何工作或打开 HTTP 连接前直接返回。Beta 或 Release 构建在第一次进入世界后安排一次检查，延迟五秒后异步向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送 HTTPS `GET`；整个客户端进程最多一次。连接超时为五秒、请求超时为十秒、禁止重定向、只接受 HTTP 200，并把响应限制为 128 KiB。失败只记日志，不向玩家报错，也没有重试循环。若确认结果等待展示时玩家已断线，则保留到下一次进入世界再显示。
 

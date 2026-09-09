@@ -104,7 +104,7 @@ final class DungeonQuickViewSnapshotTest {
         assertEquals(298_321L, evidence.fastestCompletionMs().value());
         assertEquals(1_330L, evidence.magicalPower().value());
         assertNull(evidence.averageSecrets().value());
-        assertEquals("SCOPE_MISMATCH", evidence.averageSecrets().unavailableReason());
+        assertEquals("CALCULATION_UNAVAILABLE", evidence.averageSecrets().unavailableReason());
         assertEquals(PresenceState.PRESENT, evidence.witherBlade().state());
         assertEquals(PresenceState.CONFIRMED_ABSENT, evidence.terminator().state());
         assertEquals(PresenceState.PRESENT, evidence.goldenDragon().state());
@@ -118,6 +118,20 @@ final class DungeonQuickViewSnapshotTest {
         assertEquals(900L, view.evidenceFetchedAt());
         assertTrue(view.requirementsEvidenceTrusted());
         assertEquals("", view.requirementsEvidenceBlocker());
+    }
+
+    @Test
+    void acceptsEvidenceV2AverageSecretsWhileKeepingV1FailClosed() {
+        String versionTwo = JSON_WITH_REQUIREMENTS
+                .replace("\"version\":1", "\"version\":2")
+                .replace("\"state\":\"UNAVAILABLE\",\"value\":null,\"numerator\":2432,\"denominator\":213,\"scope\":\"ACCOUNT_SECRETS_SELECTED_PROFILE_RUNS\",\"complete\":false,\"reason\":\"SCOPE_MISMATCH\"",
+                        "\"state\":\"KNOWN\",\"value\":11.417840375586854,\"numerator\":2432,\"denominator\":213,\"scope\":\"SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS\",\"complete\":true");
+
+        DungeonQuickViewSnapshot view = DungeonQuickViewSnapshot.parse(versionTwo);
+
+        assertTrue(view.requirementsEvidenceTrusted());
+        assertEquals(11.417840375586854,
+                view.requirementsEvidence().averageSecrets().value());
     }
 
     @Test

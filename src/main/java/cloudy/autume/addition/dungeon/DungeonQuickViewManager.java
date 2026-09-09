@@ -42,7 +42,6 @@ import java.util.regex.Pattern;
 public final class DungeonQuickViewManager {
     private static final long AUTHORITY_TIMEOUT_NANOS = Duration.ofSeconds(3).toNanos();
     private static final long FINAL_AUTHORITY_MAX_AGE_NANOS = Duration.ofSeconds(2).toNanos();
-    private static final long CLASS_ROSTER_MAX_AGE_NANOS = Duration.ofSeconds(2).toNanos();
     private static final long CLASS_ROSTER_TIMEOUT_NANOS = Duration.ofSeconds(3).toNanos();
     private static final long ADMISSION_EVIDENCE_MAX_LOCAL_AGE_NANOS =
             Duration.ofSeconds(10).toNanos();
@@ -107,13 +106,19 @@ public final class DungeonQuickViewManager {
 
         if (!ConfigManager.get().dungeons.playerQuickView || client.player == null) return;
         DungeonJoinParser.event(raw).ifPresent(event -> {
+            if (event.playerName().equalsIgnoreCase(client.getUser().getName())) return;
+            long now = System.nanoTime();
+            long membershipEpoch = claimMembershipEpoch(event.playerName(), now);
+            if (membershipEpoch < 0L) return;
             updateScoreboard(LocationTracker.liveScoreboardLines(client));
-            DungeonPartyFinderFloorTracker.update(client);
-            long rosterObservedAt = System.nanoTime();
-            List<PartyMemberClass> existingClasses = freshPreJoinClasses(
-                    event.playerName(), rosterObservedAt);
+            // Mark the exact Party Finder target before reading any currently
+            // open listing so it can never be mistaken for a trusted/manual
+            // member during the same client task.
             DungeonPartyFinderFloorTracker.observeJoin(event);
-            request(client, event, existingClasses);
+            DungeonPartyFinderFloorTracker.update(client);
+            List<PartyMemberClass> existingClasses =
+                    DungeonPartyFinderFloorTracker.existingClasses(event.playerName());
+            request(client, event, existingClasses, now, membershipEpoch);
         });
     }
 
@@ -131,12 +136,9 @@ public final class DungeonQuickViewManager {
     }
 
     private static void request(Minecraft client, DungeonJoinParser.DungeonJoinEvent event,
-                                List<PartyMemberClass> existingClasses) {
-        if (event.playerName().equalsIgnoreCase(client.getUser().getName())) return;
-        long now = System.nanoTime();
+                                List<PartyMemberClass> existingClasses,
+                                long now, long membershipEpoch) {
         String playerKey = playerKey(event.playerName());
-        long membershipEpoch = claimMembershipEpoch(playerKey, now);
-        if (membershipEpoch < 0L) return;
 
         long requestSession = session;
         DungeonPartyFinderFloorTracker.ListingContext listing =
@@ -160,6 +162,10 @@ public final class DungeonQuickViewManager {
                     now + AUTHORITY_TIMEOUT_NANOS,
                     QUEUE_CONTEXT.generation(), admissionPolicyRevision);
             replaceAdmission(playerKey, admission);
+        } else {
+            // No enabled policy means this membership passed vacuously. Keep
+            // its exact join-line class for future DUPE comparisons.
+            DungeonPartyFinderFloorTracker.acceptPartyFinderMember(event);
         }
 
         DungeonQuickViewSnapshot cached = admission == null
@@ -230,9 +236,9 @@ public final class DungeonQuickViewManager {
     static void onPartyAuthorityChanged() {
         Minecraft client = Minecraft.getInstance();
         if (client == null || ADMISSIONS.isEmpty()) return;
-        // Re-read the currently open own-listing menu in the same client task
-        // as the PartyInfo response. DUPE evidence still requires both sources
-        // to be independently fresh and observed after the final request.
+        // Refresh any currently open own-listing classes in the same client
+        // task as PartyInfo. The frozen active names remain the membership
+        // boundary; PartyInfo and live Tab UUIDs independently reconcile them.
         DungeonPartyFinderFloorTracker.update(client);
         cancelInvalidAdmissions();
         long now = System.nanoTime();
@@ -279,7 +285,8 @@ public final class DungeonQuickViewManager {
                 ? attempt.finalAuthorityDeadlineNanos : attempt.authorityDeadlineNanos;
         if (attempt.snapshot.playerUuid() == null
                 || requiredAuthorityResponse == Long.MAX_VALUE) {
-            showAuthorityUnknown(client, attempt);
+            showAuthorityUnknown(client, attempt, null,
+                    "PARTY_AUTHORITY_UNAVAILABLE", now);
             return;
         }
         DungeonPartyAuthorityTracker.Snapshot party =
@@ -287,23 +294,29 @@ public final class DungeonQuickViewManager {
                         attempt.authoritySession, requiredAuthorityResponse);
         if (party == null && now <= authorityDeadline) return;
         if (!authorityResponseUsable(party, now, authorityDeadline)) {
-            showAuthorityUnknown(client, attempt);
+            showAuthorityUnknown(client, attempt, party,
+                    "PARTY_AUTHORITY_UNAVAILABLE", now);
             return;
         }
         Readiness readiness = party.readiness(attempt.authoritySession,
                 requiredAuthorityResponse, client.player.getUUID(),
                 attempt.snapshot.playerUuid());
         if (readiness != Readiness.READY) {
-            showAuthorityUnknown(client, attempt);
+            showAuthorityUnknown(client, attempt, party,
+                    authorityReason(readiness), now);
             return;
         }
 
         DungeonRequirementEvidence evidence = evidenceFor(client, attempt, party, true, now);
         DungeonRequirementEvaluation evaluation =
-                DungeonRequirementEvaluator.evaluate(attempt.policy, evidence);
+                DungeonRequirementEvaluator.evaluate(
+                        attempt.policy, evidence, attempt.event.dungeonClass());
 
         if (evaluation.failures().isEmpty()) {
             if (shouldAwaitClassRoster(attempt, evaluation, now)) return;
+            if (evaluation.unknowns().isEmpty()) {
+                DungeonPartyFinderFloorTracker.acceptPartyFinderMember(attempt.event);
+            }
             finish(attempt);
             client.player.sendSystemMessage(evaluation.unknowns().isEmpty()
                     ? DungeonQuickViewMessage.build(attempt.snapshot, client.font)
@@ -322,12 +335,12 @@ public final class DungeonQuickViewManager {
                         DungeonQuickViewMessage.build(attempt.snapshot, client.font));
                 return;
             }
-            attempt.finalAuthorityRequestedAtNanos = now;
             attempt.finalAuthorityResponse = DungeonPartyAuthorityTracker.requestRefresh();
             attempt.finalAuthorityDeadlineNanos = now + AUTHORITY_TIMEOUT_NANOS;
             attempt.finalClassRosterDeadlineNanos = now + CLASS_ROSTER_TIMEOUT_NANOS;
             if (attempt.finalAuthorityResponse == Long.MAX_VALUE) {
-                showAuthorityUnknown(client, attempt);
+                showAuthorityUnknown(client, attempt, null,
+                        "PARTY_AUTHORITY_UNAVAILABLE", now);
             }
             return;
         }
@@ -336,17 +349,27 @@ public final class DungeonQuickViewManager {
         // failure report and the one server command it authorizes.
         if (!party.freshAt(now, FINAL_AUTHORITY_MAX_AGE_NANOS)
                 || !finalGuard(client, attempt, party, now)) {
-            showAuthorityUnknown(client, attempt);
+            finish(attempt);
+            if (client.player != null) {
+                client.player.sendSystemMessage(DungeonQuickViewMessage.failures(
+                        attempt.snapshot.playerName(), attempt.floor, evaluation,
+                        "PARTY_AUTHORITY_UNAVAILABLE"));
+            }
+            return;
+        }
+        var connection = client.getConnection();
+        if (connection == null) {
+            finish(attempt);
+            if (client.player != null) {
+                client.player.sendSystemMessage(DungeonQuickViewMessage.failures(
+                        attempt.snapshot.playerName(), attempt.floor, evaluation,
+                        "PARTY_AUTHORITY_UNAVAILABLE"));
+            }
             return;
         }
         ActionKey action = new ActionKey(attempt.managerSession, attempt.listing.generation(),
                 attempt.membershipEpoch, attempt.floor, attempt.snapshot.playerUuid());
         if (!SENT_ACTIONS.add(action)) {
-            finish(attempt);
-            return;
-        }
-        var connection = client.getConnection();
-        if (connection == null) {
             finish(attempt);
             return;
         }
@@ -356,14 +379,27 @@ public final class DungeonQuickViewManager {
         connection.sendCommand("party kick " + attempt.snapshot.playerName());
     }
 
-    private static void showAuthorityUnknown(Minecraft client, AdmissionAttempt attempt) {
+    private static void showAuthorityUnknown(
+            Minecraft client, AdmissionAttempt attempt,
+            DungeonPartyAuthorityTracker.Snapshot party,
+            String reason, long nowNanos) {
+        DungeonRequirementEvidence evidence = evidenceFor(
+                client, attempt, party, false, nowNanos, reason);
         DungeonRequirementEvaluation unavailable = DungeonRequirementEvaluator.evaluate(
-                attempt.policy, DungeonRequirementEvidence.unavailable(
-                        attempt.policy.floor(), "PARTY_AUTHORITY_UNAVAILABLE"));
+                attempt.policy, evidence, attempt.event.dungeonClass());
         finish(attempt);
         if (client.player != null) {
-            client.player.sendSystemMessage(DungeonQuickViewMessage.buildWithUnknowns(
-                    attempt.snapshot, unavailable, client.font));
+            Component message;
+            if (!unavailable.failures().isEmpty()) {
+                message = DungeonQuickViewMessage.failures(
+                        attempt.snapshot.playerName(), attempt.floor, unavailable, reason);
+            } else if (!unavailable.unknowns().isEmpty()) {
+                message = DungeonQuickViewMessage.buildWithUnknowns(
+                        attempt.snapshot, unavailable, client.font);
+            } else {
+                message = DungeonQuickViewMessage.build(attempt.snapshot, client.font);
+            }
+            client.player.sendSystemMessage(message);
         }
     }
 
@@ -373,12 +409,23 @@ public final class DungeonQuickViewManager {
                 ? "UNSUPPORTED_EVIDENCE" : reason;
         DungeonRequirementEvaluation unavailable = DungeonRequirementEvaluator.evaluate(
                 attempt.policy, DungeonRequirementEvidence.unavailable(
-                        attempt.policy.floor(), unavailableReason));
+                        attempt.policy.floor(), unavailableReason),
+                attempt.event.dungeonClass());
         finish(attempt);
         if (client.player != null) {
             client.player.sendSystemMessage(DungeonQuickViewMessage.buildWithUnknowns(
                     attempt.snapshot, unavailable, client.font));
         }
+    }
+
+    private static String authorityReason(Readiness readiness) {
+        if (readiness == null) return "PARTY_AUTHORITY_UNAVAILABLE";
+        return switch (readiness) {
+            case NOT_IN_PARTY -> "PARTY_NOT_CONFIRMED";
+            case NOT_LEADER -> "LOCAL_PLAYER_NOT_PARTY_LEADER";
+            case TARGET_ABSENT -> "TARGET_NOT_IN_PARTY";
+            case PENDING, READY -> "PARTY_AUTHORITY_UNAVAILABLE";
+        };
     }
 
     /** Pure clock-domain gate used by the runtime and deterministic tests. */
@@ -421,6 +468,14 @@ public final class DungeonQuickViewManager {
             Minecraft client, AdmissionAttempt attempt,
             DungeonPartyAuthorityTracker.Snapshot party, boolean authorityReady,
             long nowNanos) {
+        return evidenceFor(client, attempt, party, authorityReady, nowNanos,
+                "PARTY_AUTHORITY_UNAVAILABLE");
+    }
+
+    private static DungeonRequirementEvidence evidenceFor(
+            Minecraft client, AdmissionAttempt attempt,
+            DungeonPartyAuthorityTracker.Snapshot party, boolean authorityReady,
+            long nowNanos, String authorityUnavailableReason) {
         DungeonRequirementEvidence base = attempt.snapshot.requirementsEvidence();
         if (base == null || base.floor() != attempt.policy.floor()) {
             base = DungeonRequirementEvidence.unavailable(
@@ -432,67 +487,100 @@ public final class DungeonQuickViewManager {
                     attempt.policy.floor(), evidenceBlocker);
         }
 
-        DungeonPartyFinderFloorTracker.GuiRosterSnapshot guiRoster =
-                DungeonPartyFinderFloorTracker.authoritativeGuiRoster().orElse(null);
-        boolean rosterUsable = guiRoster != null && guiRoster.usableFor(
-                attempt.listing, attempt.classRosterNotBeforeNanos(), nowNanos,
-                CLASS_ROSTER_MAX_AGE_NANOS);
-        Set<String> frozenNames = new HashSet<>();
-        for (PartyMemberClass member : attempt.existingClasses) {
-            if (member != null) frozenNames.add(playerKey(member.playerName()));
-        }
-
-        List<PartyMemberClass> verified = new ArrayList<>();
-        Set<UUID> verifiedIds = new HashSet<>();
-        DungeonClassKey newcomerClass = null;
+        DungeonClassKey newcomerClass = attempt.event.dungeonClass();
+        List<PartyMemberClass> classRoster =
+                DungeonPartyFinderFloorTracker.currentClassesFor(attempt.existingClasses);
+        DuplicateClass duplicate;
         var connection = client.getConnection();
-        if (authorityReady && rosterUsable && connection != null) {
-            for (PartyMemberClass member : guiRoster.members()) {
-                if (member == null || member.dungeonClass() == null) continue;
+        if (!authorityReady || party == null || connection == null) {
+            duplicate = DuplicateClass.unknown(newcomerClass, classRoster,
+                    authorityUnavailableReason);
+        } else {
+            Set<UUID> partyExisting = new HashSet<>(party.members().keySet());
+            partyExisting.remove(attempt.snapshot.playerUuid());
+            LinkedHashMap<String, UUID> resolvedIdentities = new LinkedHashMap<>();
+            for (PartyMemberClass member : classRoster) {
                 var playerInfo = connection.getPlayerInfoIgnoreCase(member.playerName());
-                if (playerInfo == null || playerInfo.getProfile() == null) continue;
-                UUID uuid = playerInfo.getProfile().id();
-                if (uuid == null || !party.members().containsKey(uuid)) continue;
-                if (uuid.equals(attempt.snapshot.playerUuid())
-                        && member.playerName().equalsIgnoreCase(attempt.event.playerName())) {
-                    newcomerClass = member.dungeonClass();
-                    continue;
-                }
-                // Freeze membership at the instant before this newcomer joined.
-                // A later newcomer visible in the refreshed GUI may not become
-                // a conflict for this older admission.
-                if (!frozenNames.contains(playerKey(member.playerName()))
-                        || !verifiedIds.add(uuid)) continue;
-                verified.add(member);
+                UUID uuid = playerInfo == null || playerInfo.getProfile() == null
+                        ? null : playerInfo.getProfile().id();
+                if (uuid != null) resolvedIdentities.put(playerKey(member.playerName()), uuid);
             }
+            duplicate = reconcileDuplicateClass(
+                    newcomerClass, classRoster, resolvedIdentities, partyExisting);
         }
-        int expectedExisting = authorityReady ? Math.max(0, party.members().size() - 1) : -1;
-        boolean rosterComplete = rosterUsable && authorityReady
-                && newcomerClass != null && verifiedIds.size() == expectedExisting;
-        // Even a matching class is non-actionable until the full frozen roster
-        // reconciles with current PartyInfo. This prevents stale or later-join
-        // class rows from becoming a confirmed duplicate.
-        List<PartyMemberClass> confirmedMembers = rosterComplete ? verified : List.of();
-        DuplicateClass duplicate = new DuplicateClass(newcomerClass, confirmedMembers,
-                rosterComplete, "PARTY_CLASSES_INCOMPLETE");
         return new DungeonRequirementEvidence(base.floor(), base.floorCompletions(), duplicate,
                 base.fastestCompletionMs(), base.averageSecrets(), base.magicalPower(),
                 base.witherBlade(), base.terminator(), base.goldenDragon(), base.enderDragon());
     }
 
-    private static List<PartyMemberClass> freshPreJoinClasses(String newcomer, long nowNanos) {
-        DungeonPartyFinderFloorTracker.ListingContext listing =
-                DungeonPartyFinderFloorTracker.currentListing();
-        DungeonPartyFinderFloorTracker.GuiRosterSnapshot roster =
-                DungeonPartyFinderFloorTracker.authoritativeGuiRoster(newcomer).orElse(null);
-        if (listing == null || roster == null || !roster.complete()
-                || !roster.floor().equals(listing.floor())
-                || roster.listingGeneration() != listing.generation()
-                || roster.observedAtNanos() <= 0L || nowNanos < roster.observedAtNanos()
-                || nowNanos - roster.observedAtNanos() > CLASS_ROSTER_MAX_AGE_NANOS) {
-            return List.of();
+    static DuplicateClass reconcileDuplicateClass(
+            DungeonClassKey newcomerClass,
+            List<PartyMemberClass> classRoster,
+            Map<String, UUID> resolvedIdentities,
+            Set<UUID> partyExisting) {
+        List<PartyMemberClass> roster = classRoster == null ? List.of() : List.copyOf(classRoster);
+        Set<UUID> partyMembers = partyExisting == null ? Set.of() : Set.copyOf(partyExisting);
+        Map<String, UUID> identities = resolvedIdentities == null ? Map.of() : resolvedIdentities;
+        if (partyMembers.size() != roster.size()) {
+            return DuplicateClass.unknown(newcomerClass, roster,
+                    "PARTY_ROSTER_COUNT_MISMATCH|" + partyMembers.size()
+                            + "|" + roster.size());
         }
-        return roster.members();
+
+        LinkedHashMap<UUID, PartyMemberClass> classesByUuid = new LinkedHashMap<>();
+        List<String> unmapped = new ArrayList<>();
+        for (PartyMemberClass member : roster) {
+            UUID uuid = identities.get(playerKey(member.playerName()));
+            if (uuid == null || classesByUuid.putIfAbsent(uuid, member) != null) {
+                unmapped.add(member.playerName());
+            }
+        }
+        if (!unmapped.isEmpty()) {
+            return DuplicateClass.unknown(newcomerClass, roster,
+                    "PARTY_CLASS_IDENTITIES_UNAVAILABLE|" + joinedNames(unmapped));
+        }
+
+        List<String> missing = partyMembers.stream()
+                .filter(uuid -> !classesByUuid.containsKey(uuid))
+                .map(DungeonQuickViewManager::shortUuid)
+                .toList();
+        List<String> unexpected = classesByUuid.entrySet().stream()
+                .filter(entry -> !partyMembers.contains(entry.getKey()))
+                .map(entry -> entry.getValue().playerName())
+                .toList();
+        if (!missing.isEmpty() || !unexpected.isEmpty()) {
+            return DuplicateClass.unknown(newcomerClass, roster,
+                    "PARTY_ROSTER_IDENTITY_MISMATCH|" + joinedNames(missing)
+                            + "|" + joinedNames(unexpected));
+        }
+
+        List<String> missingClasses = roster.stream()
+                .filter(member -> member.dungeonClass() == null)
+                .map(PartyMemberClass::playerName)
+                .toList();
+        if (newcomerClass == null) {
+            return DuplicateClass.unknown(null, roster, "NEWCOMER_CLASS_MISSING");
+        }
+        if (!missingClasses.isEmpty()) {
+            return DuplicateClass.unknown(newcomerClass, roster,
+                    "PARTY_CLASSES_MISSING|" + joinedNames(missingClasses));
+        }
+        return DuplicateClass.known(newcomerClass, roster);
+    }
+
+    private static String joinedNames(List<String> names) {
+        return names == null ? "" : names.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .reduce((left, right) -> left + "," + right)
+                .orElse("");
+    }
+
+    private static String shortUuid(UUID uuid) {
+        if (uuid == null) return "unknown-uuid";
+        String value = uuid.toString();
+        return "UUID-" + value.substring(0, Math.min(8, value.length()));
     }
 
     private static boolean shouldAwaitClassRoster(
@@ -632,9 +720,11 @@ public final class DungeonQuickViewManager {
         attempt.finished = true;
         ADMISSIONS.remove(attempt.id);
         LATEST_ADMISSION.remove(playerKey(attempt.event.playerName()), attempt.id);
+        DungeonPartyFinderFloorTracker.rejectPartyFinderMember(attempt.event.playerName());
     }
 
     private static void cancelPlayer(String player) {
+        DungeonPartyFinderFloorTracker.forgetMember(player);
         String key = playerKey(player);
         Long id = LATEST_ADMISSION.remove(key);
         if (id == null) return;
@@ -653,6 +743,7 @@ public final class DungeonQuickViewManager {
         for (AdmissionAttempt attempt : ADMISSIONS.values()) {
             if (showProfiles) showProfileIfAvailable(attempt);
             attempt.finished = true;
+            DungeonPartyFinderFloorTracker.rejectPartyFinderMember(attempt.event.playerName());
         }
         ADMISSIONS.clear();
         LATEST_ADMISSION.clear();
@@ -758,12 +849,10 @@ public final class DungeonQuickViewManager {
         private final long authoritySession;
         private final long requiredAuthorityResponse;
         private final long authorityDeadlineNanos;
-        private final long startedAtNanos;
         private final long classRosterDeadlineNanos;
         private final long queueContextGeneration;
         private final long admissionPolicyRevision;
         private long finalAuthorityResponse = -1L;
-        private long finalAuthorityRequestedAtNanos;
         private long finalAuthorityDeadlineNanos;
         private long finalClassRosterDeadlineNanos;
         private DungeonQuickViewSnapshot snapshot;
@@ -793,18 +882,14 @@ public final class DungeonQuickViewManager {
             this.authoritySession = authoritySession;
             this.requiredAuthorityResponse = requiredAuthorityResponse;
             this.authorityDeadlineNanos = authorityDeadlineNanos;
-            this.startedAtNanos = authorityDeadlineNanos - AUTHORITY_TIMEOUT_NANOS;
-            this.classRosterDeadlineNanos = startedAtNanos + CLASS_ROSTER_TIMEOUT_NANOS;
+            this.classRosterDeadlineNanos = authorityDeadlineNanos - AUTHORITY_TIMEOUT_NANOS
+                    + CLASS_ROSTER_TIMEOUT_NANOS;
             this.queueContextGeneration = queueContextGeneration;
             this.admissionPolicyRevision = admissionPolicyRevision;
         }
 
         private boolean awaitingFinalAuthority() {
             return finalAuthorityResponse > 0L;
-        }
-
-        private long classRosterNotBeforeNanos() {
-            return awaitingFinalAuthority() ? finalAuthorityRequestedAtNanos : startedAtNanos;
         }
 
         private long activeClassRosterDeadlineNanos() {

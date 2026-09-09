@@ -94,6 +94,12 @@ public final class DungeonQuickViewMessage {
 
     static Component failures(String playerName, String floor,
                               DungeonRequirementEvaluation evaluation) {
+        return failures(playerName, floor, evaluation, "");
+    }
+
+    static Component failures(String playerName, String floor,
+                              DungeonRequirementEvaluation evaluation,
+                              String actionError) {
         MutableComponent output = Component.literal("[QCA] ")
                 .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD);
         output.append(Component.literal(ModText.get(
@@ -105,6 +111,9 @@ public final class DungeonQuickViewMessage {
                         .withStyle(ChatFormatting.DARK_GRAY));
                 output.append(findingText(finding, floor).withStyle(ChatFormatting.RED));
             }
+            appendUnknowns(output, evaluation, floor, actionError);
+        } else if (actionError != null && !actionError.isBlank()) {
+            appendUnknowns(output, null, floor, actionError);
         }
         return output;
     }
@@ -190,7 +199,7 @@ public final class DungeonQuickViewMessage {
         output.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY));
         output.append(presence("EDragon", snapshot.enderDragon(), ItemKind.PET, hoverFactory));
 
-        output.append("\n").append(label("Magical Power: "));
+        output.append("\n").append(label("Highest Magical Power: "));
         output.append(value(snapshot.magicalPower() == null ? "Missing"
                 : String.format(Locale.ROOT, "%,d", snapshot.magicalPower())));
 
@@ -202,20 +211,7 @@ public final class DungeonQuickViewMessage {
                     .withHoverEvent(new HoverEvent.ShowText(detail))));
         }
 
-        if (evaluation != null && !evaluation.unknowns().isEmpty()) {
-            output.append("\n").append(Component.literal(
-                    ModText.get("dungeon.requirements.unknown_header"))
-                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
-            for (RequirementFinding finding : evaluation.unknowns()) {
-                output.append("\n").append(Component.literal("- ")
-                        .withStyle(ChatFormatting.DARK_GRAY));
-                output.append(Component.literal(requirementLabel(
-                                finding.requirement(), snapshot.floor().id()) + ": ")
-                        .withStyle(ChatFormatting.YELLOW));
-                output.append(Component.literal(unknownReason(finding.unavailableReason()))
-                        .withStyle(ChatFormatting.GRAY));
-            }
-        }
+        appendUnknowns(output, evaluation, snapshot.floor().id(), "");
 
         output.append("\n").append(Component.literal(separators.bottomNormal())
                 .withStyle(ChatFormatting.DARK_AQUA));
@@ -277,8 +273,55 @@ public final class DungeonQuickViewMessage {
                 ? ModText.get(key, floor) : ModText.get(key);
     }
 
+    private static void appendUnknowns(MutableComponent output,
+                                       DungeonRequirementEvaluation evaluation,
+                                       String floor,
+                                       String actionError) {
+        List<RequirementFinding> unknowns = evaluation == null ? List.of() : evaluation.unknowns();
+        boolean hasActionError = actionError != null && !actionError.isBlank();
+        if (unknowns.isEmpty() && !hasActionError) return;
+        output.append("\n").append(Component.literal(
+                ModText.get("dungeon.requirements.unknown_header"))
+                .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+        for (RequirementFinding finding : unknowns) {
+            output.append("\n").append(Component.literal("- ")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            output.append(Component.literal(requirementLabel(finding.requirement(), floor) + ": ")
+                    .withStyle(ChatFormatting.YELLOW));
+            output.append(Component.literal(unknownReason(finding.unavailableReason()))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        if (hasActionError) {
+            output.append("\n").append(Component.literal("- ")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            output.append(Component.literal(ModText.get(
+                            "dungeon.requirements.automatic_action") + ": ")
+                    .withStyle(ChatFormatting.YELLOW));
+            output.append(Component.literal(unknownReason(actionError))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
     private static String unknownReason(String reason) {
-        String normalized = reason == null ? "" : reason.trim().toUpperCase(Locale.ROOT)
+        String raw = reason == null ? "" : reason.trim();
+        String[] details = raw.split("\\|", -1);
+        if (details.length >= 3 && details[0].equals("PARTY_ROSTER_COUNT_MISMATCH")) {
+            return ModText.get("dungeon.requirements.unknown.party_roster_count",
+                    details[1], details[2]);
+        }
+        if (details.length >= 3 && details[0].equals("PARTY_ROSTER_IDENTITY_MISMATCH")) {
+            return ModText.get("dungeon.requirements.unknown.party_roster_identity",
+                    displayNames(details[1]), displayNames(details[2]));
+        }
+        if (details.length >= 2 && details[0].equals("PARTY_CLASS_IDENTITIES_UNAVAILABLE")) {
+            return ModText.get("dungeon.requirements.unknown.party_class_identities",
+                    displayNames(details[1]));
+        }
+        if (details.length >= 2 && details[0].equals("PARTY_CLASSES_MISSING")) {
+            return ModText.get("dungeon.requirements.unknown.party_classes_missing",
+                    displayNames(details[1]));
+        }
+        String normalized = raw.toUpperCase(Locale.ROOT)
                 .replace(' ', '_');
         String key = switch (normalized) {
             case "SOURCE_STALE", "PROFILE_EVIDENCE_IS_STALE", "DATA_IS_STALE" ->
@@ -295,6 +338,18 @@ public final class DungeonQuickViewMessage {
                     "dungeon.requirements.unknown.no_completion_time";
             case "PARTY_AUTHORITY_UNAVAILABLE" ->
                     "dungeon.requirements.unknown.party_authority";
+            case "PARTY_NOT_CONFIRMED" ->
+                    "dungeon.requirements.unknown.party_not_confirmed";
+            case "LOCAL_PLAYER_NOT_PARTY_LEADER" ->
+                    "dungeon.requirements.unknown.not_party_leader";
+            case "TARGET_NOT_IN_PARTY" ->
+                    "dungeon.requirements.unknown.target_not_in_party";
+            case "NEWCOMER_CLASS_MISSING" ->
+                    "dungeon.requirements.unknown.newcomer_class_missing";
+            case "NO_COMPLETED_DUNGEON_RUNS" ->
+                    "dungeon.requirements.unknown.no_completed_runs";
+            case "AVERAGE_SECRETS_UNAVAILABLE" ->
+                    "dungeon.requirements.unknown.average_secrets_unavailable";
             case "PLAYER_IDENTITY_EVIDENCE_DOES_NOT_MATCH", "IDENTITY_MISMATCH" ->
                     "dungeon.requirements.unknown.identity_mismatch";
             case "DUNGEON_FLOOR_EVIDENCE_DOES_NOT_MATCH", "FLOOR_MISMATCH",
@@ -309,6 +364,12 @@ public final class DungeonQuickViewMessage {
             default -> "dungeon.requirements.unknown.missing_value";
         };
         return ModText.get(key);
+    }
+
+    private static String displayNames(String encoded) {
+        return encoded == null || encoded.isBlank()
+                ? ModText.get("dungeon.requirements.unknown.none")
+                : encoded.replace(",", ", ");
     }
 
     static Lines separators(ToIntFunction<String> width) {

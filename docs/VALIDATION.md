@@ -1,3 +1,42 @@
+# QCloudy_Addition 0.3.10-alpha9 roster and evidence-v2 validation status
+
+Date: 2026-09-09<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha9` completes the requested Party Finder membership/class lifecycle and replaces the unsafe cross-scope average-Secrets evidence. Existing and ordinary/manual party members are trusted and never checked or kicked; only exact Party Finder newcomers enter admission. Average Secrets uses the exactly selected Profile's Dungeon Secrets over only that Profile's explicit F1–F7/M1–M7 completions, and a confirmed Mage skips that rule. Evidence advances to version 2 while the client safely reads version 1 with its average forced UNKNOWN. The existing 14 independent F1–F7/M1–M7 policies, no-Entrance boundary, default-off master/rules, nine rule switches, and tri-state output remain unchanged.
+
+## Source and static verification completed
+
+- Exact queue confirmation starts a new listing generation. The first complete, ownership-proven own-listing roster becomes the trusted baseline; ordinary/manual joins are trusted too. Exact Party Finder newcomers remain pending until their own admission passes. A pending newcomer arriving before the first roster read remains excluded from the trusted baseline.
+- Exact leave, removal, offline kick, party disband, local kick, joining another party, delist, listing/floor replacement, world/server/session change, rejected admission, and cancellation clear the applicable tracked state. A failed or departed newcomer cannot remain in later DUPE checks.
+- DUPE excludes the current newcomer from both the frozen QCA roster and fresh PartyInfo, maps every remaining name through live Tab UUIDs, and requires equal counts, identical membership, and complete classes. Count, identity, mapping, or class uncertainty creates a concrete DUPE UNKNOWN only. Other rules continue; confirmed failures remain visible and may reach the independent final action guard.
+- Evidence version 2 returns the selected Profile's `member.dungeons.secrets`, explicit F1–F7/M1–M7 denominator, `SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS` scope, and completeness. Entrance `0`, `total`, account achievements, and `bloodMobKills / 4` are excluded. Missing/malformed data and zero completed runs stay UNKNOWN. Confirmed Mage omits the average rule completely; unknown class makes it UNKNOWN.
+- Version-1 responses remain parseable during deployment transition, but average Secrets is forced UNKNOWN. Profile and rule copy labels `highest_magical_power` as historical Highest Magical Power.
+- PASS emits only Profile. UNKNOWN-only emits Profile plus concrete reasons and does not kick. FAIL emits all confirmed failures and concurrent concrete errors before the adjacent guarded `party kick <validated newcomer>` command, with no PASS, no-kick, or kick-sent line.
+
+## Automated/build status
+
+- Minecraft 26.1.2/Java 25 final `clean build prepareRelease` completed successfully: 65 suites, 433 tests, 0 failures, 0 errors, and 0 skipped. The backend regression suite completed with 50 passing tests.
+- `build prepareRelease` completed successfully after the clean test. All 497 compiled project/test class files use Java major version 69. No Finder-style `* 2.class` or `TEST-* 2.xml` conflict copy exists.
+- Both archives pass JDK 25 `jar --validate` and `unzip -t`, contain zero duplicate paths, and the playable JAR declares exact version `0.3.10-alpha9+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha9+26.1.2.jar` — 3,962,285 bytes — `ef1802e05a9d66f2af39832d4be634a270b512bdc92da4af2ee4a6a51fef2cd6`
+- `release/QCloudy_Addition-0.3.10-alpha9+26.1.2-sources.jar` — 3,187,610 bytes — `d5ff19e8dc3c235b1f65a2315fa6e5b9a8bbda8715a28db7d6d9f3fd1ed81574`
+- `release/qcloudy-api-0.3.10-alpha9-evidence-v2-patch.zip` — 7,115 bytes — `aae79ce49fb8076f7842d58f430a81f0ba78a65ebc63725d768cbf25c04eb022`; contains only `app/dungeon_service.py` and passes `unzip -t`.
+
+## Deployment and live-validation boundary
+
+- Building the mod does not deploy the backend. The separately handed-off Alpha 9 patch ZIP must be uploaded/extracted at `/opt/qcloudy-api` and the service restarted; until then a version-1 response keeps average Secrets UNKNOWN, and a response without supported evidence keeps backend rules UNKNOWN/display-only. Exact BaoTa steps and rollback are recorded in `backend/qcloudy-api/deploy/README.md`.
+- No authenticated live Hypixel run has exercised the full real own-listing → newcomer → PartyInfo → output → optional command sequence. Local tests do not prove live menu/chat wording, leadership races, server acceptance, successful removal, or absence of every future false positive.
+- This section does not claim a Minecraft 26.2 Alpha artifact, game-directory installation, production deployment, GitHub Release, or Modrinth publication. Public Beta 0.3.10 and stable Release/update baseline 0.3.9 remain unchanged.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha8 Dungeon admission rules validation status
 
 Date: 2026-09-08<br>

@@ -12,6 +12,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,6 +36,10 @@ final class DungeonPartyFinderFloorTracker {
     private static DungeonFloor currentFloor;
     private static long generation;
     private static final LinkedHashMap<String, PartyMemberClass> memberClasses = new LinkedHashMap<>();
+    private static final LinkedHashSet<String> activeMembers = new LinkedHashSet<>();
+    private static final LinkedHashSet<String> pendingPartyFinderMembers = new LinkedHashSet<>();
+    private static boolean trustedBaselineCaptured;
+    private static boolean awaitingQueuedListing;
     private static GuiRosterSnapshot authoritativeGuiRoster;
 
     private DungeonPartyFinderFloorTracker() { }
@@ -108,10 +113,18 @@ final class DungeonPartyFinderFloorTracker {
         if (observedFloor.isEmpty()) return false;
 
         DungeonFloor floor = observedFloor.orElseThrow();
-        if (currentFloor == null || !currentFloor.equals(floor)) {
+        if (currentFloor == null) {
+            if (!awaitingQueuedListing) generation++;
+            // A real Party Finder admission message can arrive before the
+            // first readable own-listing snapshot. Preserve that pending
+            // newcomer while freezing the trusted pre-queue baseline; otherwise
+            // the first GUI read could silently promote the newcomer to trusted.
+            clearTrustedRosterPreservingPending();
+            awaitingQueuedListing = false;
+        } else if (!currentFloor.equals(floor)) {
             generation++;
-            memberClasses.clear();
-            authoritativeGuiRoster = null;
+            clearRosterState();
+            awaitingQueuedListing = false;
         }
         currentFloor = floor;
 
@@ -121,12 +134,37 @@ final class DungeonPartyFinderFloorTracker {
         boolean selectedClassConsistent = selected.isEmpty()
                 || localRosterClass != null
                 && localRosterClass.dungeonClass() == selected.orElseThrow();
-        if (!parsed.membersByName().isEmpty()
-                && !memberClasses.equals(parsed.membersByName())) {
-            memberClasses.clear();
-            memberClasses.putAll(parsed.membersByName());
+        boolean parsedAuthoritative = parsed.complete() && selectedClassConsistent;
+        if (parsedAuthoritative) {
+            if (trustedBaselineCaptured) {
+                for (String active : List.copyOf(activeMembers)) {
+                    if (pendingPartyFinderMembers.contains(active)
+                            || parsed.membersByName().containsKey(active)) continue;
+                    PartyMemberClass previous = memberClasses.get(active);
+                    if (previous != null) {
+                        memberClasses.put(active,
+                                new PartyMemberClass(previous.playerName(), null));
+                    }
+                }
+            }
+            for (Map.Entry<String, PartyMemberClass> entry : parsed.membersByName().entrySet()) {
+                memberClasses.put(entry.getKey(), entry.getValue());
+                // The first complete own-listing read freezes every member
+                // already present as trusted. Later names without a matching
+                // Party Finder admission are ordinary/manual trusted joins.
+                if (!pendingPartyFinderMembers.contains(entry.getKey())) {
+                    activeMembers.add(entry.getKey());
+                }
+            }
+            trustedBaselineCaptured = true;
+        } else if (trustedBaselineCaptured && selected.isPresent()
+                && localRosterClass != null && activeMembers.contains(key(localPlayer))) {
+            memberClasses.put(key(localPlayer), new PartyMemberClass(localPlayer, null));
         }
-        selected.ifPresent(value -> putClass(localPlayer, value));
+        if (parsedAuthoritative) selected.ifPresent(value -> {
+            putClass(localPlayer, value);
+            if (trustedBaselineCaptured) activeMembers.add(key(localPlayer));
+        });
 
         authoritativeGuiRoster = new GuiRosterSnapshot(floor, generation,
                 observedAtNanos, parsed.complete() && selectedClassConsistent,
@@ -137,14 +175,36 @@ final class DungeonPartyFinderFloorTracker {
     /** Captures the members that existed before this admission. */
     static List<PartyMemberClass> existingClasses(String newcomer) {
         String excluded = key(newcomer);
-        return memberClasses.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(excluded))
-                .map(Map.Entry::getValue)
+        return activeMembers.stream()
+                .filter(member -> !member.equals(excluded))
+                .map(memberClasses::get)
+                .filter(java.util.Objects::nonNull)
                 .toList();
+    }
+
+    /** Current class records for exactly the frozen pre-join member names. */
+    static List<PartyMemberClass> currentClassesFor(List<PartyMemberClass> frozenMembers) {
+        if (frozenMembers == null || frozenMembers.isEmpty()) return List.of();
+        List<PartyMemberClass> result = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        for (PartyMemberClass frozen : frozenMembers) {
+            if (frozen == null) continue;
+            String member = key(frozen.playerName());
+            if (!activeMembers.contains(member) || !seen.add(member)) continue;
+            PartyMemberClass current = memberClasses.get(member);
+            result.add(current == null
+                    ? new PartyMemberClass(frozen.playerName(), null) : current);
+        }
+        return List.copyOf(result);
     }
 
     static void observeJoin(DungeonJoinParser.DungeonJoinEvent event) {
         if (event == null) return;
+        String member = key(event.playerName());
+        // An exact Party Finder line starts a new admission membership, even
+        // if a missed departure left an older trusted entry behind.
+        activeMembers.remove(member);
+        pendingPartyFinderMembers.add(member);
         if (event.dungeonClass() != null) putClass(event.playerName(), event.dungeonClass());
         // A roster mutation makes the last GUI observation stale. The chat
         // line itself must never become authoritative GUI proof.
@@ -154,6 +214,10 @@ final class DungeonPartyFinderFloorTracker {
     static boolean observeSystemMessage(String raw) {
         String original = clean(raw);
         String text = original.toLowerCase(Locale.ROOT);
+        if (DungeonJoinParser.partyFinderQueued(original)) {
+            beginQueuedListing();
+            return false;
+        }
         if (text.equals("you left the party.")
                 || text.contains("the party was disbanded")
                 || text.contains("you have been kicked from the party")
@@ -165,8 +229,32 @@ final class DungeonPartyFinderFloorTracker {
             clearListing();
             return true;
         }
+        DungeonJoinParser.ordinaryPartyJoin(original)
+                .ifPresent(DungeonPartyFinderFloorTracker::observeTrustedJoin);
         DungeonJoinParser.departure(original).ifPresent(DungeonPartyFinderFloorTracker::removeMember);
         return false;
+    }
+
+    static void acceptPartyFinderMember(DungeonJoinParser.DungeonJoinEvent event) {
+        if (event == null) return;
+        String member = key(event.playerName());
+        pendingPartyFinderMembers.remove(member);
+        activeMembers.add(member);
+        memberClasses.put(member, new PartyMemberClass(event.playerName(), event.dungeonClass()));
+    }
+
+    static void rejectPartyFinderMember(String player) {
+        String member = key(player);
+        pendingPartyFinderMembers.remove(member);
+        if (!activeMembers.contains(member)) memberClasses.remove(member);
+    }
+
+    static void forgetMember(String player) {
+        removeMember(player);
+    }
+
+    static boolean trustedBaselineCaptured() {
+        return trustedBaselineCaptured;
     }
 
     static void reset() {
@@ -298,8 +386,27 @@ final class DungeonPartyFinderFloorTracker {
     }
 
     private static void removeMember(String player) {
-        memberClasses.remove(key(player));
+        String member = key(player);
+        memberClasses.remove(member);
+        activeMembers.remove(member);
+        pendingPartyFinderMembers.remove(member);
         authoritativeGuiRoster = null;
+    }
+
+    private static void observeTrustedJoin(String player) {
+        if (!FriendName.valid(player)) return;
+        String member = key(player);
+        if (pendingPartyFinderMembers.contains(member)) return;
+        activeMembers.add(member);
+        memberClasses.putIfAbsent(member, new PartyMemberClass(player, null));
+        authoritativeGuiRoster = null;
+    }
+
+    private static void beginQueuedListing() {
+        generation++;
+        currentFloor = null;
+        clearRosterState();
+        awaitingQueuedListing = true;
     }
 
     private static void clearListing() {
@@ -307,7 +414,28 @@ final class DungeonPartyFinderFloorTracker {
             generation++;
         }
         currentFloor = null;
+        clearRosterState();
+        awaitingQueuedListing = false;
+    }
+
+    private static void clearRosterState() {
         memberClasses.clear();
+        activeMembers.clear();
+        pendingPartyFinderMembers.clear();
+        trustedBaselineCaptured = false;
+        authoritativeGuiRoster = null;
+    }
+
+    private static void clearTrustedRosterPreservingPending() {
+        LinkedHashMap<String, PartyMemberClass> pendingClasses = new LinkedHashMap<>();
+        for (String pending : pendingPartyFinderMembers) {
+            PartyMemberClass value = memberClasses.get(pending);
+            if (value != null) pendingClasses.put(pending, value);
+        }
+        memberClasses.clear();
+        memberClasses.putAll(pendingClasses);
+        activeMembers.clear();
+        trustedBaselineCaptured = false;
         authoritativeGuiRoster = null;
     }
 

@@ -150,7 +150,8 @@ public record DungeonQuickViewSnapshot(
         }
         String unavailable = "UNSUPPORTED_EVIDENCE";
         try {
-            if (integer(raw, "version", true) != 1) {
+            int evidenceVersion = integer(raw, "version", true);
+            if (evidenceVersion != 1 && evidenceVersion != 2) {
                 return DungeonRequirementEvidence.unavailable(
                         floor, "UNSUPPORTED_EVIDENCE");
             }
@@ -181,7 +182,9 @@ public record DungeonQuickViewSnapshot(
                         longEvidence(object(raw, "floorCompletions"), "value"),
                         DuplicateClass.unknown(null, null, "PARTY_CLASSES_INCOMPLETE"),
                         longEvidence(object(raw, "fastestCompletion"), "valueMs"),
-                        decimalEvidence(object(raw, "averageSecrets"), "value"),
+                        evidenceVersion == 2
+                                ? decimalEvidence(object(raw, "averageSecrets"), "value")
+                                : DecimalValue.unknown("CALCULATION_UNAVAILABLE"),
                         longEvidence(object(raw, "magicalPower"), "value"),
                         presenceEvidence(object(object(raw, "weapons"), "witherBlade")),
                         presenceEvidence(object(object(raw, "weapons"), "terminator")),

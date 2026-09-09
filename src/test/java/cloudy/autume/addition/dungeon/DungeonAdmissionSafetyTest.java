@@ -2,6 +2,9 @@ package cloudy.autume.addition.dungeon;
 
 import cloudy.autume.addition.config.ModConfig;
 import cloudy.autume.addition.dungeon.requirements.DungeonFloorKey;
+import cloudy.autume.addition.dungeon.requirements.DungeonClassKey;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidenceValue.DuplicateClass;
+import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidenceValue.PartyMemberClass;
 import cloudy.autume.addition.dungeon.requirements.DungeonRequirementPolicy;
 import net.hypixel.modapi.packet.impl.clientbound.ClientboundPartyInfoPacket.PartyRole;
 import org.junit.jupiter.api.Test;
@@ -11,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -176,6 +180,55 @@ final class DungeonAdmissionSafetyTest {
         assertEquals(DungeonPartyAuthorityTracker.Readiness.READY,
                 authoritySnapshot(5L, 6L, true, PartyRole.LEADER, true)
                         .readiness(5L, 6L, LOCAL_PLAYER, TARGET_PLAYER));
+    }
+
+    @Test
+    void dupeReconciliationStopsOnCountIdentityAndClassGaps() {
+        UUID other = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        List<PartyMemberClass> oneClass = List.of(
+                new PartyMemberClass("LocalPlayer", DungeonClassKey.MAGE));
+
+        DuplicateClass countMismatch = DungeonQuickViewManager.reconcileDuplicateClass(
+                DungeonClassKey.ARCHER, oneClass,
+                Map.of("localplayer", LOCAL_PLAYER), Set.of(LOCAL_PLAYER, other));
+        assertEquals("PARTY_ROSTER_COUNT_MISMATCH|2|1",
+                countMismatch.unavailableReason());
+        assertFalse(countMismatch.authoritativeRoster());
+
+        List<PartyMemberClass> twoClasses = List.of(
+                new PartyMemberClass("LocalPlayer", DungeonClassKey.MAGE),
+                new PartyMemberClass("StalePlayer", DungeonClassKey.TANK));
+        DuplicateClass identityMismatch = DungeonQuickViewManager.reconcileDuplicateClass(
+                DungeonClassKey.ARCHER, twoClasses,
+                Map.of("localplayer", LOCAL_PLAYER, "staleplayer", TARGET_PLAYER),
+                Set.of(LOCAL_PLAYER, other));
+        assertTrue(identityMismatch.unavailableReason()
+                .startsWith("PARTY_ROSTER_IDENTITY_MISMATCH|UUID-33333333|StalePlayer"));
+        assertFalse(identityMismatch.authoritativeRoster());
+
+        DuplicateClass unmapped = DungeonQuickViewManager.reconcileDuplicateClass(
+                DungeonClassKey.ARCHER, oneClass, Map.of(), Set.of(LOCAL_PLAYER));
+        assertEquals("PARTY_CLASS_IDENTITIES_UNAVAILABLE|LocalPlayer",
+                unmapped.unavailableReason());
+
+        DuplicateClass classMissing = DungeonQuickViewManager.reconcileDuplicateClass(
+                DungeonClassKey.ARCHER,
+                List.of(new PartyMemberClass("LocalPlayer", null)),
+                Map.of("localplayer", LOCAL_PLAYER), Set.of(LOCAL_PLAYER));
+        assertEquals("PARTY_CLASSES_MISSING|LocalPlayer",
+                classMissing.unavailableReason());
+        assertFalse(classMissing.authoritativeRoster());
+    }
+
+    @Test
+    void dupeReconciliationRequiresFullIdentityMatchBeforeFindingADuplicate() {
+        DuplicateClass duplicate = DungeonQuickViewManager.reconcileDuplicateClass(
+                DungeonClassKey.ARCHER,
+                List.of(new PartyMemberClass("LocalPlayer", DungeonClassKey.ARCHER)),
+                Map.of("localplayer", LOCAL_PLAYER), Set.of(LOCAL_PLAYER));
+
+        assertTrue(duplicate.authoritativeRoster());
+        assertEquals(List.of("LocalPlayer"), duplicate.conflictingPlayers());
     }
 
     @Test

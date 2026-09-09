@@ -25,6 +25,18 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
+    void distinguishesAQueuedListingAndOrdinaryTrustedPartyJoin() {
+        assertTrue(DungeonJoinParser.partyFinderQueued(
+                "§dParty Finder §f> §eYour party has been queued in the dungeon finder!"));
+        assertFalse(DungeonJoinParser.partyFinderQueued(
+                "Party > Your party has been queued in the dungeon finder!"));
+        assertEquals("ManualPlayer", DungeonJoinParser.ordinaryPartyJoin(
+                "[MVP+] ManualPlayer joined the party.").orElseThrow());
+        assertTrue(DungeonJoinParser.ordinaryPartyJoin(
+                "Party Finder > ManualPlayer joined the dungeon group! (Mage Level 40)").isEmpty());
+    }
+
+    @Test
     void retainsTheNewcomersDungeonClassAndClassLevel() {
         DungeonJoinParser.DungeonJoinEvent event = DungeonJoinParser.event(
                 "§dParty Finder §f> §b[MVP+] GhostsTM §ejoined the dungeon group! (§bArcher Level 9§e)")
@@ -214,7 +226,7 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
-    void joinedClassIsExcludedForTheNewcomerAndReleasedWhenTheyLeave() {
+    void partyFinderClassStaysPendingUntilAdmissionPassesAndIsReleasedOnLeave() {
         DungeonPartyFinderFloorTracker.reset();
         DungeonJoinParser.DungeonJoinEvent event = DungeonJoinParser.event(
                 "Party Finder > GhostsTM joined the dungeon group! (Archer Level 9)")
@@ -222,6 +234,9 @@ final class DungeonJoinAndFloorTest {
 
         DungeonPartyFinderFloorTracker.observeJoin(event);
         assertTrue(DungeonPartyFinderFloorTracker.existingClasses("GhostsTM").isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").isEmpty());
+
+        DungeonPartyFinderFloorTracker.acceptPartyFinderMember(event);
         assertEquals(DungeonClassKey.ARCHER,
                 DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").getFirst().dungeonClass());
 
@@ -251,7 +266,7 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
-    void chatOnlyClassCacheNeverBecomesAuthoritativeGuiRosterEvidence() {
+    void pendingPartyFinderClassNeverBecomesAnActiveDupeMemberByItself() {
         DungeonPartyFinderFloorTracker.reset();
         try {
             DungeonJoinParser.DungeonJoinEvent event = DungeonJoinParser.event(
@@ -260,13 +275,103 @@ final class DungeonJoinAndFloorTest {
 
             DungeonPartyFinderFloorTracker.observeJoin(event);
 
-            assertEquals(DungeonClassKey.ARCHER,
-                    DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse")
-                            .getFirst().dungeonClass());
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").isEmpty());
             assertTrue(DungeonPartyFinderFloorTracker
                     .authoritativeGuiRoster("SomeoneElse").isEmpty());
         } finally {
             DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void partyFinderNewcomerArrivingBeforeFirstListingReadIsNeverTrusted() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!");
+            DungeonJoinParser.DungeonJoinEvent event = DungeonJoinParser.event(
+                    "Party Finder > GhostsTM joined the dungeon group! (Archer Level 9)")
+                    .orElseThrow();
+            DungeonPartyFinderFloorTracker.observeJoin(event);
+
+            assertTrue(DungeonPartyFinderFloorTracker.observeOwnListingMenu(
+                    "Party Finder", ownRoster("The Catacombs", "Floor VII"),
+                    "LocalPlayer", 100L));
+
+            assertEquals(List.of("LocalPlayer", "ExistingTank"),
+                    DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").stream()
+                            .map(PartyMemberClass::playerName).toList());
+            assertTrue(DungeonPartyFinderFloorTracker.authoritativeGuiRoster().orElseThrow()
+                    .members().stream().anyMatch(member ->
+                            member.playerName().equals("GhostsTM")));
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void queuedListingFreezesExistingPlayersAndManualJoinsAsTrusted() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertFalse(DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!"));
+            assertTrue(DungeonPartyFinderFloorTracker.observeOwnListingMenu(
+                    "Party Finder", ownRoster("The Catacombs", "Floor VII"),
+                    "LocalPlayer", 100L));
+            assertTrue(DungeonPartyFinderFloorTracker.trustedBaselineCaptured());
+            assertEquals(List.of("LocalPlayer", "GhostsTM", "ExistingTank"),
+                    DungeonPartyFinderFloorTracker.existingClasses("NewPlayer").stream()
+                            .map(PartyMemberClass::playerName).toList());
+
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "[MVP+] ManualPlayer joined the party.");
+            PartyMemberClass manual = DungeonPartyFinderFloorTracker
+                    .existingClasses("NewPlayer").stream()
+                    .filter(member -> member.playerName().equals("ManualPlayer"))
+                    .findFirst().orElseThrow();
+            assertEquals(null, manual.dungeonClass());
+
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "ManualPlayer has left the party.");
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("NewPlayer").stream()
+                    .noneMatch(member -> member.playerName().equals("ManualPlayer")));
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void rejectedPartyFinderMemberNeverEntersTheDupeRoster() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            DungeonJoinParser.DungeonJoinEvent event = DungeonJoinParser.event(
+                    "Party Finder > GhostsTM joined the dungeon group! (Archer Level 9)")
+                    .orElseThrow();
+            DungeonPartyFinderFloorTracker.observeJoin(event);
+            DungeonPartyFinderFloorTracker.rejectPartyFinderMember("GhostsTM");
+
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").isEmpty());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void localKickCommandImmediatelyDropsTheTrackedMember() {
+        DungeonQuickViewManager.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeOwnListingMenu(
+                    "Party Finder", ownRoster("The Catacombs", "Floor VII"),
+                    "LocalPlayer", 100L));
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").stream()
+                    .anyMatch(member -> member.playerName().equals("GhostsTM")));
+
+            DungeonQuickViewManager.onOutgoingCommand("/party kick GhostsTM");
+
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("SomeoneElse").stream()
+                    .noneMatch(member -> member.playerName().equals("GhostsTM")));
+        } finally {
+            DungeonQuickViewManager.reset();
         }
     }
 

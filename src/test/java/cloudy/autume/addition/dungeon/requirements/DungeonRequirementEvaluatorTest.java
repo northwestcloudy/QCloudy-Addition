@@ -34,7 +34,7 @@ final class DungeonRequirementEvaluatorTest {
                         DecimalValue.known(8.0),
                         LongValue.known(1_400),
                         PresenceEvidence.present(), PresenceEvidence.present(),
-                        PresenceEvidence.present(), PresenceEvidence.present()));
+                        PresenceEvidence.present(), PresenceEvidence.present()), ARCHER);
 
         assertEquals(PASS, result.status());
         assertTrue(result.passed());
@@ -59,7 +59,7 @@ final class DungeonRequirementEvaluatorTest {
                         DecimalValue.known(7.999),
                         LongValue.known(1_399),
                         PresenceEvidence.confirmedAbsent(), PresenceEvidence.confirmedAbsent(),
-                        PresenceEvidence.confirmedAbsent(), PresenceEvidence.confirmedAbsent()));
+                        PresenceEvidence.confirmedAbsent(), PresenceEvidence.confirmedAbsent()), ARCHER);
 
         assertEquals(FAIL, result.status());
         assertFalse(result.passed());
@@ -88,8 +88,8 @@ final class DungeonRequirementEvaluatorTest {
                 DecimalValue.known(8.04), base.magicalPower(), base.witherBlade(),
                 base.terminator(), base.goldenDragon(), base.enderDragon());
 
-        DungeonRequirementEvaluation failed = DungeonRequirementEvaluator.evaluate(policy, below);
-        DungeonRequirementEvaluation passed = DungeonRequirementEvaluator.evaluate(policy, equal);
+        DungeonRequirementEvaluation failed = DungeonRequirementEvaluator.evaluate(policy, below, ARCHER);
+        DungeonRequirementEvaluation passed = DungeonRequirementEvaluator.evaluate(policy, equal, ARCHER);
 
         assertEquals(FAIL, failed.status());
         assertEquals(8.03, ((DecimalValue) failed.failures().getFirst().evidence()).value());
@@ -104,7 +104,7 @@ final class DungeonRequirementEvaluatorTest {
         DungeonRequirementEvidence unavailable = DungeonRequirementEvidence.unavailable(
                 DungeonFloorKey.F3, "Profile data is stale");
         DungeonRequirementEvaluation result = DungeonRequirementEvaluator.evaluate(
-                allEnabled(DungeonFloorKey.F3), unavailable);
+                allEnabled(DungeonFloorKey.F3), unavailable, ARCHER);
 
         assertEquals(UNKNOWN, result.status());
         assertTrue(result.failures().isEmpty());
@@ -124,7 +124,7 @@ final class DungeonRequirementEvaluatorTest {
                 base.terminator(), base.goldenDragon(), base.enderDragon());
 
         DungeonRequirementEvaluation result = DungeonRequirementEvaluator.evaluate(
-                allEnabled(DungeonFloorKey.F1), mixed);
+                allEnabled(DungeonFloorKey.F1), mixed, ARCHER);
 
         assertEquals(FAIL, result.status());
         assertEquals(List.of(DungeonRequirement.MINIMUM_FLOOR_COMPLETIONS),
@@ -133,7 +133,7 @@ final class DungeonRequirementEvaluatorTest {
     }
 
     @Test
-    void incompleteRosterIsUnknownUnlessADuplicateIsAlreadyConfirmed() {
+    void incompleteRosterIsAlwaysUnknownEvenWhenAnObservedClassLooksDuplicate() {
         DungeonRequirementPolicy policy = dupeOnly(DungeonFloorKey.M4);
         DungeonRequirementEvidence noDuplicate = dupeEvidence(DungeonFloorKey.M4,
                 DuplicateClass.unknown(ARCHER,
@@ -146,8 +146,44 @@ final class DungeonRequirementEvaluatorTest {
                         List.of(new PartyMemberClass("ArcherPlayer", ARCHER)), "Newcomer class missing"));
 
         assertEquals(UNKNOWN, DungeonRequirementEvaluator.evaluate(policy, noDuplicate).status());
-        assertEquals(FAIL, DungeonRequirementEvaluator.evaluate(policy, duplicate).status());
+        assertEquals(UNKNOWN, DungeonRequirementEvaluator.evaluate(policy, duplicate).status());
         assertEquals(UNKNOWN, DungeonRequirementEvaluator.evaluate(policy, newcomerUnknown).status());
+    }
+
+    @Test
+    void mageSkipsAverageSecretsWithoutAStatusLineButStillChecksEveryOtherRule() {
+        DungeonRequirementPolicy policy = allEnabled(DungeonFloorKey.F7);
+        DungeonRequirementEvidence unavailable = DungeonRequirementEvidence.unavailable(
+                DungeonFloorKey.F7, "Missing");
+
+        DungeonRequirementEvaluation result = DungeonRequirementEvaluator.evaluate(
+                policy, unavailable, MAGE);
+
+        assertEquals(8, result.findings().size());
+        assertTrue(result.findings().stream().noneMatch(finding ->
+                finding.requirement() == DungeonRequirement.MINIMUM_AVERAGE_SECRETS));
+        assertEquals(8, result.unknowns().size());
+    }
+
+    @Test
+    void unknownAdmissionClassMakesOnlyAverageSecretsUnknown() {
+        DungeonRequirementPolicy policy = new DungeonRequirementPolicy(DungeonFloorKey.F7,
+                LongRule.disabled(0), false,
+                LongRule.disabled(0), DecimalRule.enabled(8.0),
+                LongRule.disabled(0), false, false, false, false);
+        DungeonRequirementEvidence base = DungeonRequirementEvidence.unavailable(
+                DungeonFloorKey.F7, "Unused");
+        DungeonRequirementEvidence knownAverage = new DungeonRequirementEvidence(
+                DungeonFloorKey.F7, base.floorCompletions(), base.duplicateClass(),
+                base.fastestCompletionMs(), DecimalValue.known(12.5), base.magicalPower(),
+                base.witherBlade(), base.terminator(), base.goldenDragon(), base.enderDragon());
+
+        DungeonRequirementEvaluation result = DungeonRequirementEvaluator.evaluate(
+                policy, knownAverage, null);
+
+        assertEquals(UNKNOWN, result.status());
+        assertEquals("NEWCOMER_CLASS_MISSING",
+                result.unknowns().getFirst().unavailableReason());
     }
 
     @Test

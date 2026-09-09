@@ -12,6 +12,10 @@ public final class DungeonJoinParser {
     private static final Pattern JOIN = Pattern.compile(
             "^Party Finder\\s*>\\s*(?:\\[[^]]+]\\s*)?([A-Za-z0-9_]{3,16})\\s+"
                     + "joined the dungeon group!\\s*\\(([^()]+?)\\s+Level\\s+(\\d+)\\)\\s*$");
+    private static final Pattern PARTY_FINDER_QUEUED = Pattern.compile(
+            "^Party Finder\\s*>\\s*Your party has been queued in the dungeon finder!$");
+    private static final Pattern ORDINARY_PARTY_JOIN = Pattern.compile(
+            "^(?:\\[[^]\\r\\n]+]\\s*)?([A-Za-z0-9_]{3,16}) joined the party\\.$");
     private static final List<Pattern> DEPARTURES = List.of(
             Pattern.compile("^(?:\\[[^]\\r\\n]+]\\s*)?([A-Za-z0-9_]{3,16}) "
                     + "(?:has left the party|has been removed from the party|"
@@ -24,6 +28,16 @@ public final class DungeonJoinParser {
 
     public static Optional<String> newcomer(String raw) {
         return event(raw).map(DungeonJoinEvent::playerName);
+    }
+
+    public static boolean partyFinderQueued(String raw) {
+        return PARTY_FINDER_QUEUED.matcher(clean(raw)).matches();
+    }
+
+    /** A manual/ordinary party join is trusted and is never an admission target. */
+    public static Optional<String> ordinaryPartyJoin(String raw) {
+        Matcher matcher = ORDINARY_PARTY_JOIN.matcher(clean(raw));
+        return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
     /** Returns all admission evidence carried by the exact Party Finder line. */
