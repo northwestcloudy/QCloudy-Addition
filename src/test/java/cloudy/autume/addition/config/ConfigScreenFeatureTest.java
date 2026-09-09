@@ -153,6 +153,7 @@ final class ConfigScreenFeatureTest {
 
         assertEquals(List.of(
                 ConfigScreen.Feature.CHAT_PEEK,
+                ConfigScreen.Feature.CHAT_CHANNEL_SWITCHER,
                 ConfigScreen.Feature.PARTY_AUTO_ACCEPT,
                 ConfigScreen.Feature.DIRECT_MESSAGE_PARTY_REQUEST,
                 ConfigScreen.Feature.QUICK_PRIVATE_PARTY_REQUEST,
@@ -160,6 +161,23 @@ final class ConfigScreenFeatureTest {
         assertTrue(chatFeatures.stream().allMatch(feature -> feature.category == ConfigScreen.Category.GENERAL));
         assertEquals(ConfigScreen.FeatureGroup.COMMANDS, ConfigScreen.Feature.PARTY_COMMANDS.group);
         assertEquals(ConfigScreen.Category.GENERAL, ConfigScreen.Feature.PARTY_COMMANDS.category);
+    }
+
+    @Test
+    void chatChannelSwitcherIsOptInWithOfficerAsAnIndependentAdvancedChoice() {
+        ModConfig config = new ModConfig();
+        config.normalize();
+        ConfigScreen.Feature feature = ConfigScreen.Feature.CHAT_CHANNEL_SWITCHER;
+
+        assertEquals(ConfigScreen.FeatureGroup.CHAT_UI, feature.group);
+        assertFalse(feature.enabled(config));
+        assertFalse(config.chat.chatChannelShowOfficer);
+        assertTrue(feature.hasSettings());
+        assertEquals(null, feature.hudType());
+
+        feature.toggle(config);
+        assertTrue(feature.enabled(config));
+        assertFalse(config.chat.chatChannelShowOfficer);
     }
 
     @Test

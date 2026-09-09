@@ -103,6 +103,7 @@ Foraging and Hunting are separate top-level settings categories, while Safari is
 ### Chat
 
 - **Chat Peek** — hold a user-defined key or modifier combination to temporarily render the focused-height chat history without opening Chat. While peeking, the mouse wheel defaults to scrolling chat; the secondary setting can leave it controlling the hotbar instead. The peek key is intentionally unbound by default to avoid conflicts.
+- **Chat Channel Switcher** — an opt-in row above the vanilla chat input for All, Party, Guild, and SkyBlock Co-op; Officer is an independently enabled advanced button. A click preserves the complete draft and waits for an exact Hypixel acknowledgement before marking the channel active. While that acknowledgement is pending, another button command and ordinary-chat submission are blocked, but slash commands remain available. Timeout makes the channel unknown instead of trusting stale state, and no channel is persisted across connections.
 - **Party Auto Accept** — optionally accepts qualifying party invitations from the configured friend category or a 16-player whitelist. The master switch is off by default; the whitelist overrides the friend-category choice.
 - **Private-message Party Request** — when enabled, an exact received private-message keyword `!p`, `!party`, or `!invite` sends `party invite <sender>`. It is off by default and ignores unrelated private messages.
 - **Quick Private `!p`** — when enabled, local `//invited <player>`, `//invited by <player>`, and `//i <player>` send `msg <player> !p`. It is off by default.

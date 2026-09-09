@@ -40,9 +40,33 @@ final class UnifiedModIntegrationTest {
                     english.get(ConfigScreen.Feature.FAIRY_SOUL_WAYPOINTS));
             assertEquals("items_and_menus:cursor_memory",
                     english.get(ConfigScreen.Feature.CURSOR_MEMORY));
+            assertEquals("general:chat_channel_switcher",
+                    english.get(ConfigScreen.Feature.CHAT_CHANNEL_SWITCHER));
         } finally {
             ConfigManager.get().language = originalLanguage;
         }
+    }
+
+    @Test
+    void babyZombieChatChannelSwitcherMergesWithTheLocalLogicalFeature() {
+        UnifiedModIntegration.Classification classification = new UnifiedModIntegration.Classification(
+                ConfigScreen.Category.GENERAL,
+                UnifiedModIntegration.ClassificationSource.VERIFIED_RULE, 1.0);
+        UnifiedModIntegration.NativeFeature providerFeature = new UnifiedModIntegration.NativeFeature(
+                UnifiedModIntegration.Provider.BABYZOMBIE, "general:chat_channel_switcher",
+                "Chat Channel Switcher", "Provider description", classification,
+                "Chat UI", null, List.of());
+
+        UnifiedModIntegration.UnifiedFeature merged = UnifiedModIntegration.buildFeatures(List.of(providerFeature))
+                .stream().filter(feature -> feature.qcloudyFeature
+                        == ConfigScreen.Feature.CHAT_CHANNEL_SWITCHER)
+                .findFirst().orElse(null);
+
+        assertNotNull(merged);
+        assertEquals("general:chat_channel_switcher", merged.id);
+        assertEquals(1, merged.external.size());
+        assertEquals(UnifiedModIntegration.Provider.BABYZOMBIE,
+                merged.external.getFirst().provider);
     }
 
     @Test

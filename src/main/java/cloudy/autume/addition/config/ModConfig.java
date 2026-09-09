@@ -222,6 +222,12 @@ public final class ModConfig {
             dungeons.partyFinderAutoKick = new PartyFinderAutoKick();
             configVersion = 30;
         }
+        if (configVersion < 31) {
+            // Chat-channel switching is opt-in. The session state is deliberately
+            // not persisted; rewriting only advances the schema and preserves
+            // any explicit preview values already present in this config.
+            configVersion = 31;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
@@ -834,6 +840,10 @@ public final class ModConfig {
 
         public boolean chatPeek = true;
         public String peekScrollTarget = "CHAT";
+        /** Opt-in chat-screen shortcuts; selected channel state remains session-only. */
+        public boolean chatChannelSwitcher;
+        /** Officer chat is permission-sensitive and stays hidden unless explicitly requested. */
+        public boolean chatChannelShowOfficer;
         public boolean partyAutoAccept;
         public PartyAcceptFriendMode partyAutoAcceptFriendMode = PartyAcceptFriendMode.NORMAL_ONLY;
         public List<String> partyAutoAcceptWhitelist = new ArrayList<>();

@@ -695,6 +695,8 @@ public final class ConfigScreen extends Screen {
                 "config.desc.integration.hud_editor"),
         MANUAL_RECONNECT(FeatureGroup.CONNECTION, "config.manual_reconnect", "config.desc.manual_reconnect"),
         CHAT_PEEK(FeatureGroup.CHAT_UI, "config.chat_peek", "config.desc.chat_peek"),
+        CHAT_CHANNEL_SWITCHER(FeatureGroup.CHAT_UI, "config.chat.channel_switcher",
+                "config.desc.chat.channel_switcher"),
         PARTY_AUTO_ACCEPT(FeatureGroup.CHAT_UI, "config.party.auto_accept", "config.desc.party.auto_accept"),
         DIRECT_MESSAGE_PARTY_REQUEST(FeatureGroup.CHAT_UI, "config.chat.dm_party_request",
                 "config.desc.chat.dm_party_request"),
@@ -770,6 +772,7 @@ public final class ConfigScreen extends Screen {
                 case HUD_ANIMATIONS -> config.hudStyle.animations;
                 case MANUAL_RECONNECT -> config.manualReconnectButton;
                 case PARTY_AUTO_ACCEPT -> config.chat.partyAutoAccept;
+                case CHAT_CHANNEL_SWITCHER -> config.chat.chatChannelSwitcher;
                 case DIRECT_MESSAGE_PARTY_REQUEST -> config.chat.directMessagePartyRequest;
                 case QUICK_PRIVATE_PARTY_REQUEST -> config.chat.quickPrivatePartyRequest;
                 case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands;
@@ -827,6 +830,8 @@ public final class ConfigScreen extends Screen {
                 case HUD_ANIMATIONS -> config.hudStyle.animations = !config.hudStyle.animations;
                 case MANUAL_RECONNECT -> config.manualReconnectButton = !config.manualReconnectButton;
                 case PARTY_AUTO_ACCEPT -> config.chat.partyAutoAccept = !config.chat.partyAutoAccept;
+                case CHAT_CHANNEL_SWITCHER -> config.chat.chatChannelSwitcher =
+                        !config.chat.chatChannelSwitcher;
                 case DIRECT_MESSAGE_PARTY_REQUEST -> config.chat.directMessagePartyRequest =
                         !config.chat.directMessagePartyRequest;
                 case QUICK_PRIVATE_PARTY_REQUEST -> config.chat.quickPrivatePartyRequest =
@@ -908,7 +913,7 @@ public final class ConfigScreen extends Screen {
                 case BONZO_MASK_COOLDOWN_HUD -> ModConfig.HudType.BONZO_MASK_COOLDOWN;
                 case PHOENIX_COOLDOWN_HUD -> ModConfig.HudType.PHOENIX_COOLDOWN;
                 case HUD_ANIMATIONS, HUNTING_ALERT_SOUND, UNIFIED_SETTINGS_EDITOR, UNIFIED_HUD_EDITOR,
-                        MANUAL_RECONNECT, PARTY_AUTO_ACCEPT, DIRECT_MESSAGE_PARTY_REQUEST,
+                        MANUAL_RECONNECT, CHAT_CHANNEL_SWITCHER, PARTY_AUTO_ACCEPT, DIRECT_MESSAGE_PARTY_REQUEST,
                         QUICK_PRIVATE_PARTY_REQUEST, FAST_PARTY_COMMANDS, PARTY_COMMANDS,
                         DUNGEON_QUICK_VIEW,
                         FISHING_BITE_ALERT,

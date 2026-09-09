@@ -1,5 +1,6 @@
 package cloudy.autume.addition;
 
+import cloudy.autume.addition.chat.ChatChannelSwitcher;
 import cloudy.autume.addition.config.ConfigManager;
 import cloudy.autume.addition.config.ConfigScreen;
 import cloudy.autume.addition.config.IntegrationScanService;
@@ -102,6 +103,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ShardWarehouseManager.load();
         CenturyCakeManager.load();
         HypixelSessionTracker.init();
+        ChatChannelSwitcher.init();
         DungeonQuickViewManager.init();
         ItemTimestampTooltip.register();
         SafariBeltTooltip.register();
@@ -146,6 +148,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         ClientSendMessageEvents.COMMAND.register(DungeonQuickViewManager::onOutgoingCommand);
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            ChatChannelSwitcher.observe(message, overlay);
             onPartyMessage(message, overlay);
             onDeathSaveMessage(message, overlay);
             PetTracker.onChat(message.getString(), overlay);
@@ -157,6 +160,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         // Compatibility path for chat compactors (for example SkyHanni): GAME
         // and GAME_CANCELED are mutually exclusive for one received message.
         ClientReceiveMessageEvents.GAME_CANCELED.register((message, overlay) -> {
+            ChatChannelSwitcher.observe(message, overlay);
             onPartyMessage(message, overlay);
             onDeathSaveMessage(message, overlay);
             HuntingTracker.onMessage(message, overlay);
@@ -168,6 +172,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             HypixelSessionTracker.beginConnection();
+            ChatChannelSwitcher.reset();
             LocationTracker.clearWorldContext();
             RELEASE_UPDATES.onJoin(client);
         });
@@ -596,6 +601,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
 
     private static void resetTrackers() {
         HypixelSessionTracker.reset();
+        ChatChannelSwitcher.reset();
         LocationTracker.reset();
         TabListTracker.reset();
         PetTracker.reset();

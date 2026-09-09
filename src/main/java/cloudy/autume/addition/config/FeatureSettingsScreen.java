@@ -332,6 +332,11 @@ final class FeatureSettingsScreen extends Screen {
             rows.add(new Setting(Kind.EXTERNAL_STATUS, "config.integration.no_secondary_settings"));
             return rows;
         }
+        if (feature == ConfigScreen.Feature.CHAT_CHANNEL_SWITCHER) {
+            rows.add(new Setting(Kind.CHAT_CHANNEL_SHOW_OFFICER,
+                    "config.setting.chat_channel_show_officer"));
+            return rows;
+        }
         if (feature.huntingFeature()) {
             for (HuntingOption option : HuntingOption.forFeature(feature)) rows.add(new Setting(option));
             if (feature.hudType() != null) {
@@ -638,6 +643,8 @@ final class FeatureSettingsScreen extends Screen {
                     new PartyWhitelistScreen(this));
             case FAST_PARTY_WARP_PERMISSION, FAST_PARTY_OTHER_PERMISSION -> { }
             case FAST_PARTY_ALLOW_SELF -> config.chat.fastPartyAllowSelf = !config.chat.fastPartyAllowSelf;
+            case CHAT_CHANNEL_SHOW_OFFICER -> config.chat.chatChannelShowOfficer =
+                    !config.chat.chatChannelShowOfficer;
             case OPEN_FAST_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
                     new PartyWhitelistScreen(this, PartyWhitelistScreen.Target.FAST_PARTY_COMMANDS));
             case OPEN_DUNGEON_REQUIREMENTS -> MinecraftClientCompat.setScreen(minecraft,
@@ -889,6 +896,7 @@ final class FeatureSettingsScreen extends Screen {
         OPEN_CENTURY_CAKES, CENTURY_CAKE_SOUND, CENTURY_CAKE_VOLUME,
         CHAT_PEEK_KEY, CHAT_SCROLL_TARGET,
         PARTY_FRIEND_MODE, OPEN_PARTY_WHITELIST,
+        CHAT_CHANNEL_SHOW_OFFICER,
         FAST_PARTY_WARP_PERMISSION, FAST_PARTY_OTHER_PERMISSION,
         FAST_PARTY_ALLOW_SELF, OPEN_FAST_PARTY_WHITELIST,
         OPEN_DUNGEON_REQUIREMENTS
@@ -993,6 +1001,7 @@ final class FeatureSettingsScreen extends Screen {
                 case FAST_PARTY_WARP_PERMISSION -> permissionValue(config.chat.fastPartyWarpPermission);
                 case FAST_PARTY_OTHER_PERMISSION -> permissionValue(config.chat.fastPartyOtherPermission);
                 case FAST_PARTY_ALLOW_SELF -> onOff(config.chat.fastPartyAllowSelf);
+                case CHAT_CHANNEL_SHOW_OFFICER -> onOff(config.chat.chatChannelShowOfficer);
                 case OPEN_FAST_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
                         config.chat.fastPartyCommandWhitelist.size(),
                         ModConfig.Chat.FAST_PARTY_WHITELIST_LIMIT);

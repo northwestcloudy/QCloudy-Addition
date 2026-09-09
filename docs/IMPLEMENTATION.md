@@ -358,7 +358,14 @@ All information rows on; icon+name accessory mode; read/render only; no runtime 
 - **Expected effect:** chat expands only while the chord is held; wheel controls chat by default.
 - **Default/outbound:** feature on, chord unbound, scroll target Chat; no message is sent.
 
-### 11.1 Party and chat command utilities
+### 11.1 Chat Channel Switcher
+
+- **Purpose and presentation:** when the opt-in feature is enabled on an officially confirmed Hypixel connection, `ChatChannelSwitcher` adds real narratable widgets directly above the vanilla `ChatScreen` input. The default order is All, Party, Guild, Co-op; Officer is a separate default-off setting inserted between Guild and Co-op. Full localized labels compact to one-character labels only when required, and an impossibly narrow row is hidden instead of clipped. Co-op is disabled only when an authoritative Location packet confirms a non-SkyBlock game. The complete row hides while the input begins with `/`, leaving command suggestions unobstructed.
+- **Click and draft safety:** `ChatScreenMixin` gives a visible button rectangle priority over command suggestions, clickable chat text, and other screen children, including when that button is already current, pending, or unavailable. A physical click sends one exact `sendCommand` payload without changing the input, cursor, selection, history, or focus. The state moves from unknown/confirmed to pending; only an exact received server acknowledgement confirms the new channel. While pending, Enter on ordinary chat is consumed before vanilla can send, clear, or close the screen. Slash commands remain available, and no draft is queued or sent automatically.
+- **Tracking:** `ChatChannelTracker` consumes both normal and canceled-display game-message paths even while the feature toggle is off. It accepts only anchored English, Simplified Chinese, and known mixed-language channel acknowledgements, the exact forced-to-All messages, and a bounded set of exact request rejections. A rejection retains the previous confirmed channel. A three-second timeout clears both pending and previously confirmed state because delivery is uncertain. Physical join/disconnect resets session state; ordinary world changes do not persist or guess a channel.
+- **Commands and defaults:** All → `chat all`; Party → `chat party`; Guild → `chat guild`; Officer → `chat officer`; Co-op → `chat coop`. The master and Officer option default off. The feature does not inspect membership, request rosters, send probes, write channel state to disk, or use `sendChat`.
+
+### 11.2 Party and chat command utilities
 
 - **Inputs and bounded parsing:** `PartyText` removes Minecraft formatting before parsing. `PartyChatLine` accepts only received English Party Chat lines, extracts the sender, and accepts only a recognized `!` alias with normalized whitespace. `PrivatePartyRequestCommands` accepts only exact received English private-message bodies `!p`, `!party`, or `!invite`. Public chat, guild chat, unrecognized Party Chat text, and nonmatching private messages do not select an action.
 - **Roster and completion:** `PartyRosterTracker` observes the client-visible party roster and resolves a player argument by exact case-insensitive name first, then a unique case-insensitive prefix. Ambiguous prefixes produce no command; a syntactically valid full player name remains usable when it is not in the observed roster. `!pt`/`!ptme` transfer leadership to the Party Chat sender; `//pt`/`//ptme` transfer it to the local player. The same resolver supplies command suggestions for aliases and player arguments.
@@ -461,6 +468,7 @@ Release-check state and a confirmed remote result are process-memory only; no up
 | Player types `/helia` | `sendCommand("chapter torrhus")` | No |
 | Player clicks the underlined Century Cake renewal text | `sendCommand("visit northwestcloudy")` through Minecraft's `RUN_COMMAND` chat click event | No |
 | Player clicks Reconnect | One normal Minecraft server connection to the remembered in-memory target | No |
+| Player clicks an enabled Chat Channel Switcher button | `sendCommand("chat all")`, `sendCommand("chat party")`, `sendCommand("chat guild")`, optional `sendCommand("chat officer")`, or `sendCommand("chat coop")` | No; one physical click, official Hypixel authority, no pending request, and a non-current target are required |
 | First world join in a Beta/Release build | After five seconds, at most one HTTPS `GET` in the client process to the fixed stable Release manifest; Alpha performs none | Yes; metadata check only, with no download or installation |
 | Enabled Party Auto Accept receives a qualifying invite | `sendCommand("party accept <sender>")` | Yes, only after its local sender check |
 | Enabled Private-message Party Request receives exact `!p`, `!party`, or `!invite` | `sendCommand("party invite <sender>")` | Yes, only after its exact message match |
@@ -468,7 +476,7 @@ Release-check state and a confirmed remote result are process-memory only; no up
 | Enabled Quick Private `!p` receives local `//invited …` or `//i …` input | `sendCommand("msg <player> !p")` | No; typed locally |
 | Enabled Party Commands receives a recognized local `//` alias | `sendCommand` with the documented Party/Stream/`joininstance` payload | No; typed locally |
 
-`sendChat` calls: none. Generated `sendCommand` payloads include the separately enabled Quick Private `!p` message and, only under the admission conditions above, `party kick <validated newcomer>`. Automatic movement, combat, capture, item use, block interaction, or reconnect: none.
+`sendChat` calls: none. Generated `sendCommand` payloads include the physically clicked channel switch, the separately enabled Quick Private `!p` message and, only under the admission conditions above, `party kick <validated newcomer>`. Automatic movement, combat, capture, item use, block interaction, or reconnect: none.
 
 ## 15. Expected validation boundary
 

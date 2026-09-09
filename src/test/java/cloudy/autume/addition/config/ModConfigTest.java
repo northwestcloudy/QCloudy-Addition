@@ -53,7 +53,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(30, config.configVersion);
+        assertEquals(31, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -78,6 +78,8 @@ final class ModConfigTest {
         assertEquals(64, config.fishing.biteAlertVolume);
         assertEquals(0x0F, config.keybinds.openShardFusionModifiers);
         assertEquals(true, config.chat.chatPeek);
+        assertEquals(false, config.chat.chatChannelSwitcher);
+        assertEquals(false, config.chat.chatChannelShowOfficer);
         assertEquals("CHAT", config.chat.peekScrollTarget);
         assertEquals(true, config.inventory.teleportSoundCustomization);
         assertEquals("VANILLA", config.inventory.instantTransmissionSoundMode);
@@ -194,7 +196,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(30, migrated.configVersion);
+        assertEquals(31, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -240,7 +242,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(30, migrated.configVersion);
+        assertEquals(31, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
@@ -268,7 +270,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(30, migrated.configVersion);
+        assertEquals(31, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(false, migrated.chat.directMessagePartyRequest);
@@ -321,7 +323,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(30, config.configVersion);
+        assertEquals(31, config.configVersion);
         assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
                 config.chat.fastPartyWarpPermission);
         assertEquals(ModConfig.PartyCommandPermission.NONE,
@@ -389,7 +391,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(30, config.configVersion);
+        assertEquals(31, config.configVersion);
         assertFalse(config.dungeons.partyFinderAutoKick.enabled);
         assertEquals(1, config.dungeons.partyFinderAutoKick.rulesVersion);
         assertEquals(14, config.dungeons.partyFinderAutoKick.floors.size());
@@ -403,6 +405,20 @@ final class ModConfigTest {
         }
         assertNotSame(config.dungeons.partyFinderAutoKick.rulesFor("F7"),
                 config.dungeons.partyFinderAutoKick.rulesFor("M7"));
+    }
+
+    @Test
+    void migration31PreservesExplicitChatChannelChoices() {
+        ModConfig config = new ModConfig();
+        config.configVersion = 30;
+        config.chat.chatChannelSwitcher = true;
+        config.chat.chatChannelShowOfficer = true;
+
+        config.normalize();
+
+        assertEquals(31, config.configVersion);
+        assertTrue(config.chat.chatChannelSwitcher);
+        assertTrue(config.chat.chatChannelShowOfficer);
     }
 
     @Test
