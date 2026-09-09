@@ -1,7 +1,7 @@
 {
   "config.tab.features": "Features",
   "config.search": "Search",
-  "config.feature_settings_hint": "Every option for this feature is kept here.",
+  "config.feature_settings_hint": "Left-click to toggle or act; right-click editable switches for details.",
   "config.empty": "No matching settings",
   "config.open": "OPEN",
   "config.key.waiting": "PRESS KEY / MOUSE · ESC CLEARS",

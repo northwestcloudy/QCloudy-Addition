@@ -42,12 +42,19 @@ public final class AcaUiTheme {
     }
 
     public static void toggle(GuiGraphicsExtractor graphics, int x, int y, boolean enabled) {
+        toggle(graphics, x, y, enabled, true);
+    }
+
+    public static void toggle(GuiGraphicsExtractor graphics, int x, int y, boolean enabled, boolean available) {
         int width = 30;
         int height = 14;
-        graphics.fill(x, y, x + width, y + height, enabled ? ACCENT_DARK : CONTROL);
-        graphics.outline(x, y, width, height, enabled ? ACCENT : BORDER);
+        int fill = available ? (enabled ? ACCENT_DARK : CONTROL) : (enabled ? 0xFF29434B : 0xFF1B2023);
+        int outline = available ? (enabled ? ACCENT : BORDER) : (enabled ? 0xFF41636E : BORDER_SOFT);
+        int knob = available ? (enabled ? 0xFFFFFFFF : 0xFF87949A) : TEXT_DIM;
+        graphics.fill(x, y, x + width, y + height, fill);
+        graphics.outline(x, y, width, height, outline);
         int knobX = enabled ? x + width - 11 : x + 3;
-        graphics.fill(knobX, y + 3, knobX + 8, y + 11, enabled ? 0xFFFFFFFF : 0xFF87949A);
+        graphics.fill(knobX, y + 3, knobX + 8, y + 11, knob);
     }
 
     public static boolean contains(double mouseX, double mouseY, int x, int y, int width, int height) {

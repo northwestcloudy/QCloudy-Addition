@@ -6,6 +6,7 @@ import cloudy.autume.addition.i18n.ModText;
 import cloudy.autume.addition.inventory.CenturyCakeEffectsScreen;
 import cloudy.autume.addition.inventory.ShardPlanningScreen;
 import cloudy.autume.addition.input.HotkeyInputs;
+import cloudy.autume.addition.dungeon.DungeonQuickViewManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -110,6 +111,12 @@ final class FeatureSettingsScreen extends Screen {
                 listening ? 0xFF263D47 : hovered ? AcaUiTheme.CARD_HOVER : AcaUiTheme.CARD);
         graphics.outline(x, y, rowWidth, ROW_HEIGHT,
                 listening ? AcaUiTheme.ACCENT : hovered ? AcaUiTheme.ACCENT_DARK : AcaUiTheme.BORDER_SOFT);
+        if (setting.booleanControl()) {
+            drawFittedText(graphics, Component.literal(setting.label()), x + 10, y + 9,
+                    Math.max(1, rowWidth - 62), available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
+            AcaUiTheme.toggle(graphics, x + rowWidth - 40, y + 7, setting.booleanValue(), available);
+            return;
+        }
         String value = setting.value();
         if (setting.kind == Kind.INTEGRATION_SCAN_PROGRESS) {
             UnifiedModIntegration.ScanStatus status = UnifiedModIntegration.scanStatus(integrationScanView());
@@ -458,10 +465,12 @@ final class FeatureSettingsScreen extends Screen {
             }
             return true;
         }
-        if (click.button() != 0) return super.mouseClicked(click, doubled);
+        boolean primary = click.button() == 0;
+        boolean secondary = click.button() == 1;
+        if (!primary && !secondary) return super.mouseClicked(click, doubled);
         if (openDropdownId != null) {
             DropdownLayout dropdown = dropdownLayout();
-            if (dropdown != null && dropdown.contains(click.x(), click.y())) {
+            if (primary && dropdown != null && dropdown.contains(click.x(), click.y())) {
                 int visibleIndex = (int) ((click.y() - dropdown.y()) / dropdown.optionHeight());
                 int choiceIndex = dropdownScroll + visibleIndex;
                 List<Choice> choices = dropdown.setting().dropdownChoices();
@@ -477,15 +486,17 @@ final class FeatureSettingsScreen extends Screen {
             dropdownScroll = 0;
             return true;
         }
-        if (AcaUiTheme.contains(click.x(), click.y(), windowX + 10, windowY + 8, 24, 18)) {
+        if (primary && AcaUiTheme.contains(click.x(), click.y(), windowX + 10, windowY + 8, 24, 18)) {
             onClose();
             return true;
         }
-        VerticalScrollbar.Interaction scrollbarClick = contentScrollbar.mouseClicked(
-                click.button(), click.x(), click.y(), scroll);
-        if (scrollbarClick.consumed()) {
-            scroll = scrollbarClick.scroll();
-            return true;
+        if (primary) {
+            VerticalScrollbar.Interaction scrollbarClick = contentScrollbar.mouseClicked(
+                    click.button(), click.x(), click.y(), scroll);
+            if (scrollbarClick.consumed()) {
+                scroll = scrollbarClick.scroll();
+                return true;
+            }
         }
         int viewportHeight = viewportHeight();
         if (!AcaUiTheme.contains(click.x(), click.y(), contentX, contentY, contentWidth, viewportHeight)) {
@@ -493,6 +504,10 @@ final class FeatureSettingsScreen extends Screen {
         }
         for (Hit hit : hits) {
             if (hit.contains(click.x(), click.y())) {
+                if (secondary) {
+                    if (hit.setting.hasEditor()) openEditor(hit.setting);
+                    return true;
+                }
                 if (!hit.setting.available()) return true;
                 if (hit.setting.dropdown()) {
                     openDropdownId = hit.setting.id();
@@ -510,6 +525,12 @@ final class FeatureSettingsScreen extends Screen {
             }
         }
         return super.mouseClicked(click, doubled);
+    }
+
+    private void openEditor(Setting setting) {
+        if (setting.kind == Kind.OPEN_DUNGEON_REQUIREMENTS) {
+            MinecraftClientCompat.setScreen(minecraft, new DungeonRequirementsScreen(this));
+        }
     }
 
     @Override
@@ -647,8 +668,15 @@ final class FeatureSettingsScreen extends Screen {
                     !config.chat.chatChannelShowOfficer;
             case OPEN_FAST_PARTY_WHITELIST -> MinecraftClientCompat.setScreen(minecraft,
                     new PartyWhitelistScreen(this, PartyWhitelistScreen.Target.FAST_PARTY_COMMANDS));
-            case OPEN_DUNGEON_REQUIREMENTS -> MinecraftClientCompat.setScreen(minecraft,
-                    new DungeonRequirementsScreen(this));
+            case OPEN_DUNGEON_REQUIREMENTS -> {
+                if (config.dungeons.partyFinderAutoKick.enabled) {
+                    config.dungeons.partyFinderAutoKick.enabled = false;
+                    DungeonQuickViewManager.onAdmissionPolicyChanged();
+                } else {
+                    MinecraftClientCompat.setScreen(minecraft, new DungeonAutoKickConfirmScreen(this));
+                    return;
+                }
+            }
             case OPEN_SHARD_GUIDE -> QCloudyAdditionClient.openShardFusionGuide(minecraft, this, "");
             case OPEN_SHARD_PLANNER -> MinecraftClientCompat.setScreen(minecraft, new ShardPlanningScreen(this,
                     ConfigManager.get().inventory.shardPlannerTarget));
@@ -878,7 +906,7 @@ final class FeatureSettingsScreen extends Screen {
         }
     }
 
-    private enum Kind {
+    enum Kind {
         PROVIDER, EXTERNAL_STATUS,
         INTEGRATION_SCAN_PROGRESS, INTEGRATION_SCAN_CURRENT, INTEGRATION_SCAN_SUMMARY,
         INTEGRATION_SCAN_PROVIDERS, INTEGRATION_SCAN_EVENT_1, INTEGRATION_SCAN_EVENT_2,
@@ -908,6 +936,22 @@ final class FeatureSettingsScreen extends Screen {
 
     static boolean partyCommandChildSettingsAvailable(ModConfig config, boolean localPartyCommand) {
         return localPartyCommand ? config.chat.partyCommands : config.chat.fastPartyCommands;
+    }
+
+    static boolean isBooleanSettingKind(Kind kind) {
+        return switch (kind) {
+            case FAST_PARTY_ALLOW_SELF, CHAT_CHANNEL_SHOW_OFFICER, OPEN_DUNGEON_REQUIREMENTS,
+                    SHOW_CREATION, SHOW_COUNTDOWNS,
+                    DEPLOYABLE_POWER_ORB_ALERTS, DEPLOYABLE_FLARE_ALERTS,
+                    DEPLOYABLE_EXPIRY_CENTER_TEXT, DEPLOYABLE_EXPIRY_SOUND,
+                    CENTURY_CAKE_SOUND, BORDER, BOLD, SHADOW, HOTM_SLOT,
+                    PET_ICON, PET_LEVEL_XP, PET_MAX_XP, PET_OVERFLOW_LEVEL, PET_SKIN_NAME -> true;
+            default -> false;
+        };
+    }
+
+    static boolean hasSecondaryEditor(Kind kind) {
+        return kind == Kind.OPEN_DUNGEON_REQUIREMENTS;
     }
 
     private final class Setting {
@@ -1005,9 +1049,9 @@ final class FeatureSettingsScreen extends Screen {
                 case OPEN_FAST_PARTY_WHITELIST -> ModText.get("config.party.whitelist.count",
                         config.chat.fastPartyCommandWhitelist.size(),
                         ModConfig.Chat.FAST_PARTY_WHITELIST_LIMIT);
-                case OPEN_DUNGEON_REQUIREMENTS -> ModText.get("config.open");
+                case OPEN_DUNGEON_REQUIREMENTS -> onOff(config.dungeons.partyFinderAutoKick.enabled);
                 case OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER ->
-                        ModText.get(available() ? "config.open" : "config.disabled");
+                        ModText.get(available() ? "config.open" : "config.integration.unavailable");
                 case SHARD_GUIDE_KEY, OPEN_CONFIG_KEY, CHAT_PEEK_KEY -> {
                     QCloudyAdditionClient.ChordAction action = chordAction();
                     yield action == listeningChord ? ModText.get("config.key.waiting")
@@ -1124,6 +1168,53 @@ final class FeatureSettingsScreen extends Screen {
             }
             return (kind != Kind.OPEN_SHARD_GUIDE && kind != Kind.OPEN_SHARD_PLANNER)
                     || shardGuideEntryEnabled(ConfigManager.get());
+        }
+
+        boolean booleanControl() {
+            if (externalSetting != null) {
+                return externalSetting.kind == UnifiedModIntegration.ValueKind.BOOLEAN;
+            }
+            if (huntingOption != null) return huntingOption.type == HuntingOption.Type.BOOLEAN;
+            if (partyCommandOption != null) return true;
+            return isBooleanSettingKind(kind);
+        }
+
+        boolean booleanValue() {
+            ModConfig config = ConfigManager.get();
+            if (externalSetting != null) return externalSetting.value() instanceof Boolean value && value;
+            if (huntingOption != null) return huntingOption.booleanValue(config.hunting);
+            if (partyCommandOption != null) {
+                return localPartyCommand
+                        ? partyCommandOption.localEnabled(config.chat)
+                        : partyCommandOption.fastEnabled(config.chat);
+            }
+            ModConfig.PanelStyle style = panelStyle();
+            return switch (kind) {
+                case FAST_PARTY_ALLOW_SELF -> config.chat.fastPartyAllowSelf;
+                case CHAT_CHANNEL_SHOW_OFFICER -> config.chat.chatChannelShowOfficer;
+                case OPEN_DUNGEON_REQUIREMENTS -> config.dungeons.partyFinderAutoKick.enabled;
+                case SHOW_CREATION -> config.inventory.showCreationTimestamp;
+                case SHOW_COUNTDOWNS -> config.inventory.showCountdownCompletion;
+                case DEPLOYABLE_POWER_ORB_ALERTS -> config.combat.deployablePowerOrbAlerts;
+                case DEPLOYABLE_FLARE_ALERTS -> config.combat.deployableFlareAlerts;
+                case DEPLOYABLE_EXPIRY_CENTER_TEXT -> config.combat.deployableExpiryCenterText;
+                case DEPLOYABLE_EXPIRY_SOUND -> config.combat.deployableExpiryAudio.sound;
+                case CENTURY_CAKE_SOUND -> config.centuryCakes.expiryAudio.sound;
+                case BORDER -> style.border;
+                case BOLD -> style.boldText;
+                case SHADOW -> style.textShadow;
+                case HOTM_SLOT -> config.mining.showHotmSlot;
+                case PET_ICON -> config.pets.showPetIcon;
+                case PET_LEVEL_XP -> config.pets.showLevelProgress;
+                case PET_MAX_XP -> config.pets.showMaxProgress;
+                case PET_OVERFLOW_LEVEL -> config.pets.showOverflowLevel;
+                case PET_SKIN_NAME -> config.pets.showSkinName;
+                default -> false;
+            };
+        }
+
+        boolean hasEditor() {
+            return kind != null && hasSecondaryEditor(kind);
         }
 
         boolean color() {

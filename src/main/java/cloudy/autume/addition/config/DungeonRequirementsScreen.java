@@ -76,7 +76,7 @@ final class DungeonRequirementsScreen extends Screen {
         windowY = (height - windowHeight) / 2;
         contentX = windowX + 12;
         contentWidth = Math.max(1, windowWidth - 29);
-        rowsY = windowY + 140;
+        rowsY = windowY + 96;
         // Keep a small footer clear for invalid-input feedback instead of
         // painting it over the final rule row.
         rowsHeight = Math.max(1, windowY + windowHeight - rowsY - 28);
@@ -100,35 +100,14 @@ final class DungeonRequirementsScreen extends Screen {
                 Math.max(1, windowWidth - 54), AcaUiTheme.TEXT);
 
         hits.clear();
-        drawMaster(graphics, mouseX, mouseY);
         drawFloorSelector(graphics, mouseX, mouseY);
         drawRules(graphics, mouseX, mouseY);
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         UiAnimation.pop(graphics);
     }
 
-    private void drawMaster(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        ModConfig.PartyFinderAutoKick policy = policy();
-        int y = windowY + 42;
-        boolean hovered = AcaUiTheme.contains(mouseX, mouseY, contentX, y, contentWidth, 30);
-        graphics.fill(contentX, y, contentX + contentWidth, y + 30,
-                hovered ? AcaUiTheme.CARD_HOVER : AcaUiTheme.CARD);
-        graphics.outline(contentX, y, contentWidth, 30,
-                hovered ? AcaUiTheme.ACCENT_DARK : AcaUiTheme.BORDER_SOFT);
-        drawFitted(graphics, ModText.component("config.dungeon_requirements.auto_kick"),
-                contentX + 10, y + 10, Math.max(1, contentWidth - 96), AcaUiTheme.TEXT);
-        AcaUiTheme.toggle(graphics, contentX + contentWidth - 39, y + 8, policy.enabled);
-        hits.add(new Hit(HitType.MASTER, null, null, contentX, y, contentWidth, 30));
-
-        int hintColor = policy.enabled ? AcaUiTheme.DANGER : AcaUiTheme.TEXT_MUTED;
-        drawFitted(graphics, ModText.component(policy.enabled
-                        ? "config.dungeon_requirements.auto_kick_active"
-                        : "config.dungeon_requirements.auto_kick_inactive"),
-                contentX, y + 36, contentWidth, hintColor);
-    }
-
     private void drawFloorSelector(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        int y = windowY + 96;
+        int y = windowY + 42;
         int floorWidth = Math.max(1, (contentWidth - FLOOR_GAP * 6) / 7);
         ModConfig.DungeonFloor[] floors = ModConfig.DungeonFloor.values();
         for (int index = 0; index < floors.length; index++) {
@@ -164,7 +143,7 @@ final class DungeonRequirementsScreen extends Screen {
             AcaUiTheme.toggle(graphics, contentX + 8, y + 8, enabled);
             int fieldWidth = option.numeric() ? Math.min(112, Math.max(62, contentWidth / 4)) : 0;
             int labelRight = option.numeric() ? contentX + contentWidth - fieldWidth - 17
-                    : contentX + contentWidth - 54;
+                    : contentX + contentWidth - 10;
             drawFitted(graphics, ModText.component(option.labelKey), contentX + 48, y + 10,
                     Math.max(1, labelRight - contentX - 53), enabled ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_MUTED);
             if (option.numeric()) {
@@ -176,10 +155,6 @@ final class DungeonRequirementsScreen extends Screen {
                     graphics.outline(boxX, y + 5, fieldWidth, ROW_HEIGHT - 10,
                             validFields.getOrDefault(option, true) ? AcaUiTheme.BORDER : AcaUiTheme.DANGER);
                 }
-            } else {
-                String value = ModText.get(enabled ? "config.enabled" : "config.disabled");
-                graphics.text(font, value, contentX + contentWidth - 10 - font.width(value), y + 10,
-                        enabled ? AcaUiTheme.ACCENT : AcaUiTheme.TEXT_DIM, false);
             }
             if (y + ROW_HEIGHT > rowsY && y < rowsY + rowsHeight) {
                 hits.add(new Hit(HitType.RULE, null, option,
@@ -255,23 +230,12 @@ final class DungeonRequirementsScreen extends Screen {
             Hit hit = hits.get(index);
             if (!hit.contains(click.x(), click.y())) continue;
             switch (hit.type) {
-                case MASTER -> toggleMaster();
                 case FLOOR -> selectFloor(hit.floor);
                 case RULE -> toggleRule(hit.option);
             }
             return true;
         }
         return false;
-    }
-
-    private void toggleMaster() {
-        if (policy().enabled) {
-            policy().enabled = false;
-            DungeonQuickViewManager.onAdmissionPolicyChanged();
-            ConfigManager.save();
-            return;
-        }
-        MinecraftClientCompat.setScreen(minecraft, new DungeonAutoKickConfirmScreen(this));
     }
 
     private void selectFloor(ModConfig.DungeonFloor floor) {
@@ -473,7 +437,7 @@ final class DungeonRequirementsScreen extends Screen {
 
     private enum ValueKind { NONE, WHOLE, DURATION, DECIMAL }
 
-    private enum HitType { MASTER, FLOOR, RULE }
+    private enum HitType { FLOOR, RULE }
 
     private record Hit(HitType type, ModConfig.DungeonFloor floor, RequirementOption option,
                        int x, int y, int width, int height) {

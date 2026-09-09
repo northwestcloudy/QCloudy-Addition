@@ -1,7 +1,7 @@
 {
   "config.tab.features": "功能",
   "config.search": "搜索",
-  "config.feature_settings_hint": "这个功能的全部选项都集中在这里。",
+  "config.feature_settings_hint": "左键切换或操作；带下级编辑的开关可右键打开详细设置。",
   "config.empty": "没有匹配的设置",
   "config.open": "打开",
   "config.key.waiting": "请按键盘或鼠标键 · ESC 清空",

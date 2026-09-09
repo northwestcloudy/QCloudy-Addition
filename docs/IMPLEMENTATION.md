@@ -77,6 +77,7 @@ The screen layer derives inputs, buttons, lists, detail viewports, and click tar
 
 - `ConfigScreen` owns one searchable Features page and preserves the required category order, but computes the visible sidebar from the currently available first-party and provider features. A category such as Dungeons is absent when it owns no visible feature. Fishing's sole first-party cue is placed under the `Bite Alerts` subgroup.
 - Left-click changes a feature's primary state; right-click opens only settings specific to that feature.
+- Every boolean in a secondary settings page uses the shared QCA cyan switch instead of ON/OFF text and toggles on left-click. Parent-gated switches are dimmed without falsifying their stored position. Right-click is reserved for switches with a real child editor; the Party Finder admission row uniquely owns its master while its per-floor rules remain editable even when that master is off.
 - `HudLayoutScreen` lists only QCA HUDs currently loaded by location/state plus enabled HUDs from the selected compatible provider. Dragging changes position; dragging a border/corner changes that HUD's native scale when available.
 - `PanelStyle` separately stores background color/alpha, border width/color, title color, bold state, shadow state, and scale for Map, Mining, Hunting, and Pet panels.
 - `ColorPickerScreen` supplies RGB/HSV controls, brightness, presets, and transparent backgrounds.

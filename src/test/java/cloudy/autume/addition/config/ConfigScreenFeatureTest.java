@@ -101,6 +101,22 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void secondaryBooleanRowsUseSwitchesAndOnlyRequirementPolicyHasAChildEditor() {
+        assertTrue(FeatureSettingsScreen.isBooleanSettingKind(
+                FeatureSettingsScreen.Kind.CHAT_CHANNEL_SHOW_OFFICER));
+        assertTrue(FeatureSettingsScreen.isBooleanSettingKind(
+                FeatureSettingsScreen.Kind.OPEN_DUNGEON_REQUIREMENTS));
+        assertTrue(FeatureSettingsScreen.isBooleanSettingKind(FeatureSettingsScreen.Kind.BORDER));
+        assertTrue(FeatureSettingsScreen.isBooleanSettingKind(FeatureSettingsScreen.Kind.PET_SKIN_NAME));
+        assertFalse(FeatureSettingsScreen.isBooleanSettingKind(FeatureSettingsScreen.Kind.EDIT_LAYOUT));
+        assertFalse(FeatureSettingsScreen.isBooleanSettingKind(FeatureSettingsScreen.Kind.OPEN_SHARD_GUIDE));
+        assertTrue(FeatureSettingsScreen.hasSecondaryEditor(
+                FeatureSettingsScreen.Kind.OPEN_DUNGEON_REQUIREMENTS));
+        assertFalse(FeatureSettingsScreen.hasSecondaryEditor(
+                FeatureSettingsScreen.Kind.CHAT_CHANNEL_SHOW_OFFICER));
+    }
+
+    @Test
     void dungeonRequirementEditorsAcceptOnlySafeExplicitValues() {
         assertEquals(50L, DungeonRequirementsScreen.parseWholeNumber("50", 0, 1_000_000));
         assertEquals(0L, DungeonRequirementsScreen.parseWholeNumber("0", 0, 1_000_000));
