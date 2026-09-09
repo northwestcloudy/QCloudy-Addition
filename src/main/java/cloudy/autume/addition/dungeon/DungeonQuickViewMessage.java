@@ -149,7 +149,7 @@ public final class DungeonQuickViewMessage {
                 : String.format(Locale.ROOT, "%,d", snapshot.totalSecrets())));
         output.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY));
         output.append(value(snapshot.averageSecrets() == null ? "Missing"
-                : formatDecimal(snapshot.averageSecrets())));
+                : formatAverageSecrets(snapshot.averageSecrets())));
 
         output.append("\n").append(label("Classes: "));
         int classIndex = 0;
@@ -437,6 +437,12 @@ public final class DungeonQuickViewMessage {
         if (!Double.isFinite(number)) throw new IllegalArgumentException("Decimal must be finite");
         String plain = BigDecimal.valueOf(number).stripTrailingZeros().toPlainString();
         return plain.indexOf('.') >= 0 ? plain : plain + ".0";
+    }
+
+    /** Compact profile-card form; admission comparisons retain the original value. */
+    static String formatAverageSecrets(double number) {
+        if (!Double.isFinite(number)) throw new IllegalArgumentException("Decimal must be finite");
+        return String.format(Locale.ROOT, "%.1f", number);
     }
 
     private static Component stat(DungeonQuickViewSnapshot.Stat stat, boolean oneDecimal) {

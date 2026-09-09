@@ -310,6 +310,44 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
+    void queuedConfirmationRetainsThePreviouslyProvenFloorWithoutAnotherGuiRead() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeOwnListingMenu(
+                    "Party Finder", ownRoster("The Catacombs", "Floor VII"),
+                    "LocalPlayer", 100L));
+            DungeonPartyFinderFloorTracker.ListingContext beforeQueue =
+                    DungeonPartyFinderFloorTracker.currentListing();
+
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!");
+
+            DungeonPartyFinderFloorTracker.ListingContext queuedListing =
+                    DungeonPartyFinderFloorTracker.currentListing();
+            assertEquals("F7", queuedListing.floor().id());
+            assertTrue(queuedListing.generation() > beforeQueue.generation());
+            assertTrue(DungeonPartyFinderFloorTracker.authoritativeGuiRoster().isEmpty());
+            assertTrue(DungeonPartyFinderFloorTracker.existingClasses("NewPlayer").isEmpty());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void queuedConfirmationWithoutAProvenFloorStillHasNoListing() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!");
+
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentListing());
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
     void queuedListingFreezesExistingPlayersAndManualJoinsAsTrusted() {
         DungeonPartyFinderFloorTracker.reset();
         try {

@@ -113,18 +113,29 @@ final class DungeonPartyFinderFloorTracker {
         if (observedFloor.isEmpty()) return false;
 
         DungeonFloor floor = observedFloor.orElseThrow();
-        if (currentFloor == null) {
-            if (!awaitingQueuedListing) generation++;
+        if (awaitingQueuedListing) {
+            if (currentFloor != null && !currentFloor.equals(floor)) {
+                // The retained pre-queue floor was disproved. Treat the GUI
+                // observation as another listing boundary and do not carry a
+                // pending newcomer across the mismatch.
+                generation++;
+                clearRosterState();
+            } else {
+                // A Party Finder admission can arrive after the queue line but
+                // before this confirming GUI read. Keep that member pending.
+                clearTrustedRosterPreservingPending();
+            }
+            awaitingQueuedListing = false;
+        } else if (currentFloor == null) {
+            generation++;
             // A real Party Finder admission message can arrive before the
             // first readable own-listing snapshot. Preserve that pending
             // newcomer while freezing the trusted pre-queue baseline; otherwise
             // the first GUI read could silently promote the newcomer to trusted.
             clearTrustedRosterPreservingPending();
-            awaitingQueuedListing = false;
         } else if (!currentFloor.equals(floor)) {
             generation++;
             clearRosterState();
-            awaitingQueuedListing = false;
         }
         currentFloor = floor;
 
@@ -404,7 +415,10 @@ final class DungeonPartyFinderFloorTracker {
 
     private static void beginQueuedListing() {
         generation++;
-        currentFloor = null;
+        // The queue confirmation starts a new roster/admission generation, but
+        // it does not disprove a floor already read from the local player's own
+        // ownership-proven listing. The GUI normally closes at this point, so
+        // clearing that floor would make the subsequent request omit ?floor.
         clearRosterState();
         awaitingQueuedListing = true;
     }

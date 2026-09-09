@@ -137,7 +137,7 @@ final class DungeonQuickViewMessageRequirementsTest {
     }
 
     @Test
-    void profileAverageSecretsKeepsAllMeaningfulDecimalPlaces() {
+    void profileAverageSecretsUsesOneDecimalWithoutRoundingTheSnapshot() {
         DungeonQuickViewSnapshot snapshot = DungeonQuickViewSnapshot.parse(
                 DungeonQuickViewSnapshotTest.JSON.replace("\"averagePerRun\":11.4",
                         "\"averagePerRun\":8.0375"));
@@ -145,7 +145,10 @@ final class DungeonQuickViewMessageRequirementsTest {
         String text = DungeonQuickViewMessage.build(snapshot, String::length,
                 (item, kind) -> new HoverEvent.ShowText(Component.literal(item.name()))).getString();
 
-        assertTrue(text.contains("Secrets: 2,432 | 8.0375"));
+        assertEquals(8.0375, snapshot.averageSecrets());
+        assertTrue(text.contains("Secrets: 2,432 | 8.0"));
+        assertEquals("3.3", DungeonQuickViewMessage.formatAverageSecrets(
+                3.315789473684211));
     }
 
     @Test

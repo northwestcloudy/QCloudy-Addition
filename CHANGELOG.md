@@ -13,6 +13,11 @@ Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.
 - The backend evidence contract advances to version 2. The client accepts versions 1 and 2 during deployment transition, but deliberately forces version-1 average Secrets to UNKNOWN because only version 2 proves the matching selected-Profile scope.
 - The Profile card and admission rule now explicitly label `highest_magical_power` as historical **Highest Magical Power**, not live current MP.
 
+### Fixed
+
+- Queue confirmation now retains an advertised floor already proven from the local player's own listing while starting a fresh roster/admission generation. Closing the Party Finder GUI therefore no longer makes the following newcomer request omit `?floor`, while roster and DUPE authority are still cleared and must be re-established independently.
+- The Profile card now renders average Secrets with exactly one decimal place. Requirement evaluation still compares the original full-precision value, and failure details retain enough precision to distinguish nearby values.
+
 ### Party and DUPE safety
 
 - Exact `Party Finder > Your party has been queued in the dungeon finder!` starts a new listing generation. The first complete, ownership-proven own-listing roster freezes players already in the party as trusted; they are never Profile-checked, rejected, kicked, or printed by this feature. Ordinary/manual party joins are also trusted and are used only as class context.
