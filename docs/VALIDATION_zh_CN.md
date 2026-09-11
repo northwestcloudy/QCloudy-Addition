@@ -1,3 +1,32 @@
+# QCloudy_Addition 0.3.10-alpha12 多人重叠入队验证状态
+
+日期：2026-09-11<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha12` 修复多个 Party Finder 入队判定重叠时，后续 PartyInfo 票据还在 QCA 单飞 FIFO 中等待就提前消耗三秒回包截止时间的问题。现在每张初次/最终票据只在真正物理发送时启动该回包计时，同时保留独立且有界的未发送等待；判定完成、被替换或取消时，会移除其尚未发送的票据。Party Finder 入队总开关所在布尔行也会在可视化开关旁显示本地化右键编辑提示，不改变原有左右键行为。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 的 `clean test build prepareRelease` 成功完成：67 个测试套件、455 项测试，0 failure、0 error、0 skipped。
+- 确定性回归证明：第二名玩家的票据排队时没有发送时间，只在真正发出时取得新时间，并从该时间推导回包截止时间；被取消的待发票据会跳过，不会阻塞下一张票据。原有精确票据、外部标记、世界/连接重置、错误、有界历史与最终保护测试继续通过。
+- 响应式设置测试确认只有带下级编辑器的布尔行拥有行内提示，而且宽屏与窄行下的提示宽度都有边界。
+- 两个归档均无重复路径，并通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 的内部版本精确声明为 `0.3.10-alpha12+26.1.2`，并声明纯客户端、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求与必需 `hypixel-mod-api >=1.0`；`release/` 副本与对应的 `build/26.1.2/libs/` 文件逐字节一致。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha12+26.1.2.jar` — 3,991,045 字节 — `ce0ae61df71d51e977e4e7b5adf03362b53fc265f52af98cf5e704698df6f85e`
+- `release/QCloudy_Addition-0.3.10-alpha12+26.1.2-sources.jar` — 3,200,035 字节 — `9ea0cca447500f14ef09bab055450e6d57dfb75babc2f23d8d3701a47aa01569`
+
+## 边界
+
+- 自动测试证明源码层的队列、截止时间、取消与 UI 布局逻辑；它不能复现实服登录后的多人同时 Party Finder 入队和网络时序，也不能证明 Hypixel 接受并完成每一条已发出的 `party kick` 指令。
+- 本次 Alpha 输出没有部署后端，没有安装进游戏目录，没有发布 GitHub Release/Modrinth 版本，也不声称已完成登录 Hypixel 的实服验证。公开 Beta 0.3.10 与稳定 Release/更新检查基线 0.3.9 均未改变。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha11 Group Builder 楼层捕获验证状态
 
 日期：2026-09-11<br>

@@ -2,6 +2,7 @@
   "config.tab.features": "功能",
   "config.search": "搜索",
   "config.feature_settings_hint": "左键切换或操作；带下级编辑的开关可右键打开详细设置。",
+  "config.right_click_to_edit": "右键打开编辑",
   "config.empty": "没有匹配的设置",
   "config.open": "打开",
   "config.key.waiting": "请按键盘或鼠标键 · ESC 清空",

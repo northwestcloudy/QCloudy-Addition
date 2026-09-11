@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.LongSupplier;
 
 /**
  * Authoritative, session-only party membership and role snapshots supplied by
@@ -41,6 +42,8 @@ public final class DungeonPartyAuthorityTracker {
     private static final ArrayDeque<OutboundMarker> outboundLedger = new ArrayDeque<>();
     private static final LinkedHashMap<RequestKey, Snapshot> exactSnapshots =
             new LinkedHashMap<>();
+    private static final LinkedHashMap<RequestKey, Long> dispatchedAtNanos =
+            new LinkedHashMap<>();
     private static long activeTicket;
     private static boolean handlingResponse;
     private static boolean dispatchBlocked;
@@ -49,6 +52,7 @@ public final class DungeonPartyAuthorityTracker {
     private static boolean testingSender;
     private static Object testingConnection = TEST_CONNECTION;
     private static PartyInfoSender sender = DungeonPartyAuthorityTracker::sendPartyInfoPacket;
+    private static LongSupplier monotonicClock = System::nanoTime;
 
     private DungeonPartyAuthorityTracker() { }
 
@@ -91,6 +95,22 @@ public final class DungeonPartyAuthorityTracker {
     static synchronized Snapshot snapshotFor(long expectedSession, long ticket) {
         if (dispatchBlocked || ticket <= 0L || ticket == Long.MAX_VALUE) return null;
         return exactSnapshots.get(new RequestKey(expectedSession, ticket));
+    }
+
+    /**
+     * Returns when this exact ticket was physically dispatched. A queued ticket
+     * deliberately has no response deadline yet.
+     */
+    static synchronized long dispatchedAtNanosFor(long expectedSession, long ticket) {
+        if (dispatchBlocked || ticket <= 0L || ticket == Long.MAX_VALUE) return -1L;
+        return dispatchedAtNanos.getOrDefault(new RequestKey(expectedSession, ticket), -1L);
+    }
+
+    /** Removes an obsolete request only while it is still waiting in QCA's FIFO. */
+    static synchronized void cancelRefresh(long expectedSession, long ticket) {
+        if (ticket <= 0L || ticket == Long.MAX_VALUE || expectedSession != sessionEpoch
+                || ticket == activeTicket) return;
+        pendingTickets.remove(ticket);
     }
 
     /**
@@ -275,8 +295,9 @@ public final class DungeonPartyAuthorityTracker {
         exactSnapshots.put(owner, snapshot);
         while (exactSnapshots.size() > MAX_EXACT_SNAPSHOTS) {
             var iterator = exactSnapshots.entrySet().iterator();
-            iterator.next();
+            RequestKey evicted = iterator.next().getKey();
             iterator.remove();
+            dispatchedAtNanos.remove(evicted);
         }
     }
 
@@ -289,6 +310,7 @@ public final class DungeonPartyAuthorityTracker {
         activeTicket = 0L;
         pendingTickets.clear();
         exactSnapshots.clear();
+        dispatchedAtNanos.clear();
         responseSerial = 0L;
         receivedAtNanos = 0L;
         inParty = false;
@@ -310,6 +332,8 @@ public final class DungeonPartyAuthorityTracker {
         long ticket = pendingTickets.removeFirst();
         activeTicket = ticket;
         RequestKey owner = new RequestKey(sessionEpoch, ticket);
+        long dispatchedAt = Math.max(1L, monotonicClock.getAsLong());
+        dispatchedAtNanos.put(owner, dispatchedAt);
         boolean sent;
         try {
             sent = (testingSender || HypixelSessionTracker.canSendHypixelCommand())
@@ -320,6 +344,7 @@ public final class DungeonPartyAuthorityTracker {
         }
         if (sent && isActiveLocked(owner)) return true;
 
+        dispatchedAtNanos.remove(owner);
         if (isActiveLocked(owner)) activeTicket = 0L;
         pendingTickets.clear();
         dispatchBlocked = true;
@@ -371,6 +396,7 @@ public final class DungeonPartyAuthorityTracker {
         inParty = false;
         members = Map.of();
         exactSnapshots.clear();
+        dispatchedAtNanos.clear();
         pendingTickets.clear();
         activeTicket = 0L;
         handlingResponse = false;
@@ -407,6 +433,14 @@ public final class DungeonPartyAuthorityTracker {
         sender = DungeonPartyAuthorityTracker::sendPartyInfoPacket;
         testingSender = false;
         testingConnection = TEST_CONNECTION;
+    }
+
+    static synchronized void useClockForTesting(LongSupplier testClock) {
+        monotonicClock = testClock == null ? System::nanoTime : testClock;
+    }
+
+    static synchronized void restoreClockAfterTesting() {
+        monotonicClock = System::nanoTime;
     }
 
     static synchronized void useConnectionForTesting(Object connection) {

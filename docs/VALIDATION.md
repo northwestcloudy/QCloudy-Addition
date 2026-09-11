@@ -1,3 +1,32 @@
+# QCloudy_Addition 0.3.10-alpha12 overlapping-admission validation status
+
+Date: 2026-09-11<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha12` fixes overlapping Party Finder admissions whose later PartyInfo tickets previously spent their three-second response deadline while waiting behind another admission in QCA's single-flight FIFO. Each initial/final ticket now starts that response deadline only at physical dispatch, retains a separate bounded unsent wait, and is removed from the pending queue when its admission finishes, is replaced, or is cancelled. The Party Finder admission Boolean row also shows a localized inline right-click editing cue beside its visual toggle without changing the established left/right-click behavior.
+
+## Automated/build status
+
+- Minecraft 26.1.2/Java 25 `clean test build prepareRelease` completed successfully: 67 test suites, 455 tests, 0 failures, 0 errors, and 0 skipped.
+- Deterministic regressions prove that a second admission ticket has no dispatch timestamp while queued, receives a new timestamp only when actually sent, and derives its response deadline from that timestamp. A cancelled pending ticket is skipped and does not block the next ticket; existing exact-ticket, foreign-marker, world/connection reset, error, bounded-history, and final-guard tests continue to pass.
+- Responsive settings coverage confirms that only a Boolean row with a secondary editor owns the inline cue and that its width remains bounded at wide and narrow row sizes.
+- Both archives have zero duplicate paths and pass JDK 25 `jar --validate` plus `unzip -t`. The playable JAR declares exact internal version `0.3.10-alpha12+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`. The `release/` copies are byte-identical to their `build/26.1.2/libs/` counterparts.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha12+26.1.2.jar` — 3,991,045 bytes — `ce0ae61df71d51e977e4e7b5adf03362b53fc265f52af98cf5e704698df6f85e`
+- `release/QCloudy_Addition-0.3.10-alpha12+26.1.2-sources.jar` — 3,200,035 bytes — `9ea0cca447500f14ef09bab055450e6d57dfb75babc2f23d8d3701a47aa01569`
+
+## Boundary
+
+- Automated tests prove queue/deadline/cancellation behavior and UI layout logic at source level. They do not reproduce authenticated simultaneous Hypixel Party Finder joins, network timing, or prove that Hypixel accepted and completed every emitted `party kick` command.
+- This Alpha output does not deploy the backend, install the mod into a game directory, publish a GitHub Release/Modrinth version, or claim authenticated live Hypixel validation. Public Beta 0.3.10 and stable Release/update baseline 0.3.9 remain unchanged.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha11 Group Builder floor-capture validation status
 
 Date: 2026-09-11<br>

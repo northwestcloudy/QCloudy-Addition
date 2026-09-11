@@ -112,9 +112,19 @@ final class FeatureSettingsScreen extends Screen {
         graphics.outline(x, y, rowWidth, ROW_HEIGHT,
                 listening ? AcaUiTheme.ACCENT : hovered ? AcaUiTheme.ACCENT_DARK : AcaUiTheme.BORDER_SOFT);
         if (setting.booleanControl()) {
+            int toggleX = x + rowWidth - 40;
+            int labelRight = toggleX - 8;
+            if (setting.hasEditor()) {
+                String editorHint = ModText.get("config.right_click_to_edit");
+                int hintWidth = inlineEditorHintWidth(rowWidth, font.width(editorHint));
+                drawFittedTextRight(graphics, editorHint, labelRight, y + 9, hintWidth,
+                        available ? AcaUiTheme.ACCENT : AcaUiTheme.TEXT_DIM);
+                labelRight -= hintWidth + 8;
+            }
             drawFittedText(graphics, Component.literal(setting.label()), x + 10, y + 9,
-                    Math.max(1, rowWidth - 62), available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
-            AcaUiTheme.toggle(graphics, x + rowWidth - 40, y + 7, setting.booleanValue(), available);
+                    Math.max(1, labelRight - x - 10),
+                    available ? AcaUiTheme.TEXT : AcaUiTheme.TEXT_DIM);
+            AcaUiTheme.toggle(graphics, toggleX, y + 7, setting.booleanValue(), available);
             return;
         }
         String value = setting.value();
@@ -262,6 +272,10 @@ final class FeatureSettingsScreen extends Screen {
         graphics.pose().scale(scale, scale);
         graphics.text(font, text, 0, 0, color, false);
         graphics.pose().popMatrix();
+    }
+
+    static int inlineEditorHintWidth(int rowWidth, int textWidth) {
+        return Math.max(1, Math.min(Math.max(1, textWidth), Math.max(1, (rowWidth - 70) / 3)));
     }
 
     private UnifiedModIntegration.ScanView integrationScanView() {

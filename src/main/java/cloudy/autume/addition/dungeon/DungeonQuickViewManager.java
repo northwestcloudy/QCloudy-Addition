@@ -46,8 +46,8 @@ import java.util.regex.Pattern;
 /** Runtime boundary for Dungeon Party Finder profile checks and admission actions. */
 public final class DungeonQuickViewManager {
     private static final long AUTHORITY_TIMEOUT_NANOS = Duration.ofSeconds(3).toNanos();
+    private static final long AUTHORITY_QUEUE_TIMEOUT_NANOS = Duration.ofSeconds(10).toNanos();
     private static final long FINAL_AUTHORITY_MAX_AGE_NANOS = Duration.ofSeconds(2).toNanos();
-    private static final long CLASS_ROSTER_TIMEOUT_NANOS = Duration.ofSeconds(3).toNanos();
     private static final long ADMISSION_EVIDENCE_MAX_LOCAL_AGE_NANOS =
             Duration.ofSeconds(10).toNanos();
     private static final long ADMISSION_EVIDENCE_MAX_SOURCE_AGE_MILLIS =
@@ -189,7 +189,7 @@ public final class DungeonQuickViewManager {
             admission = new AdmissionAttempt(++nextAttemptId, requestSession, event, floor,
                     listing, policy, existingClasses, membershipEpoch,
                     authoritySession, requiredResponse,
-                    now + AUTHORITY_TIMEOUT_NANOS,
+                    deadlineAfter(now, AUTHORITY_QUEUE_TIMEOUT_NANOS),
                     QUEUE_CONTEXT.generation(), admissionPolicyRevision);
             replaceAdmission(playerKey, admission);
         } else {
@@ -311,8 +311,8 @@ public final class DungeonQuickViewManager {
 
         long requiredAuthorityResponse = attempt.awaitingFinalAuthority()
                 ? attempt.finalAuthorityResponse : attempt.requiredAuthorityResponse;
-        long authorityDeadline = attempt.awaitingFinalAuthority()
-                ? attempt.finalAuthorityDeadlineNanos : attempt.authorityDeadlineNanos;
+        long authorityQueueDeadline = attempt.awaitingFinalAuthority()
+                ? attempt.finalAuthorityQueueDeadlineNanos : attempt.authorityQueueDeadlineNanos;
         if (attempt.snapshot.playerUuid() == null
                 || requiredAuthorityResponse == Long.MAX_VALUE) {
             showAuthorityUnknown(client, attempt, null,
@@ -322,6 +322,14 @@ public final class DungeonQuickViewManager {
         DungeonPartyAuthorityTracker.Snapshot party =
                 DungeonPartyAuthorityTracker.snapshotFor(
                         attempt.authoritySession, requiredAuthorityResponse);
+        long authorityDeadline = authorityResponseDeadline(
+                attempt.authoritySession, requiredAuthorityResponse);
+        if (authorityDeadline < 0L) {
+            if (party == null && now <= authorityQueueDeadline) return;
+            showAuthorityUnknown(client, attempt, party,
+                    "PARTY_AUTHORITY_UNAVAILABLE", now);
+            return;
+        }
         if (party == null && now <= authorityDeadline) return;
         if (!authorityResponseUsable(party, now, authorityDeadline)) {
             showAuthorityUnknown(client, attempt, party,
@@ -343,7 +351,7 @@ public final class DungeonQuickViewManager {
                         attempt.policy, evidence, attempt.event.dungeonClass());
 
         if (evaluation.failures().isEmpty()) {
-            if (shouldAwaitClassRoster(attempt, evaluation, now)) return;
+            if (shouldAwaitClassRoster(attempt, evaluation, now, authorityDeadline)) return;
             if (evaluation.unknowns().isEmpty()) {
                 DungeonPartyFinderFloorTracker.acceptPartyFinderMember(attempt.event);
             }
@@ -366,8 +374,8 @@ public final class DungeonQuickViewManager {
                 return;
             }
             attempt.finalAuthorityResponse = DungeonPartyAuthorityTracker.requestRefresh();
-            attempt.finalAuthorityDeadlineNanos = now + AUTHORITY_TIMEOUT_NANOS;
-            attempt.finalClassRosterDeadlineNanos = now + CLASS_ROSTER_TIMEOUT_NANOS;
+            attempt.finalAuthorityQueueDeadlineNanos =
+                    deadlineAfter(now, AUTHORITY_QUEUE_TIMEOUT_NANOS);
             if (attempt.finalAuthorityResponse == Long.MAX_VALUE) {
                 showAuthorityUnknown(client, attempt, null,
                         "PARTY_AUTHORITY_UNAVAILABLE", now);
@@ -378,7 +386,7 @@ public final class DungeonQuickViewManager {
         // Final guard is intentionally immediately adjacent to the visible
         // failure report and the one server command it authorizes.
         if (!party.freshAt(now, FINAL_AUTHORITY_MAX_AGE_NANOS)
-                || !finalGuard(client, attempt, party, now)) {
+                || !finalGuard(client, attempt, party, now, authorityDeadline)) {
             finish(attempt);
             if (client.player != null) {
                 client.player.sendSystemMessage(DungeonQuickViewMessage.failures(
@@ -492,6 +500,19 @@ public final class DungeonQuickViewManager {
                 && nowNanos >= snapshot.receivedAtNanos()
                 && snapshot.receivedAtNanos() <= deadlineNanos
                 && nowNanos <= deadlineNanos;
+    }
+
+    /** Response time starts at physical dispatch, not while a request waits in FIFO. */
+    static long authorityResponseDeadline(long authoritySession, long ticket) {
+        long dispatchedAt = DungeonPartyAuthorityTracker.dispatchedAtNanosFor(
+                authoritySession, ticket);
+        return dispatchedAt <= 0L ? -1L : deadlineAfter(dispatchedAt, AUTHORITY_TIMEOUT_NANOS);
+    }
+
+    static long deadlineAfter(long startNanos, long durationNanos) {
+        if (startNanos <= 0L || durationNanos < 0L) return -1L;
+        return startNanos > Long.MAX_VALUE - durationNanos
+                ? Long.MAX_VALUE : startNanos + durationNanos;
     }
 
     private static DungeonRequirementEvidence evidenceFor(
@@ -614,16 +635,17 @@ public final class DungeonQuickViewManager {
     }
 
     private static boolean shouldAwaitClassRoster(
-            AdmissionAttempt attempt, DungeonRequirementEvaluation evaluation, long nowNanos) {
+            AdmissionAttempt attempt, DungeonRequirementEvaluation evaluation,
+            long nowNanos, long authorityDeadlineNanos) {
         return attempt.policy.duplicateClassDisallowed()
-                && nowNanos < attempt.activeClassRosterDeadlineNanos()
+                && nowNanos < authorityDeadlineNanos
                 && evaluation.unknowns().stream().anyMatch(finding ->
                 finding.requirement() == DungeonRequirement.DISALLOW_DUPLICATE_CLASS);
     }
 
     private static boolean finalGuard(Minecraft client, AdmissionAttempt attempt,
                                       DungeonPartyAuthorityTracker.Snapshot party,
-                                      long nowNanos) {
+                                      long nowNanos, long authorityDeadlineNanos) {
         // This reads vanilla's current scoreboard immediately next to the
         // command boundary. The ordinary periodic context cache may be up to one
         // second old and may not authorize an action by itself.
@@ -643,7 +665,7 @@ public final class DungeonQuickViewManager {
                 || !attempt.policy.equals(currentPolicy(attempt.floor))
                 || !attempt.awaitingFinalAuthority()
                 || !authorityResponseUsable(
-                party, nowNanos, attempt.finalAuthorityDeadlineNanos)
+                party, nowNanos, authorityDeadlineNanos)
                 || !party.freshAt(nowNanos, FINAL_AUTHORITY_MAX_AGE_NANOS)) return false;
         var targetInfo = client.getConnection().getPlayerInfoIgnoreCase(
                 attempt.event.playerName());
@@ -734,7 +756,10 @@ public final class DungeonQuickViewManager {
         Long previous = LATEST_ADMISSION.put(playerKey, attempt.id);
         if (previous != null) {
             AdmissionAttempt old = ADMISSIONS.remove(previous);
-            if (old != null) old.finished = true;
+            if (old != null) {
+                cancelAuthorityRequests(old);
+                old.finished = true;
+            }
         }
         ADMISSIONS.put(attempt.id, attempt);
     }
@@ -747,6 +772,7 @@ public final class DungeonQuickViewManager {
 
     private static void finish(AdmissionAttempt attempt) {
         if (attempt == null || attempt.finished) return;
+        cancelAuthorityRequests(attempt);
         attempt.finished = true;
         ADMISSIONS.remove(attempt.id);
         LATEST_ADMISSION.remove(playerKey(attempt.event.playerName()), attempt.id);
@@ -761,6 +787,7 @@ public final class DungeonQuickViewManager {
         AdmissionAttempt attempt = ADMISSIONS.remove(id);
         if (attempt != null) {
             showProfileIfAvailable(attempt);
+            cancelAuthorityRequests(attempt);
             attempt.finished = true;
         }
     }
@@ -772,11 +799,20 @@ public final class DungeonQuickViewManager {
     private static void cancelAllAdmissions(boolean showProfiles) {
         for (AdmissionAttempt attempt : ADMISSIONS.values()) {
             if (showProfiles) showProfileIfAvailable(attempt);
+            cancelAuthorityRequests(attempt);
             attempt.finished = true;
             DungeonPartyFinderFloorTracker.rejectPartyFinderMember(attempt.event.playerName());
         }
         ADMISSIONS.clear();
         LATEST_ADMISSION.clear();
+    }
+
+    private static void cancelAuthorityRequests(AdmissionAttempt attempt) {
+        if (attempt == null) return;
+        DungeonPartyAuthorityTracker.cancelRefresh(
+                attempt.authoritySession, attempt.requiredAuthorityResponse);
+        DungeonPartyAuthorityTracker.cancelRefresh(
+                attempt.authoritySession, attempt.finalAuthorityResponse);
     }
 
     private static void cancelInvalidAdmissions() {
@@ -878,13 +914,11 @@ public final class DungeonQuickViewManager {
         private final long membershipEpoch;
         private final long authoritySession;
         private final long requiredAuthorityResponse;
-        private final long authorityDeadlineNanos;
-        private final long classRosterDeadlineNanos;
+        private final long authorityQueueDeadlineNanos;
         private final long queueContextGeneration;
         private final long admissionPolicyRevision;
         private long finalAuthorityResponse = -1L;
-        private long finalAuthorityDeadlineNanos;
-        private long finalClassRosterDeadlineNanos;
+        private long finalAuthorityQueueDeadlineNanos;
         private DungeonQuickViewSnapshot snapshot;
         private long snapshotReceivedAtNanos;
         private long snapshotReceivedAtEpochMillis;
@@ -898,7 +932,7 @@ public final class DungeonQuickViewManager {
                                  List<PartyMemberClass> existingClasses,
                                  long membershipEpoch,
                                  long authoritySession, long requiredAuthorityResponse,
-                                 long authorityDeadlineNanos,
+                                 long authorityQueueDeadlineNanos,
                                  long queueContextGeneration,
                                  long admissionPolicyRevision) {
             this.id = id;
@@ -911,19 +945,13 @@ public final class DungeonQuickViewManager {
             this.membershipEpoch = membershipEpoch;
             this.authoritySession = authoritySession;
             this.requiredAuthorityResponse = requiredAuthorityResponse;
-            this.authorityDeadlineNanos = authorityDeadlineNanos;
-            this.classRosterDeadlineNanos = authorityDeadlineNanos - AUTHORITY_TIMEOUT_NANOS
-                    + CLASS_ROSTER_TIMEOUT_NANOS;
+            this.authorityQueueDeadlineNanos = authorityQueueDeadlineNanos;
             this.queueContextGeneration = queueContextGeneration;
             this.admissionPolicyRevision = admissionPolicyRevision;
         }
 
         private boolean awaitingFinalAuthority() {
             return finalAuthorityResponse > 0L;
-        }
-
-        private long activeClassRosterDeadlineNanos() {
-            return awaitingFinalAuthority() ? finalClassRosterDeadlineNanos : classRosterDeadlineNanos;
         }
     }
 

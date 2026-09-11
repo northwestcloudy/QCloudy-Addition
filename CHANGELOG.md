@@ -2,6 +2,20 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha12] - 2026-09-11
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Fixed
+
+- Overlapping Party Finder admissions no longer consume a later player's three-second PartyInfo response window while that exact ticket is still waiting in QCA's single-flight FIFO. Initial and final authority deadlines now begin at physical dispatch, while a separate bounded queue wait retains fail-closed behavior if traffic stalls.
+- Cancelling, replacing, or finishing an admission removes each still-unsent PartyInfo ticket so obsolete work cannot continue blocking newer players. Active requests remain in the physical-connection ledger until their exact response consumes the FIFO position.
+- The Party Finder admission master switch now shows a localized inline `Right-click to edit` / `右键打开编辑` cue beside its visual toggle; left-click still toggles it and right-click opens the per-floor rules editor.
+
+### Validation boundary
+
+- Deterministic regressions cover dispatch-time deadlines, queued-ticket cancellation, exact-ticket FIFO attribution, and responsive editor-hint sizing. Authenticated multi-player Party Finder joins and Hypixel's acceptance of each emitted kick command remain separate live-game checks.
+
 ## [0.3.10-alpha11] - 2026-09-11
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

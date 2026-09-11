@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -35,6 +36,7 @@ final class DungeonPartyAuthorityAttributionTest {
     void tearDown() {
         DungeonPartyAuthorityTracker.reset();
         DungeonPartyAuthorityTracker.restoreSenderAfterTesting();
+        DungeonPartyAuthorityTracker.restoreClockAfterTesting();
     }
 
     @Test
@@ -93,6 +95,49 @@ final class DungeonPartyAuthorityAttributionTest {
         assertTrue(secondSnapshot.members().containsKey(SECOND_TARGET));
         assertFalse(secondSnapshot.members().containsKey(FIRST_TARGET));
         assertEquals(second, DungeonPartyAuthorityTracker.snapshot().responseSerial());
+    }
+
+    @Test
+    void queuedTicketsStartTheirDeadlineOnlyWhenActuallyDispatched() {
+        AtomicLong clock = new AtomicLong(1_000L);
+        DungeonPartyAuthorityTracker.useClockForTesting(clock::get);
+        long session = DungeonPartyAuthorityTracker.snapshot().sessionEpoch();
+
+        long first = DungeonPartyAuthorityTracker.requestRefresh();
+        long second = DungeonPartyAuthorityTracker.requestRefresh();
+
+        assertEquals(1_000L,
+                DungeonPartyAuthorityTracker.dispatchedAtNanosFor(session, first));
+        assertEquals(-1L,
+                DungeonPartyAuthorityTracker.dispatchedAtNanosFor(session, second));
+
+        clock.set(7_000L);
+        DungeonPartyAuthorityTracker.acceptForTesting(true, party(FIRST_TARGET), 6_999L);
+
+        assertEquals(7_000L,
+                DungeonPartyAuthorityTracker.dispatchedAtNanosFor(session, second));
+        assertEquals(7_000L + java.time.Duration.ofSeconds(3).toNanos(),
+                DungeonQuickViewManager.authorityResponseDeadline(session, second));
+    }
+
+    @Test
+    void cancelledQueuedTicketDoesNotBlockTheNextAdmission() {
+        List<Long> sent = new ArrayList<>();
+        DungeonPartyAuthorityTracker.useSenderForTesting(ticket -> {
+            sent.add(ticket);
+            return true;
+        });
+        long session = DungeonPartyAuthorityTracker.snapshot().sessionEpoch();
+        long first = DungeonPartyAuthorityTracker.requestRefresh();
+        long cancelled = DungeonPartyAuthorityTracker.requestRefresh();
+        long third = DungeonPartyAuthorityTracker.requestRefresh();
+
+        DungeonPartyAuthorityTracker.cancelRefresh(session, cancelled);
+        DungeonPartyAuthorityTracker.acceptForTesting(true, party(FIRST_TARGET), 100L);
+
+        assertEquals(List.of(first, third), sent);
+        assertEquals(third, DungeonPartyAuthorityTracker.activeTicketForTesting());
+        assertEquals(List.of(), DungeonPartyAuthorityTracker.pendingTicketsForTesting());
     }
 
     @Test

@@ -2,6 +2,7 @@
   "config.tab.features": "Features",
   "config.search": "Search",
   "config.feature_settings_hint": "Left-click to toggle or act; right-click editable switches for details.",
+  "config.right_click_to_edit": "Right-click to edit",
   "config.empty": "No matching settings",
   "config.open": "OPEN",
   "config.key.waiting": "PRESS KEY / MOUSE · ESC CLEARS",

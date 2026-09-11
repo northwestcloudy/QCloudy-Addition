@@ -114,6 +114,8 @@ final class ConfigScreenFeatureTest {
                 FeatureSettingsScreen.Kind.OPEN_DUNGEON_REQUIREMENTS));
         assertFalse(FeatureSettingsScreen.hasSecondaryEditor(
                 FeatureSettingsScreen.Kind.CHAT_CHANNEL_SHOW_OFFICER));
+        assertEquals(60, FeatureSettingsScreen.inlineEditorHintWidth(250, 100));
+        assertEquals(1, FeatureSettingsScreen.inlineEditorHintWidth(70, 100));
     }
 
     @Test
