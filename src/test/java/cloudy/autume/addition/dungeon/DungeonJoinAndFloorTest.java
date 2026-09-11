@@ -348,6 +348,105 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
+    void groupBuilderConfirmSuppliesNormalFloorOnlyAfterExactQueueSuccess() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VII"),
+                    49, 1_000L));
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    1_001L);
+
+            assertEquals("F7", DungeonPartyFinderFloorTracker.currentFloor().id());
+            assertEquals("F7", DungeonPartyFinderFloorTracker.currentListing().floor().id());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void groupBuilderConfirmDistinguishesMasterModeAndEntrance() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("Master Mode The Catacombs", "Floor VI"),
+                    49, 2_000L));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    2_001L);
+            assertEquals("M6", DungeonPartyFinderFloorTracker.currentFloor().id());
+
+            DungeonPartyFinderFloorTracker.reset();
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Entrance"),
+                    49, 3_000L));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    3_001L);
+            assertEquals("E", DungeonPartyFinderFloorTracker.currentFloor().id());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void groupBuilderRejectsSearchSettingsWrongClickAndMalformedProof() {
+        List<DungeonPartyFinderFloorTracker.MenuEntry> valid =
+                groupBuilder("The Catacombs", "Floor VII");
+
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromGroupBuilder(
+                "Search Settings", valid, 49).isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromGroupBuilder(
+                "Group Builder", valid, 11).isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromGroupBuilder(
+                "Group Builder", groupBuilder("The Rift", "Floor VII"), 49).isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromGroupBuilder(
+                "Group Builder", List.of(
+                        new DungeonPartyFinderFloorTracker.MenuEntry(11, "Select Dungeon Type",
+                                List.of("Currently Selected: The Catacombs"), false, false),
+                        new DungeonPartyFinderFloorTracker.MenuEntry(13, "Select Floor",
+                                List.of("Currently Selected: Floor VII"), false, false),
+                        new DungeonPartyFinderFloorTracker.MenuEntry(49, "Confirm Group",
+                                List.of("Click to confirm!"), false, false)), 49).isEmpty());
+        assertTrue(DungeonPartyFinderFloorTracker.floorFromGroupBuilder(
+                "Group Builder", List.of(
+                        new DungeonPartyFinderFloorTracker.MenuEntry(11, "Select Dungeon Type",
+                                List.of("Currently Selected: The Catacombs"), false, false),
+                        new DungeonPartyFinderFloorTracker.MenuEntry(13, "Select Floor",
+                                List.of("Floor VII"), false, false),
+                        new DungeonPartyFinderFloorTracker.MenuEntry(49, "Confirm Group",
+                                List.of("Click to confirm!"), false, false, true)), 49).isEmpty());
+    }
+
+    @Test
+    void groupBuilderCandidateExpiresAndIsClearedByReset() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VII"),
+                    49, 1_000L));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    1_000L + java.time.Duration.ofSeconds(15).toNanos() + 1L);
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VI"),
+                    49, 2_000L));
+            DungeonPartyFinderFloorTracker.reset();
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    2_001L);
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
     void queuedListingFreezesExistingPlayersAndManualJoinsAsTrusted() {
         DungeonPartyFinderFloorTracker.reset();
         try {
@@ -554,5 +653,16 @@ final class DungeonJoinAndFloorTest {
                                 "ExistingTank: Tank (Level 35)"), true, false),
                 new DungeonPartyFinderFloorTracker.MenuEntry(
                         53, "Delist Group", List.of(), false, true));
+    }
+
+    private static List<DungeonPartyFinderFloorTracker.MenuEntry> groupBuilder(
+            String dungeon, String floor) {
+        return List.of(
+                new DungeonPartyFinderFloorTracker.MenuEntry(11, "Select Dungeon Type",
+                        List.of("Currently Selected: " + dungeon), false, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(13, "Select Floor",
+                        List.of("Currently Selected: " + floor), false, false),
+                new DungeonPartyFinderFloorTracker.MenuEntry(49, "Confirm Group",
+                        List.of("Click to confirm!"), false, false, true));
     }
 }

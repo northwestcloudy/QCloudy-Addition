@@ -38,6 +38,8 @@
   "config.dungeon_requirements.confirm.detail": "Unavailable or incomplete data will never be treated as a failure.",
   "config.dungeon_requirements.confirm.action": "Enable Auto Kick",
   "config.dungeon_requirements.confirm.cancel": "Keep Disabled",
+  "dungeon.party_finder_floor_detected": "Party Finder floor detected: %s",
+  "dungeon.party_finder_floor_missing": "Party Finder floor detection: Missing",
   "dungeon.requirements.failed_header": "%s does not meet the %s requirements:",
   "dungeon.requirements.unknown_header": "Unable to verify:",
   "dungeon.requirements.rule.floor_completions": "%s Completions",

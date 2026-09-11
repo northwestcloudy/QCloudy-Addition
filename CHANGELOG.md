@@ -2,6 +2,20 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha11] - 2026-09-11
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### Fixed
+
+- Floor capture now reads `Select Dungeon Type` and `Select Floor` from the actual `Group Builder` at the exact left-click on its emerald-block `Confirm Group`, before Hypixel closes the menu. The parsed floor remains inert for at most 15 seconds and is committed only by the exact successful Party Finder queue message.
+- The Group Builder parser rejects Search Settings, unrelated titles/clicked slots, non-emerald confirmation items, missing confirmation lore, missing selected-value lore, non-Catacombs types, and malformed floors. Existing own-listing/delist parsing remains an independent confirmation path, while reset/world/server/party lifecycle changes clear the candidate.
+- After the exact Party Finder creation confirmation, QCA now prints the detected `F/M/E` floor in chat, or explicitly prints `Missing`, so floor capture can be checked before a newcomer joins.
+
+### Validation boundary
+
+- Client regression coverage includes normal, Master Mode and Entrance Group Builder capture; pre-confirmation inertness; exact queue promotion; false-menu/proof rejection; expiry; and reset clearing. The full authenticated Hypixel menu wording and live request result remain a separate in-game validation step.
+
 ## [0.3.10-alpha10] - 2026-09-09
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

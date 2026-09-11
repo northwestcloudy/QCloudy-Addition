@@ -1,3 +1,33 @@
+# QCloudy_Addition 0.3.10-alpha11 Group Builder 楼层捕获验证状态
+
+日期：2026-09-11<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha11` 会在精确点击 `Group Builder` 确认项时捕获所选 Catacombs 楼层，只在 Hypixel 精确排队成功消息到达后提交这份短时候选，并立即在聊天中输出得到的 `F/M/E` 或 `Missing`。原有归属明确的 Party Finder 解析仍负责之后的楼层/名单确认。Search Settings、无关点击、异常菜单证据、过期候选和重置状态都会安全拒绝。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 的 `clean build prepareRelease` 成功完成：67 个测试套件、453 项测试，0 failure、0 error、0 skipped。
+- 回归覆盖普通 F7、Master Mode M6、Entrance、确认前保持惰性、精确排队成功后提交、Search Settings/错误槽位/非绿宝石/异常 lore 拒绝、15 秒过期和重置清理。
+- 全部 511 个项目/测试 class 文件均使用 Java major version 69；未发现 Finder 风格的重复 class/测试副本，两个归档的重复路径均为 0。
+- 两个归档均通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 的内部版本精确声明为 `0.3.10-alpha11+26.1.2`，并声明纯客户端、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求与必需 `hypixel-mod-api >=1.0`。
+- 可运行归档包含新的 `AbstractContainerScreenMixin`、更新后的楼层跟踪器、双语状态文字及 Mixin 注册；`release/` 副本与对应的 `build/libs/` 文件逐字节一致。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha11+26.1.2.jar` — 3,990,021 字节 — `819c9f729ebe3a7c2cdaca42c756ef42c2f2e9b1723b91817d827486baba67c7`
+- `release/QCloudy_Addition-0.3.10-alpha11+26.1.2-sources.jar` — 3,199,320 字节 — `9207a31f4187d25fce7ef117ec03a897062c6ce503c20d8d0b8fe917c920f6c5`
+
+## 边界
+
+- 自动测试证明源码层的解析、状态与输出接线，不证明当前 Hypixel 实服 `Group Builder` 的物品名/lore 与登录后的完整新人请求；新增聊天状态就是用于跨过这一实服边界的诊断提示。
+- 本次 Alpha 输出没有部署后端，没有安装进游戏目录，没有发布 GitHub Release/Modrinth 版本，也不声称已完成登录 Hypixel 的实服验证。公开 Beta 0.3.10 与稳定 Release/更新检查基线 0.3.9 均未改变。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha10 纠正输出验证状态
 
 日期：2026-09-09<br>

@@ -1,3 +1,33 @@
+# QCloudy_Addition 0.3.10-alpha11 Group Builder floor-capture validation status
+
+Date: 2026-09-11<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha11` captures the selected Catacombs floor at the exact `Group Builder` confirmation click, promotes that short-lived candidate only after Hypixel's exact queue-success message, and immediately prints the resulting `F/M/E` floor or `Missing` in chat. The existing ownership-proven Party Finder parser remains the later floor/roster confirmation path. Search Settings, unrelated clicks, malformed menu proof, stale candidates, and reset state fail closed.
+
+## Automated/build status
+
+- Minecraft 26.1.2/Java 25 `clean build prepareRelease` completed successfully: 67 test suites, 453 tests, 0 failures, 0 errors, and 0 skipped.
+- Regression coverage includes normal F7, Master Mode M6, Entrance, pre-confirmation inertness, exact queue promotion, Search Settings/wrong-slot/non-emerald/malformed-lore rejection, 15-second expiry, and reset clearing.
+- All 511 compiled project/test class files use Java major version 69. No Finder-style duplicate class/test copy was found, and both archives contain zero duplicate paths.
+- Both archives pass JDK 25 `jar --validate` and `unzip -t`. The playable JAR declares exact internal version `0.3.10-alpha11+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`.
+- The playable archive contains the new `AbstractContainerScreenMixin`, updated floor tracker, bilingual status strings, and mixin registration. The `release/` copies are byte-identical to their `build/libs/` counterparts.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha11+26.1.2.jar` — 3,990,021 bytes — `819c9f729ebe3a7c2cdaca42c756ef42c2f2e9b1723b91817d827486baba67c7`
+- `release/QCloudy_Addition-0.3.10-alpha11+26.1.2-sources.jar` — 3,199,320 bytes — `9207a31f4187d25fce7ef117ec03a897062c6ce503c20d8d0b8fe917c920f6c5`
+
+## Boundary
+
+- Automated tests prove the parser/state/output wiring at source level, not the exact current live Hypixel `Group Builder` item names/lore or an authenticated end-to-end newcomer request. The new chat status is intentionally the live diagnostic for that boundary.
+- This Alpha output does not deploy the backend, install the mod into a game directory, publish a GitHub Release/Modrinth version, or claim authenticated live Hypixel validation. Public Beta 0.3.10 and stable Release/update baseline 0.3.9 remain unchanged.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha10 corrected-output validation status
 
 Date: 2026-09-09<br>

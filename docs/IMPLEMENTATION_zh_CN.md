@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha10` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha11` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -411,7 +411,7 @@ QCA不会在磁盘保存密码、Token、Hypixel API Key、聊天历史、远程
 
 QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qpv`、`//pv` 处理器、档案界面/模型/缓存、物品价格悬停客户端、`/v1/pv/*` 路由或 `/v1/market/tooltip-prices` 路由。Shard Bazaar 传输类型已迁移到 `market.shard`，因此现有 Shard Planner 不依赖被删除的包。
 
-`DungeonJoinParser` 只把 Dungeon Finder 的精确新成员消息作为入队判定目标，并返回玩家/职业/等级事件；另外单独识别精确排队确认行和普通 Party 加入行，用于维护生命周期。只有 Mod API 的权威 Location 已确认 SkyBlock，且独立、默认开启的 Dungeon Quick View 开关已开启时，才会进入 `DungeonQuickViewManager`；它对两秒内重复入队行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。`DungeonPartyFinderFloorTracker` 只接受玩家已打开、底部取消发布控件能证明属于本机的 Party Finder 容器。精确排队确认开始新的发布 generation；首次完整的自己的发布名单会冻结已经在队伍里的可信成员，之后普通/手动加入的成员也视为可信。本功能不会检查、拒绝、踢出或输出这些玩家，只把他们的职业用于 DUPE。精确 Party Finder 新人保持待判定，直到自己的判定通过。精确离队/移除/离线/解散、本机被踢或加入其他队、取消发布、判定失败、发布/楼层变化、换世界/服务器或断线都会清理对应状态。即使新人早于第一次 GUI 名单出现，其待判定标记也会保留，不会被误并入可信初始名单。排队计分板只保留为请求/展示回退，不能作为自动操作权威。
+`DungeonJoinParser` 只把 Dungeon Finder 的精确新成员消息作为入队判定目标，并返回玩家/职业/等级事件；另外单独识别精确排队确认行和普通 Party 加入行，用于维护生命周期。只有 Mod API 的权威 Location 已确认 SkyBlock，且独立、默认开启的 Dungeon Quick View 开关已开启时，才会进入 `DungeonQuickViewManager`；它对两秒内重复入队行去重，在会话变化时取消请求，并且只分析本次捕获的新成员。`AbstractContainerScreen` 点击边界 Mixin 只观察左键 `PICKUP` 输入。点击时，`DungeonPartyFinderFloorTracker` 要求标题精确为 `Group Builder`，被点物品为带 `Click to confirm!` lore 的绿宝石块 `Confirm Group`，并要求具名 `Select Dungeon Type`/`Select Floor` 条目都带 `Currently Selected:` lore。Catacombs、Master Mode、Entrance 与 I–VII 会规范化为 `F…`、`M…` 或 `E`；Search Settings、异常证据与无关点击全部安全拒绝。解析结果只作为最多 15 秒的惰性候选，精确排队成功行到达后才生效、开始新的发布 generation，并输出本地化的已识别楼层或 `Missing` 聊天状态。跟踪器另外接受玩家已打开、底部取消发布控件能证明属于本机的 Party Finder 容器，用于确认/替换缓存楼层并提供名单权威。排队确认仍会清空名单和 DUPE 权威；首次完整的自己的发布名单会冻结已经在队伍里的可信成员，之后普通/手动加入的成员也视为可信。本功能不会检查、拒绝、踢出或输出这些玩家，只把他们的职业用于 DUPE。精确 Party Finder 新人保持待判定，直到自己的判定通过。精确离队/移除/离线/解散、本机被踢或加入其他队、取消发布、判定失败、发布/楼层变化、换世界/服务器或断线都会清理对应状态和 Group Builder 候选。即使新人早于第一次 GUI 名单出现，其待判定标记也会保留，不会被误并入可信初始名单。排队计分板只保留为请求/展示回退，不能作为自动操作权威。
 
 `DungeonQuickViewService` 在客户端校验玩家名和楼层，合并相同进行中请求，并将成功结果仅用于 Profile 展示、在进程内缓存 60 秒。存在已启用规则的自动入队判定会绕过这份已完成缓存，改用新读取或同一份正在进行的网络读取；响应只有十秒本地单调时钟判定窗口，并按后端最长新鲜来源契约检查来源 epoch。`QcaApiClient` 对 `/v1/dungeons/quick-view/{target}` 发出一个固定路由请求，可附带 floor 参数；与独立 Shard 请求共用固定 HTTPS 来源、禁止跳转、五秒连接超时、覆盖响应头和完整正文的十五秒截止时间，以及非阻塞、限制 4 MiB 的正文订阅器。永不结束的正文会被取消并以超时完成。`DungeonQuickViewSnapshot` 只接受有界 quick-view schema 1。可选规则证据版本 1 和 2 都绑定查询名称、解析 UUID、所选 Profile ID/确定性、请求/返回的 F1–F7/M1–M7 楼层、新鲜度和来源覆盖。版本 1 仅供部署过渡兼容，其平均 Secrets 会被强制改为 UNKNOWN；版本 2 才证明分子/分母同属 selected Profile。证据缺失、畸形、版本不支持、过旧、身份/楼层不符或 Profile 不确定时，结果只能是 UNKNOWN，绝不会被转成失败的 0；装备与宠物也保留“存在/确认不存在/未知”三态。
 

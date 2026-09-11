@@ -22,8 +22,12 @@ import java.util.regex.Pattern;
 
 /** Tracks only the local player's own advertised Dungeon Party Finder floor. */
 final class DungeonPartyFinderFloorTracker {
+    private static final long GROUP_BUILDER_CONFIRM_MAX_AGE_NANOS =
+            java.time.Duration.ofSeconds(15).toNanos();
     private static final Pattern FLOOR = Pattern.compile(
             "(?i)^Floor:?\\s*(?:Floor\\s*)?(Entrance|VII|VI|IV|V|III|II|I|[1-7])$");
+    private static final Pattern CURRENTLY_SELECTED = Pattern.compile(
+            "(?i)^Currently Selected:\\s*(.+)$");
     private static final Pattern MEMBER_CLASS = Pattern.compile(
             "(?i)^(?:\\[[^]]+]\\s*)?([A-Za-z0-9_]{3,16}):\\s*"
                     + "(Archer|Berserk|Healer|Mage|Tank)\\s*\\([^)]*\\d+[^)]*\\)$");
@@ -41,12 +45,20 @@ final class DungeonPartyFinderFloorTracker {
     private static boolean trustedBaselineCaptured;
     private static boolean awaitingQueuedListing;
     private static GuiRosterSnapshot authoritativeGuiRoster;
+    private static DungeonFloor confirmedGroupBuilderFloor;
+    private static long confirmedGroupBuilderAtNanos;
 
     private DungeonPartyFinderFloorTracker() { }
 
     static void update(Minecraft client) {
         if (client == null || client.player == null
                 || !(MinecraftClientCompat.screen(client) instanceof AbstractContainerScreen<?> screen)) return;
+        observeOwnListingMenu(screen.getTitle().getString(), menuEntries(client, screen),
+                client.getUser().getName(), System.nanoTime());
+    }
+
+    static List<MenuEntry> menuEntries(Minecraft client, AbstractContainerScreen<?> screen) {
+        if (client == null || client.player == null || screen == null) return List.of();
         Item.TooltipContext context = client.level == null
                 ? Item.TooltipContext.EMPTY : Item.TooltipContext.of(client.level);
         List<MenuEntry> entries = new ArrayList<>();
@@ -60,10 +72,10 @@ final class DungeonPartyFinderFloorTracker {
                 continue;
             }
             entries.add(new MenuEntry(slot.index, slot.getItem().getHoverName().getString(), tooltip,
-                    slot.getItem().is(Items.PLAYER_HEAD), slot.getItem().is(Items.BOOKSHELF)));
+                    slot.getItem().is(Items.PLAYER_HEAD), slot.getItem().is(Items.BOOKSHELF),
+                    slot.getItem().is(Items.EMERALD_BLOCK)));
         }
-        observeOwnListingMenu(screen.getTitle().getString(), entries,
-                client.getUser().getName(), System.nanoTime());
+        return List.copyOf(entries);
     }
 
     static DungeonFloor currentFloor() {
@@ -223,9 +235,14 @@ final class DungeonPartyFinderFloorTracker {
     }
 
     static boolean observeSystemMessage(String raw) {
+        return observeSystemMessage(raw, System.nanoTime());
+    }
+
+    static boolean observeSystemMessage(String raw, long observedAtNanos) {
         String original = clean(raw);
         String text = original.toLowerCase(Locale.ROOT);
         if (DungeonJoinParser.partyFinderQueued(original)) {
+            promoteFreshGroupBuilderFloor(observedAtNanos);
             beginQueuedListing();
             return false;
         }
@@ -244,6 +261,21 @@ final class DungeonPartyFinderFloorTracker {
                 .ifPresent(DungeonPartyFinderFloorTracker::observeTrustedJoin);
         DungeonJoinParser.departure(original).ifPresent(DungeonPartyFinderFloorTracker::removeMember);
         return false;
+    }
+
+    /**
+     * Captures the selected Group Builder floor at the exact Confirm Group
+     * click boundary. The candidate remains inert until Hypixel sends the
+     * exact successful Party Finder queue message.
+     */
+    static boolean observeGroupBuilderConfirm(String title, List<MenuEntry> entries,
+                                              int clickedSlot, long observedAtNanos) {
+        clearGroupBuilderCandidate();
+        Optional<DungeonFloor> floor = floorFromGroupBuilder(title, entries, clickedSlot);
+        if (floor.isEmpty()) return false;
+        confirmedGroupBuilderFloor = floor.orElseThrow();
+        confirmedGroupBuilderAtNanos = observedAtNanos;
+        return true;
     }
 
     static void acceptPartyFinderMember(DungeonJoinParser.DungeonJoinEvent event) {
@@ -295,6 +327,51 @@ final class DungeonPartyFinderFloorTracker {
             if (!entry.playerHead() || !belongsToLocalPlayer(entry, localPlayer)) continue;
             Optional<DungeonFloor> floor = floorFromOwnPartyEntry(entry);
             if (floor.isPresent()) return floor;
+        }
+        return Optional.empty();
+    }
+
+    static Optional<DungeonFloor> floorFromGroupBuilder(
+            String title, List<MenuEntry> entries, int clickedSlot) {
+        if (!clean(title).equalsIgnoreCase("Group Builder")
+                || entries == null || entries.isEmpty() || clickedSlot < 0) {
+            return Optional.empty();
+        }
+
+        MenuEntry confirm = entries.stream()
+                .filter(entry -> entry.slot() == clickedSlot)
+                .findFirst().orElse(null);
+        if (confirm == null || !confirm.emeraldBlock()
+                || !clean(confirm.name()).equalsIgnoreCase("Confirm Group")
+                || confirm.tooltip().stream().map(DungeonPartyFinderFloorTracker::clean)
+                .noneMatch(line -> line.equalsIgnoreCase("Click to confirm!"))) {
+            return Optional.empty();
+        }
+
+        String dungeon = selectedValue(entries, "Select Dungeon Type").orElse("");
+        String floor = selectedValue(entries, "Select Floor").orElse("");
+        String cleanDungeon = clean(dungeon).toLowerCase(Locale.ROOT);
+        if (!cleanDungeon.contains("catacombs")) return Optional.empty();
+
+        Matcher match = FLOOR.matcher("Floor: " + floor);
+        if (!match.matches()) return Optional.empty();
+        String floorValue = match.group(1);
+        if (floorValue.equalsIgnoreCase("Entrance")) {
+            return Optional.of(new DungeonFloor("E"));
+        }
+        int number = roman(floorValue.toUpperCase(Locale.ROOT));
+        if (number < 1) return Optional.empty();
+        boolean master = cleanDungeon.contains("master mode");
+        return Optional.of(new DungeonFloor((master ? "M" : "F") + number));
+    }
+
+    private static Optional<String> selectedValue(List<MenuEntry> entries, String entryName) {
+        for (MenuEntry entry : entries) {
+            if (!clean(entry.name()).equalsIgnoreCase(entryName)) continue;
+            for (String raw : entry.tooltip()) {
+                Matcher selected = CURRENTLY_SELECTED.matcher(clean(raw));
+                if (selected.matches()) return Optional.of(selected.group(1).trim());
+            }
         }
         return Optional.empty();
     }
@@ -423,6 +500,17 @@ final class DungeonPartyFinderFloorTracker {
         awaitingQueuedListing = true;
     }
 
+    private static void promoteFreshGroupBuilderFloor(long observedAtNanos) {
+        DungeonFloor candidate = confirmedGroupBuilderFloor;
+        long capturedAt = confirmedGroupBuilderAtNanos;
+        clearGroupBuilderCandidate();
+        if (candidate == null || capturedAt <= 0L || observedAtNanos < capturedAt
+                || observedAtNanos - capturedAt > GROUP_BUILDER_CONFIRM_MAX_AGE_NANOS) {
+            return;
+        }
+        currentFloor = candidate;
+    }
+
     private static void clearListing() {
         if (currentFloor != null || !memberClasses.isEmpty() || authoritativeGuiRoster != null) {
             generation++;
@@ -430,6 +518,12 @@ final class DungeonPartyFinderFloorTracker {
         currentFloor = null;
         clearRosterState();
         awaitingQueuedListing = false;
+        clearGroupBuilderCandidate();
+    }
+
+    private static void clearGroupBuilderCandidate() {
+        confirmedGroupBuilderFloor = null;
+        confirmedGroupBuilderAtNanos = 0L;
     }
 
     private static void clearRosterState() {
@@ -476,7 +570,12 @@ final class DungeonPartyFinderFloorTracker {
     }
 
     record MenuEntry(int slot, String name, List<String> tooltip,
-                     boolean playerHead, boolean bookshelf) {
+                     boolean playerHead, boolean bookshelf, boolean emeraldBlock) {
+        MenuEntry(int slot, String name, List<String> tooltip,
+                  boolean playerHead, boolean bookshelf) {
+            this(slot, name, tooltip, playerHead, bookshelf, false);
+        }
+
         MenuEntry {
             tooltip = tooltip == null ? List.of() : List.copyOf(tooltip);
         }

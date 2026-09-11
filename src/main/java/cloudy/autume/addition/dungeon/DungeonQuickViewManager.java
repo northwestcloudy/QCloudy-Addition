@@ -15,13 +15,18 @@ import cloudy.autume.addition.dungeon.requirements.DungeonRequirementEvidenceVal
 import cloudy.autume.addition.dungeon.requirements.DungeonRequirementPolicy;
 import cloudy.autume.addition.dungeon.requirements.DungeonRequirementPolicy.DecimalRule;
 import cloudy.autume.addition.dungeon.requirements.DungeonRequirementPolicy.LongRule;
+import cloudy.autume.addition.i18n.ModText;
 import cloudy.autume.addition.network.QcaApiClient;
 import cloudy.autume.addition.tracker.HypixelSessionTracker;
 import cloudy.autume.addition.tracker.LocationTracker;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.Slot;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -87,6 +92,22 @@ public final class DungeonQuickViewManager {
         cancelInvalidAdmissions();
     }
 
+    /** Captures Group Builder selections before its confirmation click closes the menu. */
+    public static void onContainerSlotClick(AbstractContainerScreen<?> screen, Slot clickedSlot,
+                                            int buttonNum, ContainerInput input) {
+        Minecraft client = Minecraft.getInstance();
+        if (screen == null || clickedSlot == null || buttonNum != 0
+                || input != ContainerInput.PICKUP
+                || !HypixelSessionTracker.canUseDungeonQuickView()
+                || !ConfigManager.get().dungeons.playerQuickView) {
+            return;
+        }
+        DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                screen.getTitle().getString(),
+                DungeonPartyFinderFloorTracker.menuEntries(client, screen),
+                clickedSlot.index, System.nanoTime());
+    }
+
     /** Called every client tick so a missing party-info response fails closed. */
     public static void tick(Minecraft client) {
         if (client == null || ADMISSIONS.isEmpty()) return;
@@ -99,12 +120,21 @@ public final class DungeonQuickViewManager {
     public static void onMessage(Minecraft client, Component message) {
         if (client == null || message == null) return;
         String raw = message.getString();
+        boolean partyFinderQueued = DungeonJoinParser.partyFinderQueued(raw);
         boolean partyLifecycleReset = DungeonPartyFinderFloorTracker.observeSystemMessage(raw);
         observeDeparture(raw);
         if (partyLifecycleReset) resetPartyLifecycle(false);
         cancelInvalidAdmissions();
 
         if (!ConfigManager.get().dungeons.playerQuickView || client.player == null) return;
+        if (partyFinderQueued) {
+            DungeonFloor floor = DungeonPartyFinderFloorTracker.currentFloor();
+            Component status = floor == null
+                    ? ModText.component("dungeon.party_finder_floor_missing")
+                    : ModText.component("dungeon.party_finder_floor_detected", floor.id());
+            client.player.sendSystemMessage(Component.literal("[QCA] ")
+                    .withStyle(ChatFormatting.AQUA).append(status));
+        }
         DungeonJoinParser.event(raw).ifPresent(event -> {
             if (event.playerName().equalsIgnoreCase(client.getUser().getName())) return;
             long now = System.nanoTime();

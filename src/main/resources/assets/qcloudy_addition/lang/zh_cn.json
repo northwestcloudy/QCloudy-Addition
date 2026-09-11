@@ -38,6 +38,8 @@
   "config.dungeon_requirements.confirm.detail": "无法取得或不完整的数据永远不会被当作不合格。",
   "config.dungeon_requirements.confirm.action": "启用自动踢人",
   "config.dungeon_requirements.confirm.cancel": "保持关闭",
+  "dungeon.party_finder_floor_detected": "已识别 Party Finder 楼层：%s",
+  "dungeon.party_finder_floor_missing": "Party Finder 楼层识别：Missing",
   "dungeon.requirements.failed_header": "%s 不满足 %s 的入队要求：",
   "dungeon.requirements.unknown_header": "以下项目无法确认：",
   "dungeon.requirements.rule.floor_completions": "%s 完成次数",

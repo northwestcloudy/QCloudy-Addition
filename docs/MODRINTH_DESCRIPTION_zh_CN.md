@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha10` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha11` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
@@ -26,9 +26,9 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha10` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha11` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
 
-- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
+- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。玩家精确点击 `Group Builder` 的确认项时，它把所选 Catacombs 类型/楼层保存为 15 秒候选，只在 Hypixel 精确排队成功行到达后提交，并立即输出识别到的 `F/M/E` 或 `Missing`，因此新人加入前就能诊断捕获结果。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
 - F1–F7 与 M1–M7 共 14 层规则完全独立，Entrance 无规则。每层可分别开启最低完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；数值规则各自保留开关和值。全部规则与自动操作总开关默认关闭，开启总开关必须确认。
 - 创建发布时已在队伍里的玩家与普通/手动加入者均可信，绝不检查或踢出；其职业只供 DUPE 使用。人数、身份或职业不确定时只停止 DUPE 并显示具体错误，其他规则继续。离队或判定失败的玩家会从跟踪名单移除。
 - PASS 只输出 Profile；UNKNOWN 输出 Profile 与原因并绝不踢人；FAIL 先完整列出全部确认失败与同时存在的具体错误，再仅在新鲜官方 PartyInfo 证明本机仍是队长、目标 UUID 仍在队内，并且自己的发布条目、楼层、规则、会话与单次动作均未变化时，才在同一客户端判定回合发送 `party kick <已校验玩家>`。只靠计分板识别楼层、Entrance、资料缺失/私密/过旧/不匹配/不完整、PartyInfo 不确定或网络失败，都不能授权踢人。Profile 卡仍保留红色下划线手动操作。
