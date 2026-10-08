@@ -17,6 +17,7 @@ final class ModConfigTest {
         config.maps = null;
         config.mining = null;
         config.fishing = null;
+        config.weather = null;
         config.hunting = null;
         config.crimsonIsle = null;
         config.combat = null;
@@ -32,6 +33,7 @@ final class ModConfigTest {
         assertNotNull(config.maps);
         assertNotNull(config.mining);
         assertNotNull(config.fishing);
+        assertNotNull(config.weather);
         assertNotNull(config.hunting);
         assertNotNull(config.crimsonIsle);
         assertNotNull(config.combat);
@@ -53,7 +55,7 @@ final class ModConfigTest {
         assertEquals(1, config.hudStyle.pet.borderThickness);
         assertEquals(1.0f, config.hudStyle.pet.scale);
         assertEquals(1.75f, config.hudStyle.map.scale);
-        assertEquals(31, config.configVersion);
+        assertEquals(32, config.configVersion);
         assertEquals(true, config.manualReconnectButton);
         assertEquals(true, config.pets.showMaxProgress);
         assertEquals(true, config.pets.showOverflowLevel);
@@ -100,6 +102,9 @@ final class ModConfigTest {
         assertNotNull(config.hudStyle.spiritMaskCooldown);
         assertNotNull(config.hudStyle.bonzoMaskCooldown);
         assertNotNull(config.hudStyle.phoenixCooldown);
+        assertNotNull(config.hudStyle.weather);
+        assertEquals(true, config.weather.hud);
+        assertEquals(true, config.weather.showBonuses);
         assertEquals(true, config.centuryCakes.expiryAlerts);
         assertEquals(true, config.centuryCakes.expiryAudio.sound);
         assertEquals(64, config.centuryCakes.expiryAudio.volume);
@@ -167,8 +172,9 @@ final class ModConfigTest {
         assertEquals(true, config.hunting.galateaTracker);
         assertEquals(true, config.hunting.agathaContest);
         assertEquals(false, config.hunting.showCompletedTasks);
-        assertEquals(10, config.hunting.treeGiftLoot.size());
+        assertEquals(11, config.hunting.treeGiftLoot.size());
         assertEquals(true, config.hunting.treeGiftLoot.get("Dreadwing"));
+        assertEquals(true, config.hunting.treeGiftLoot.get("Mango Dye"));
         assertNotNull(config.hunting.foundFairySoulsByProfile);
         assertNotNull(config.hunting.rememberedProgressByProfile);
 
@@ -196,7 +202,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(31, migrated.configVersion);
+        assertEquals(32, migrated.configVersion);
         assertEquals("VANILLA", migrated.inventory.instantTransmissionSoundMode);
         assertEquals("VANILLA", migrated.inventory.etherwarpSoundMode);
         assertEquals(false, migrated.hunting.safariShards);
@@ -231,6 +237,19 @@ final class ModConfigTest {
     }
 
     @Test
+    void normalizingAnOlderTreeGiftConfigAddsMangoDyeWithoutResettingExistingChoices() {
+        ModConfig config = new ModConfig();
+        config.hunting.treeGiftLoot = new java.util.LinkedHashMap<>();
+        config.hunting.treeGiftLoot.put("Dreadwing", false);
+
+        config.normalize();
+
+        assertEquals(11, config.hunting.treeGiftLoot.size());
+        assertFalse(config.hunting.treeGiftLoot.get("Dreadwing"));
+        assertTrue(config.hunting.treeGiftLoot.get("Mango Dye"));
+    }
+
+    @Test
     void migrationsPreserveExplicitDeathSaveAndPartyAutoAcceptChoices() {
         ModConfig migrated = new ModConfig();
         migrated.configVersion = 25;
@@ -242,7 +261,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(31, migrated.configVersion);
+        assertEquals(32, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.combat.spiritMaskCooldownHud);
         assertEquals(true, migrated.combat.bonzoMaskCooldownHud);
@@ -270,7 +289,7 @@ final class ModConfigTest {
 
         migrated.normalize();
 
-        assertEquals(31, migrated.configVersion);
+        assertEquals(32, migrated.configVersion);
         assertEquals(true, migrated.combat.deathSaveAlerts);
         assertEquals(true, migrated.chat.partyAutoAccept);
         assertEquals(false, migrated.chat.directMessagePartyRequest);
@@ -323,7 +342,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(31, config.configVersion);
+        assertEquals(32, config.configVersion);
         assertEquals(ModConfig.PartyCommandPermission.PARTY_MEMBERS,
                 config.chat.fastPartyWarpPermission);
         assertEquals(ModConfig.PartyCommandPermission.NONE,
@@ -391,7 +410,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(31, config.configVersion);
+        assertEquals(32, config.configVersion);
         assertFalse(config.dungeons.partyFinderAutoKick.enabled);
         assertEquals(1, config.dungeons.partyFinderAutoKick.rulesVersion);
         assertEquals(14, config.dungeons.partyFinderAutoKick.floors.size());
@@ -416,7 +435,7 @@ final class ModConfigTest {
 
         config.normalize();
 
-        assertEquals(31, config.configVersion);
+        assertEquals(32, config.configVersion);
         assertTrue(config.chat.chatChannelSwitcher);
         assertTrue(config.chat.chatChannelShowOfficer);
     }
@@ -532,5 +551,19 @@ final class ModConfigTest {
         assertEquals(10, repairedApple.safariBeltForestLevel);
         assertEquals(8_500.0, repairedBanana.resources.get("DESERT_WHISPERS"));
         assertEquals(7, repairedBanana.safariBeltIcyLevel);
+    }
+
+    @Test
+    void petMemoryKeepsAuthoritativeSpecialTierAndRejectsUnknownValues() {
+        ModConfig config = new ModConfig();
+        config.pets.rememberedDetails.put("phoenix",
+                new ModConfig.PetMemory("", "", "VERY SPECIAL", 123.0));
+        config.pets.rememberedDetails.put("unsafe",
+                new ModConfig.PetMemory("", "", "ADMIN", 50.0));
+
+        config.normalize();
+
+        assertEquals("VERY_SPECIAL", config.pets.rememberedDetails.get("phoenix").tier);
+        assertEquals("UNKNOWN", config.pets.rememberedDetails.get("unsafe").tier);
     }
 }

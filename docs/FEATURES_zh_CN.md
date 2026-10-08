@@ -1,10 +1,16 @@
 # QCloudy_Addition 功能说明
 
-## 统一设置与 HUD 控制——0.3.10-alpha12 开发快照
+## 统一设置与 HUD 控制——0.3.10-alpha13 开发快照
 
 > 当前源码包含尚未公开的 Alpha 工作；当前公开测试版仍为 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 > **注意：**统一设置编辑与统一 HUD 编辑仍是概念测试，默认关闭且尚不稳定。第三方模组更新可能使已识别路径失效。请先备份配置、谨慎使用，并在对应模组原生编辑器中核对写入结果。
+
+### SkyBlock 0.27.2 新增适配
+
+- **Island Weather HUD：**“活动”分类新增独立卡片与可移动面板，只接受聊天、Action Bar、Tab、计分板或有限 Weather/Professor Wynd/Forecast 菜单中明确收到的当前岛屿天气。内置官方 11 个天气岛、22 种普通/极端天气；只有收到服务器倒计时才显示时间，效果列表可关闭，换岛/换世界立即失效，跨岛名称拒绝，Glacite Mineshaft 明确排除。
+- **Safari Eagle：**Safari Dashboard 只显示从 Safari Essence Shop 或限定 Safari Widget 直接观察到的解锁、在场与品质。不会把附近任意 Eagle 归属给本地玩家。
+- **宠物与 Hunting 数据：**Pets 菜单收到的 `petInfo` 提供权威品质和 UUID；SPECIAL/VERY_SPECIAL Phoenix 不借用旧颜色经验曲线，Precursor Drone 按实例隔离，内置 Contraband、Grungle、Mining Off Camera 三种 Drone Mod。Mango Dye 可作为独立 Tree Gift 奖励开关，生物等级只接受严格行首 `[Lv N]`。
 
 QCA 以功能为中心，统一显示自身以及已安装 SkyHanni、Skyblocker、Firmament、BabyZombieAddons、Feesh 中能够安全识别的设置。**通用 → 兼容模组** 现在与其他下级组一样默认收起；展开后会显示两个独立总开关：**管理其他模组功能设置** 只控制第三方功能设置的探测/编辑，**管理其他模组 HUD** 只控制第三方 HUD 的探测/编辑；两者均默认关闭，且不影响 QCA 自身内容。每一次提供方扫描都必须经过第二次确认：首次开启没有有效会话快照的编辑器，以及每一次点击 Refresh，都会先显示对应设置或 HUD 范围的确认窗口。取消首次确认会保持开关关闭；取消 Refresh 会保留当前有效快照；重启后恢复为开启的开关不会静默扫描。确认后才会打开实时进度页。设置页只显示设置数量，HUD 页只显示 HUD 数量；未安装模组不会显示。Refresh 期间继续使用上一份有效结果，直到新结果完成并校验后才替换；扫描运行时 Refresh 不可点击；两个开关都关闭时会取消任务并释放快照。提供方版本号不作为白名单，仍兼容的已识别能力会保留，变化分支会逐项跳过。一级分类按 **通用、地图、物品与菜单、战斗、地牢、Slayer、挖矿、种地、砍树、钓鱼、狩猎、Rift、活动** 排序，但侧栏只显示当前至少拥有一个 QCA 或已发现提供方功能的分类。Safari 归入狩猎，Garden 归入种地，Crimson Isle/Kuudra 归入战斗；钓鱼提示使用“咬钩提示”下级组。所有可折叠下级组均默认收起，一个完全相同的功能只有一张卡片。Beta 0.3.10 同时发布 Minecraft 26.1.2 与 26.2 构建；Release 0.3.9 仍是最新稳定版。
 
@@ -84,7 +90,7 @@ QCA 以功能为中心，统一显示自身以及已安装 SkyHanni、Skyblocker
 
 Benefactor HUD 合并玩家自己的有限 Tab/计分板、已经打开的 Forest/Desert Temple 菜单，以及准确收到的 `BENEFACTOR: You donated ... will receive ... +Nd!` 消息。状态、多日剩余时间、寺庙对应效果和捐赠信息按账号/Profile 保存；重复的绝对倒计时不会延长时间，同一寺庙的新捐赠按收到时长累加，切换寺庙会改用新寺庙时长，新捐赠也不会被短暂未刷新的旧菜单清除。四项默认开启；状态变化与最后 30 秒使用统一中央提示。
 
-Tree Gift 不再错误限制于 Torrhus，同时监听正常显示的游戏聊天，以及被兼容聊天压缩模组取消显示但客户端已经收到的原始游戏聊天。精确的本人 `+N rewards gained! (hover)` 仍只允许解析同一组件自带的 `SHOW_TEXT`。独立 `BONUS GIFT` 百分比行和精确 `A <名称> fell from the Tree!` 行，只有在 15 秒、64 字符边框限定的同一 Gift 区块同时出现 `TREE GIFT`、本人 `You helped cut ...` 贡献和本人奖励汇总后才有效；每个区块内去重。附近玩家的单独公开行、Lasso 捕捉文本或不完整区块都不会触发。Firefox、Groundhog、Drybark、Puck、Grizzly Bear、Signal Enhancer、Chameleon Shard、Hummingbird Shard、Dreadwing 和 Enchanted Book (Karma I) 默认全部开启且可分别关闭。
+Tree Gift 不再错误限制于 Torrhus，同时监听正常显示的游戏聊天，以及被兼容聊天压缩模组取消显示但客户端已经收到的原始游戏聊天。精确的本人 `+N rewards gained! (hover)` 仍只允许解析同一组件自带的 `SHOW_TEXT`。独立 `BONUS GIFT` 百分比行和精确 `A <名称> fell from the Tree!` 行，只有在 15 秒、64 字符边框限定的同一 Gift 区块同时出现 `TREE GIFT`、本人 `You helped cut ...` 贡献和本人奖励汇总后才有效；每个区块内去重。附近玩家的单独公开行、Lasso 捕捉文本或不完整区块都不会触发。Firefox、Groundhog、Drybark、Puck、Grizzly Bear、Signal Enhancer、Chameleon Shard、Hummingbird Shard、Dreadwing、Enchanted Book (Karma I) 与 Mango Dye 默认全部开启且可分别关闭。
 
 ### 4.5 Safari Run Dashboard 与 Critterdex
 
@@ -145,7 +151,7 @@ Tree Gift 不再错误限制于 Torrhus，同时监听正常显示的游戏聊�
 
 **目的：**不打开 Pets 菜单即可看到当前宠物和服务器已经展示的升级进度。
 
-**功能：**严格匹配召唤、收回和 Autopet 提示，并每秒解析 `Pet:` Tab Widget。QCA 只用已验证 Profile 构造普通 player head，并刻意不写入合成 `petInfo`，防止外部物品模型判定替换 HUD 头像。Pets 菜单和附近已渲染宠物可以提供属于同一宠物的 Profile，但不会把整个 ItemStack 交给 HUD。模组内置 88 个基础 Profile、352 个皮肤 Profile、5,422 条仅限宠物的当前/动态纹理映射和 87 个配件定义；动态变体按最长真实皮肤家族前缀归属，仅 Baby Spinosaurus 就可识别 60 个当前/动画纹理。运行时不下载纹理，也不要求安装 Firmament。包括粗体在内的所有宠物文本都先完整测量，绝不使用省略号。“当前等级经验”和“到满级进度”默认开启；满级只隐藏后者，不影响配件行。通过 Pets 菜单、Tab 或已收到聊天确认的配件会按宠物持久保存到 QCA 本地配置，重登后继续可用。支持皮肤名称、Ancient Golden Dragon 装饰溢出等级；配件默认“图标＋名称”，也可只显示图标或名称。大数统一保留一位小数并使用 `k`、`m`、`b` 或 `t`。
+**功能：**严格匹配召唤、收回和 Autopet 提示，并每秒解析 `Pet:` Tab Widget。QCA 只用已验证 Profile 构造普通 player head，不复用完整 Pets-menu ItemStack。收到的 `petInfo` 提供权威品质与具体 UUID：SPECIAL/VERY_SPECIAL Phoenix 保持区分但不虚构经验曲线，Precursor Drone 配件按 UUID 隔离，UUID 未知时只保留本次会话。模组内置 88 个基础 Profile、352 个皮肤 Profile、5,422 条仅限宠物的当前/动态纹理映射和 90 个配件定义，其中包括三种 Drone Mod；动态变体按最长真实皮肤家族前缀归属。运行时不下载纹理，也不要求安装 Firmament。宠物文本完整测量，不使用省略号；到满级进度在满级或没有受支持品质曲线时隐藏，不影响配件行。配件默认“图标＋名称”，也可只显示图标或名称。
 
 ## 8. 物品与菜单
 
@@ -159,13 +165,13 @@ Tree Gift 不再错误限制于 Torrhus，同时监听正常显示的游戏聊�
 
 **目的：**直接回答“这个 Shard 用哪两个 Shard 合成”和“这个 Shard 能继续合成什么”，无需离开游戏，也无需猜测有顺序区别的配方。
 
-**功能：**打开受 JEI 信息结构启发的浏览器，读取模组内置、完全离线、严格包含 320 个当前 Bazaar Shard 的目录。搜索支持原始英文名称、内部 Shard ID、属性/效果、品质、分类、家族、对应 Skill、生物类型或获取文字。**详细信息**标签显示完整规范化 Wiki 效果、语义分类及每一种已记录自然/Fusion 获取方式；**合成来源**列出能产出所选 Shard 的全部有序输入组合，其中包括 Queen Bee 这类同时拥有自然来源与 Fusion 配方的 Shard；**可合成内容**列出包含所选 Shard 的全部有序组合与候选输出。左键结果进入详情，右键进入用途，前进/后退会保存浏览历史。任何内容都不会用省略号截断。
+**功能：**打开受 JEI 信息结构启发的浏览器，读取模组内置、完全离线、严格包含 324 个当前 Bazaar Shard 的目录，其中新增 C48 Chocobun、R28 Folf、L52 Flora 与 U73 Packrat。搜索支持原始英文名称、Shard ID、属性/效果、品质、分类、家族、Skill、生物类型或获取文字。**详细信息**显示经审核的效果与获取方式；**合成来源**列出全部有序输入组合；**可合成内容**列出包含所选 Shard 的组合与候选输出。Packrat 保留已验证的 `SHARD_PACKRAT_SKULL`，但未公开客户端 internal ID 刻意留空。
 
 配方卡保留第一/第二输入顺序，显示两侧各消耗多少、算法真实顺序中的最多三个可选输出，并区分 ID/Chameleon 输出数量 `1` 与特殊规则输出数量 `2`；Pure Reptile 会额外注明随等级从 2% 到 20% 的双倍产出概率。输入数量遵循文档规则：Chameleon Shard 消耗 `1`，Reptile/Amphibian/Elemental Shard 消耗 `2`，其他全部消耗 `5`。
 
-离线生成器依据 [Wiki 记录的 Attribute Fusion 规则](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion)与当前 [Attributes 表格](https://hypixelskyblock.minecraft.wiki/w/Attributes)，并以 [Hypixel 官方 Bazaar 接口](https://api.hypixel.net/v2/skyblock/bazaar) 作为严格的 320 项允许列表。Wiki 当前表格有 321 行；Rainbug 因不在官方 Bazaar Shard 集合中而排除。每个目录 Shard 都包含效果和获取详情；若当前表格没有记录方法（目前为 Wild Hog），界面会明确说明，而不会虚构来源。生成后的 JSON 随模组提交，运行时绝不访问 Wiki、Bazaar API、NEU 或其他模组。
+提交的离线快照交叉核对 [Attribute Fusion 规则](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion)、[Attributes 表格](https://hypixelskyblock.minecraft.wiki/w/Attributes)、SkyShards/NEU 与 [Hypixel 官方 Bazaar 接口](https://api.hypixel.net/v2/skyblock/bazaar)。Rainbug 继续排除；旧批量生成器在上游补齐全部 0.27.2 字段前不被当作权威。运行时绝不访问 Wiki、Bazaar API、NEU 或其他模组。
 
-320 个目录 ID 都拥有由已审核 MIT 许可 SkyShards 图标集离线生成的对应 Shard 图标，不再使用通用紫水晶占位；若上游游戏外观本来相同，则保留相同图标。客户端在玩家已经打开的菜单或物品栏中收到对应原生 Shard `ItemStack` 后，该物品会优先使用并保留在整次会话缓存中，因此跨 Guide 页面仍以材质包/服务器原生显示为准。QCA 运行时不会下载图标；已经收到的玩家头仍由 Minecraft 正常渲染管线处理。
+324 个目录 ID 都拥有离线生成并随模组打包的对应 Shard 图标，不再使用通用紫水晶占位；若上游游戏外观本来相同，则保留相同图标。客户端在玩家已经打开的菜单或物品栏中收到对应原生 Shard `ItemStack` 后，该物品会优先使用并保留在整次会话缓存中，因此跨 Guide 页面仍以材质包/服务器原生显示为准。QCA 运行时不会下载图标。
 
 Epic 名称使用 Minecraft 深紫色 `§5`，不再使用亮紫/粉色 `§d`；品质、属性、分类、生物类型、Skill 和获取方式均使用对应 SkyBlock/Minecraft 语义颜色。可点击 Shard 文字只有在鼠标悬停于可见文字时才会变深并添加下划线。点击搜索框外、按 `Esc` 或按 `Tab` 会释放搜索焦点；直接点击搜索框即可再次输入。配方输入和候选输出按内容宽度紧凑居中，点击范围与可见图标/文字边界一致，不再使用相隔很远的卡片左右半区。本地 `/qshard [英文查询]`、功能设置中的“打开指南”以及默认未绑定的组合键都只打开本地界面，不发送聊天、服务器命令、数据包、菜单点击或 API 请求。
 

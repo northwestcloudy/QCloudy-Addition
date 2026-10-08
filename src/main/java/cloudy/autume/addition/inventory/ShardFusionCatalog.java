@@ -28,6 +28,7 @@ import java.util.Set;
  */
 public final class ShardFusionCatalog {
     public static final String RESOURCE = "/assets/qcloudy_addition/data/shard_fusions.json";
+    public static final int EXPECTED_SHARD_COUNT = 324;
     private static final int MAX_OUTPUTS = 3;
     private static final Set<String> CHAMELEON_EXCLUSIONS = Set.of(
             "Chameleon", "Molthorn", "Galaxy Fish", "Bitbug");
@@ -73,8 +74,9 @@ public final class ShardFusionCatalog {
             addItemId(itemIds, shard.internalId(), shard);
             loaded.add(shard);
         }
-        if (loaded.size() != 320) {
-            throw new IllegalStateException("Expected 320 Shards, found " + loaded.size());
+        if (loaded.size() != EXPECTED_SHARD_COUNT) {
+            throw new IllegalStateException("Expected " + EXPECTED_SHARD_COUNT
+                    + " Shards, found " + loaded.size());
         }
         shards = List.copyOf(loaded);
         byId = Map.copyOf(ids);
@@ -720,12 +722,14 @@ public final class ShardFusionCatalog {
     }
 
     public record SourceInfo(String wikiAttributeFusion, String wikiAttributes, String skyShardsCommit,
-                             List<String> clientSupplements, String note) {
+                             List<String> clientSupplements, List<String> unresolvedInternalIds,
+                             String note) {
         private static SourceInfo from(RawSources raw) {
             if (raw == null) throw new IllegalStateException("Missing Shard source metadata");
             return new SourceInfo(text(raw.wikiAttributeFusion), text(raw.wikiAttributes),
                     text(raw.skyShardsCommit), raw.clientSupplements == null ? List.of()
-                    : List.copyOf(raw.clientSupplements), text(raw.note));
+                    : List.copyOf(raw.clientSupplements), raw.unresolvedInternalIds == null
+                    ? List.of() : List.copyOf(raw.unresolvedInternalIds), text(raw.note));
         }
     }
 
@@ -782,6 +786,7 @@ public final class ShardFusionCatalog {
         String wikiAttributes;
         String skyShardsCommit;
         List<String> clientSupplements = Collections.emptyList();
+        List<String> unresolvedInternalIds = Collections.emptyList();
         String note;
     }
 

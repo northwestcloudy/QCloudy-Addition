@@ -447,6 +447,53 @@ final class DungeonJoinAndFloorTest {
     }
 
     @Test
+    void groupBuilderCandidateAcceptsTheExactFreshnessBoundaryAndRejectsTimeTravel() {
+        long maximumAge = java.time.Duration.ofSeconds(15).toNanos();
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            long capturedAt = 1_000L;
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VII"),
+                    49, capturedAt));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    capturedAt + maximumAge);
+            assertEquals("F7", DungeonPartyFinderFloorTracker.currentFloor().id());
+
+            DungeonPartyFinderFloorTracker.reset();
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VI"),
+                    49, capturedAt));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    capturedAt - 1L);
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
+    void failedGroupBuilderConfirmationClearsAnEarlierValidCandidate() {
+        DungeonPartyFinderFloorTracker.reset();
+        try {
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder("The Catacombs", "Floor VII"),
+                    49, 1_000L));
+            assertFalse(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Search Settings", groupBuilder("The Catacombs", "Floor VI"),
+                    49, 1_001L));
+
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!",
+                    1_002L);
+            assertEquals(null, DungeonPartyFinderFloorTracker.currentFloor());
+        } finally {
+            DungeonPartyFinderFloorTracker.reset();
+        }
+    }
+
+    @Test
     void queuedListingFreezesExistingPlayersAndManualJoinsAsTrusted() {
         DungeonPartyFinderFloorTracker.reset();
         try {

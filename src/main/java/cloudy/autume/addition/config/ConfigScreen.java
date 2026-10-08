@@ -672,6 +672,7 @@ public final class ConfigScreen extends Screen {
         COMBAT_DEPLOYABLES(Category.COMBAT, "config.group.deployables"),
         COMBAT_VISIBILITY(Category.COMBAT, "config.group.combat_visibility"),
         DUNGEON_PARTY(Category.DUNGEONS, "config.group.dungeon_party"),
+        WEATHER_EVENTS(Category.EVENTS, "config.group.weather"),
         PET_DISPLAY(Category.ITEMS_AND_MENUS, "config.group.pet_display"),
         CENTURY_CAKES(Category.ITEMS_AND_MENUS, "config.group.century_cakes"),
         SHARD_FUSION(Category.ITEMS_AND_MENUS, "config.group.shard_fusion"),
@@ -708,6 +709,7 @@ public final class ConfigScreen extends Screen {
                 "config.desc.commands.party_commands"),
         DUNGEON_QUICK_VIEW(FeatureGroup.DUNGEON_PARTY, "config.dungeon.quick_view",
                 "config.desc.dungeon.quick_view"),
+        WEATHER_HUD(FeatureGroup.WEATHER_EVENTS, "config.weather.hud", "config.desc.weather.hud"),
         FISHING_BITE_ALERT(FeatureGroup.FISHING, "config.fishing.bite_alert", "config.desc.fishing.bite_alert"),
         DWARVEN_MAP(FeatureGroup.MAPS, "config.dwarven_map", "config.desc.dwarven_map"),
         GLACITE_MAP(FeatureGroup.MAPS, "config.glacite_map", "config.desc.glacite_map"),
@@ -778,6 +780,7 @@ public final class ConfigScreen extends Screen {
                 case FAST_PARTY_COMMANDS -> config.chat.fastPartyCommands;
                 case PARTY_COMMANDS -> config.chat.partyCommands;
                 case DUNGEON_QUICK_VIEW -> config.dungeons.playerQuickView;
+                case WEATHER_HUD -> config.weather.hud;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels;
@@ -842,6 +845,7 @@ public final class ConfigScreen extends Screen {
                     config.dungeons.playerQuickView = !config.dungeons.playerQuickView;
                     DungeonQuickViewManager.onAdmissionPolicyChanged();
                 }
+                case WEATHER_HUD -> config.weather.hud = !config.weather.hud;
                 case FISHING_BITE_ALERT -> config.fishing.biteAlert = !config.fishing.biteAlert;
                 case DWARVEN_MAP -> config.maps.dwarvenMines = !config.maps.dwarvenMines;
                 case GLACITE_MAP -> config.maps.glaciteTunnels = !config.maps.glaciteTunnels;
@@ -909,6 +913,7 @@ public final class ConfigScreen extends Screen {
                         SAFARI_DASHBOARD, SAFARI_SHARD_STATS, SAFARI_CRITTERDEX,
                         FLOOR_QUEST_ASSISTANT, WUMPA_HUD -> ModConfig.HudType.HUNTING;
                 case PET_HUD -> ModConfig.HudType.PET;
+                case WEATHER_HUD -> ModConfig.HudType.WEATHER;
                 case SPIRIT_MASK_COOLDOWN_HUD -> ModConfig.HudType.SPIRIT_MASK_COOLDOWN;
                 case BONZO_MASK_COOLDOWN_HUD -> ModConfig.HudType.BONZO_MASK_COOLDOWN;
                 case PHOENIX_COOLDOWN_HUD -> ModConfig.HudType.PHOENIX_COOLDOWN;

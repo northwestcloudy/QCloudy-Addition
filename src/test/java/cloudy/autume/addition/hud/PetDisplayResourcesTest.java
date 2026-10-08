@@ -20,7 +20,8 @@ final class PetDisplayResourcesTest {
             var json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             assertTrue(json.size() >= 87);
             for (String id : new String[]{"DWARF_TURTLE_SHELMET", "MINOS_RELIC",
-                    "ANTIQUE_REMEDIES", "POIGNANT_LUCKY_CLOVER", "BARREL_OF_RICHES"}) {
+                    "ANTIQUE_REMEDIES", "POIGNANT_LUCKY_CLOVER", "BARREL_OF_RICHES",
+                    "GRUNGLE", "CONTRABAND", "MINING_OFF_CAMERA"}) {
                 assertTrue(json.has(id), id);
                 assertFalse(json.getAsJsonObject(id).get("name").getAsString().isBlank(), id);
             }

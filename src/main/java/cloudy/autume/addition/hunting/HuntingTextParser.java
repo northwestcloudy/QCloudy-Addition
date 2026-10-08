@@ -42,6 +42,8 @@ public final class HuntingTextParser {
             "(?i)SPARKLING.*?Critter.*?appeared in the\\s+(Cavern|Forest|Haunted|Icy)(?:\\s+Biome)?[!.]?$" );
     private static final Pattern CRITTER_PROGRESS = Pattern.compile(
             "(?i)(Blue Jay|Goldolot|Dustybit|Hideonsun).*?([0-9]+)\\s*/\\s*([0-9]+)");
+    private static final Pattern MOB_LEVEL = Pattern.compile(
+            "(?i)^\\[\\s*Lv\\s*([0-9][0-9,]*)\\s*]\\s+.+$");
     private static final Pattern COLD = Pattern.compile(
             "(?i)(?:❄\\s*)?\\bCold\\s*(?:[:：]|➜)?\\s*([0-9]{1,3})\\b");
     private static final Pattern CLOCK = Pattern.compile("\\b([0-9]{1,2}):([0-9]{2})(?::([0-9]{2}))?\\b");
@@ -405,6 +407,17 @@ public final class HuntingTextParser {
             if (lower.contains(entry.getKey().toLowerCase(Locale.ROOT))) return entry.getValue();
         }
         return null;
+    }
+
+    /** Reads the leading level tag from a mob display name already received by the client. */
+    public static Integer mobLevel(String rawEntityName) {
+        Matcher matcher = MOB_LEVEL.matcher(plain(rawEntityName));
+        if (!matcher.matches()) return null;
+        try {
+            return Integer.valueOf(matcher.group(1).replace(",", ""));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     public static long durationSeconds(String raw) {

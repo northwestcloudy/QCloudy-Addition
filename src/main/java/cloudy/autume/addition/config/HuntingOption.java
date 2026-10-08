@@ -77,11 +77,14 @@ enum HuntingOption {
     TREE_HUMMINGBIRD(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.hunting.tree_hummingbird", "Hummingbird Shard"),
     TREE_DREADWING(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.hunting.tree_dreadwing", "Dreadwing"),
     TREE_KARMA(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.hunting.tree_karma", "Enchanted Book (Karma I)"),
+    TREE_MANGO_DYE(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.hunting.tree_mango_dye", "Mango Dye"),
     TREE_GIFT_SOUND(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.alert.sound", h -> h.treeGiftAudio.sound, (h, v) -> h.treeGiftAudio.sound = v),
     TREE_GIFT_VOLUME(ConfigScreen.Feature.TREE_GIFT_ALERTS, "config.alert.volume", 0, 100, "%", h -> h.treeGiftAudio.volume, (h, v) -> h.treeGiftAudio.volume = v),
 
     RUN_TIME(ConfigScreen.Feature.SAFARI_DASHBOARD, "config.hunting.run_time", h -> h.safariRunTime, (h, v) -> h.safariRunTime = v),
     TICKET_TIER(ConfigScreen.Feature.SAFARI_DASHBOARD, "config.hunting.ticket_tier", h -> h.safariTicketTier, (h, v) -> h.safariTicketTier = v),
+    EAGLE_STATUS(ConfigScreen.Feature.SAFARI_DASHBOARD, "config.hunting.eagle_status",
+            h -> h.safariEagleStatus, (h, v) -> h.safariEagleStatus = v),
 
     BIOME_PROGRESS(ConfigScreen.Feature.SAFARI_CRITTERDEX, "config.hunting.biome_progress", h -> h.critterdexBiomeProgress, (h, v) -> h.critterdexBiomeProgress = v),
     CAPTURED_NAMES(ConfigScreen.Feature.SAFARI_CRITTERDEX, "config.hunting.captured_names", h -> h.critterdexCapturedNames, (h, v) -> h.critterdexCapturedNames = v),

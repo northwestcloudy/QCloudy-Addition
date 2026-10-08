@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026-08-10-320-shards-details",
-  "verifiedAt": "2026-08-10",
+  "dataVersion": "2026-10-08-0.27.2-324-shards-details",
+  "verifiedAt": "2026-10-08",
   "sources": {
     "wikiAttributeFusion": "https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion",
     "wikiAttributes": "https://hypixelskyblock.minecraft.wiki/w/Attributes",
@@ -13,15 +13,25 @@
       "legendary": 811546,
       "fusion_rules": 810162
     },
-    "skyShardsCommit": "9688031dbc4e726168ffceb0f44884ff26e6e728",
+    "skyShardsCommit": "7adf1a88b90b9ad1aeb45fa49087cdfc6694cb9f",
     "officialBazaar": "https://api.hypixel.net/v2/skyblock/bazaar",
-    "officialBazaarLastUpdated": 1786283921981,
-    "clientSupplements": [],
+    "officialBazaarLastUpdated": 1791439762759,
+    "clientSupplements": [
+      "https://hypixel.net/threads/hypixel-skyblock-0-27-2-the-minister-update-greenhouse-qol-and-more.6159904/",
+      "https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/commit/eb32905615120f3c3502bb88a2ed7349fedf9f94",
+      "https://hypixelskyblock.minecraft.wiki/w/Chocobun_Shard",
+      "https://hypixelskyblock.minecraft.wiki/w/Folf_Shard",
+      "https://hypixelskyblock.minecraft.wiki/w/Flora_Shard",
+      "https://hypixelskyblock.minecraft.wiki/w/Packrat_Shard"
+    ],
+    "unresolvedInternalIds": [
+      "SHARD_PACKRAT_SKULL"
+    ],
     "wikiIdCorrections": {},
     "excludedLegacyEntries": [
       "L49 Rainbug"
     ],
-    "note": "Current Wiki 321-row tables are filtered through the official Bazaar 320-product allow-list; Rainbug is excluded and all remaining identities are cross-validated."
+    "note": "The 0.27.2 catalog covers all 324 official SHARD_* Bazaar products with source-verified Shard IDs. Packrat's public Bazaar ID is verified, but its client-only internal item ID is intentionally blank until independently published. Rainbug remains excluded."
   },
   "shards": [
     {
@@ -2238,6 +2248,45 @@
       "idResult": "C56",
       "specialLeft": "",
       "specialRight": "",
+      "wikiListed": true
+    },
+    {
+      "id": "C48",
+      "name": "Chocobun",
+      "attributeName": "Rabbit Youth",
+      "effect": [
+        {
+          "text": "Rabbit Bro, Cousin, and Sis can have ",
+          "tone": "TEXT"
+        },
+        {
+          "text": "+1–10",
+          "tone": "GREEN"
+        },
+        {
+          "text": " extra levels",
+          "tone": "TEXT"
+        }
+      ],
+      "acquisition": [
+        {
+          "text": "Fusing Bunbun Shard with Crime Family or Cocoaleech Shard",
+          "kind": "FUSION"
+        }
+      ],
+      "mobTypes": [],
+      "rarity": "COMMON",
+      "category": "FOREST",
+      "families": [
+        "Crime"
+      ],
+      "skill": "Global",
+      "bazaarId": "SHARD_CHOCOBUN",
+      "internalId": "ATTRIBUTE_SHARD_RABBIT_YOUTH",
+      "inputCount": 5,
+      "idResult": "",
+      "specialLeft": "Bunbun Shard",
+      "specialRight": "Crime|Cocoaleech Shard",
       "wikiListed": true
     },
     {
@@ -5935,6 +5984,45 @@
       "wikiListed": true
     },
     {
+      "id": "U73",
+      "name": "Packrat",
+      "attributeName": "Fiesta Fortune",
+      "effect": [
+        {
+          "text": "Grants ",
+          "tone": "TEXT"
+        },
+        {
+          "text": "+5–50 Gemstone Fortune",
+          "tone": "GOLD"
+        },
+        {
+          "text": " while Mayor Cole's Mining Fiesta perk is active",
+          "tone": "TEXT"
+        }
+      ],
+      "acquisition": [
+        {
+          "text": "Purchased from Brynmor for 250,000 Coins, with stock of 64 per SkyBlock Year while Cole is in office with Mining Fiesta",
+          "kind": "SHOP"
+        }
+      ],
+      "mobTypes": [],
+      "rarity": "UNCOMMON",
+      "category": "FOREST",
+      "families": [
+        "Cave Dweller"
+      ],
+      "skill": "Mining",
+      "bazaarId": "SHARD_PACKRAT_SKULL",
+      "internalId": "",
+      "inputCount": 5,
+      "idResult": "",
+      "specialLeft": "",
+      "specialRight": "",
+      "wikiListed": true
+    },
+    {
       "id": "U75",
       "name": "Shrieky Tiki",
       "attributeName": "Construct Ruler",
@@ -7643,6 +7731,43 @@
       "wikiListed": true
     },
     {
+      "id": "R28",
+      "name": "Folf",
+      "attributeName": "Catacombs Cap",
+      "effect": [
+        {
+          "text": "Increases your Speed Cap by ",
+          "tone": "TEXT"
+        },
+        {
+          "text": "+5–50",
+          "tone": "GREEN"
+        },
+        {
+          "text": " while in The Catacombs",
+          "tone": "TEXT"
+        }
+      ],
+      "acquisition": [
+        {
+          "text": "Fusing Soul of the Alpha Shard with any Epic or higher Shard",
+          "kind": "FUSION"
+        }
+      ],
+      "mobTypes": [],
+      "rarity": "RARE",
+      "category": "COMBAT",
+      "families": [],
+      "skill": "Combat",
+      "bazaarId": "SHARD_FOLF",
+      "internalId": "ATTRIBUTE_SHARD_CATACOMBS_CAP",
+      "inputCount": 5,
+      "idResult": "",
+      "specialLeft": "Soul of the Alpha Shard",
+      "specialRight": "Epic+",
+      "wikiListed": true
+    },
+    {
       "id": "R29",
       "name": "Silentdepth",
       "attributeName": "Crystal Serendipity",
@@ -7854,20 +7979,16 @@
       "attributeName": "Quartz Speed",
       "effect": [
         {
-          "text": "Mining Speed from events is increased by ",
+          "text": "Grants ",
           "tone": "TEXT"
         },
         {
-          "text": "+10%",
+          "text": "+10–100 Mining Speed",
           "tone": "GOLD"
         },
         {
-          "text": "–",
+          "text": " on Mining Islands while Weather is active",
           "tone": "TEXT"
-        },
-        {
-          "text": "100%",
-          "tone": "GOLD"
         }
       ],
       "acquisition": [
@@ -12351,15 +12472,7 @@
           "tone": "TEXT"
         },
         {
-          "text": "+1%",
-          "tone": "GREEN"
-        },
-        {
-          "text": "–",
-          "tone": "TEXT"
-        },
-        {
-          "text": "10%",
+          "text": "+2.5–25%",
           "tone": "GREEN"
         }
       ],
@@ -14926,6 +15039,43 @@
       "bazaarId": "SHARD_TITANOBOA",
       "internalId": "ATTRIBUTE_SHARD_BAYOU_BITER",
       "inputCount": 2,
+      "idResult": "",
+      "specialLeft": "",
+      "specialRight": "",
+      "wikiListed": true
+    },
+    {
+      "id": "L52",
+      "name": "Flora",
+      "attributeName": "Unique Bonus",
+      "effect": [
+        {
+          "text": "Counts as ",
+          "tone": "TEXT"
+        },
+        {
+          "text": "+1–10",
+          "tone": "GREEN"
+        },
+        {
+          "text": " towards the Unique Crop Bonus in your Greenhouse",
+          "tone": "TEXT"
+        }
+      ],
+      "acquisition": [
+        {
+          "text": "3% chance per 100 Copper obtained from analyzing Mutations",
+          "kind": "OTHER"
+        }
+      ],
+      "mobTypes": [],
+      "rarity": "LEGENDARY",
+      "category": "FOREST",
+      "families": [],
+      "skill": "Farming",
+      "bazaarId": "SHARD_FLORA",
+      "internalId": "ATTRIBUTE_SHARD_FLORA",
+      "inputCount": 5,
       "idResult": "",
       "specialLeft": "",
       "specialRight": "",

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "qcloudy_addition:item/shards/l52"
+  }
+}

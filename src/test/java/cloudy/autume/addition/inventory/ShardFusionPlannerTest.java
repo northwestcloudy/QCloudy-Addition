@@ -14,13 +14,26 @@ final class ShardFusionPlannerTest {
     private final ShardFusionPlanner planner = new ShardFusionPlanner(catalog);
 
     @Test
-    void acquisitionRateSnapshotMatchesTheCurrent320Catalog() {
+    void acquisitionRateSnapshotMatchesTheCurrent324Catalog() {
         var rates = ShardAcquisitionRates.load();
-        assertEquals(320, rates.rates().size());
+        assertEquals(324, rates.rates().size());
         assertEquals(catalog.shards().stream().map(ShardFusionCatalog.Shard::id).sorted().toList(),
                 rates.rates().keySet().stream().sorted().toList());
         assertFalse(rates.source().isBlank());
         assertFalse(rates.sourceCommit().isBlank());
+    }
+
+    @Test
+    void usesOfficial0272ShopStocksAndEvidenceBoundedNewShardRates() {
+        var rates = ShardAcquisitionRates.load();
+        assertEquals(24.0 / 124.0, rates.rate("C22"));
+        assertEquals(18.0 / 124.0, rates.rate("U106"));
+        assertEquals(12.0 / 124.0, rates.rate("R94"));
+        assertEquals(6.0 / 124.0, rates.rate("E46"));
+        assertEquals(64.0 / 124.0, rates.rate("U73"));
+        assertEquals(0.0, rates.rate("C48"));
+        assertEquals(0.0, rates.rate("R28"));
+        assertEquals(0.0, rates.rate("L52"));
     }
 
     @Test

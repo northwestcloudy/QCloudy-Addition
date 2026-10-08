@@ -354,6 +354,56 @@ final class DungeonAdmissionSafetyTest {
     }
 
     @Test
+    void worldChangeInvalidatesPriorDungeonAndPartyEvidenceTogether() {
+        DungeonQuickViewManager.reset();
+        DungeonPartyAuthorityTracker.useSenderForTesting(ignored -> true);
+        try {
+            List<DungeonPartyFinderFloorTracker.MenuEntry> groupBuilder = List.of(
+                    new DungeonPartyFinderFloorTracker.MenuEntry(11, "Select Dungeon Type",
+                            List.of("Currently Selected: The Catacombs"), false, false),
+                    new DungeonPartyFinderFloorTracker.MenuEntry(13, "Select Floor",
+                            List.of("Currently Selected: Floor VII"), false, false),
+                    new DungeonPartyFinderFloorTracker.MenuEntry(49, "Confirm Group",
+                            List.of("Click to confirm!"), false, false, true));
+            assertTrue(DungeonPartyFinderFloorTracker.observeGroupBuilderConfirm(
+                    "Group Builder", groupBuilder, 49, 1_000L));
+            DungeonPartyFinderFloorTracker.observeSystemMessage(
+                    "Party Finder > Your party has been queued in the dungeon finder!", 1_001L);
+            DungeonQuickViewManager.updateScoreboard(List.of(
+                    "Queued: The Catacombs", "Tier: Floor VII"));
+
+            long membership = DungeonQuickViewManager.claimMembershipEpoch(
+                    "GhostsTM", 1_000_000_000L);
+            long authoritySession = DungeonPartyAuthorityTracker.snapshot().sessionEpoch();
+            long authorityTicket = DungeonPartyAuthorityTracker.requestRefresh();
+            DungeonPartyAuthorityTracker.acceptForTesting(true,
+                    Map.of(LOCAL_PLAYER, PartyRole.LEADER,
+                            TARGET_PLAYER, PartyRole.MEMBER), 2_000L);
+
+            assertEquals("F7", DungeonPartyFinderFloorTracker.currentListing().floor().id());
+            assertEquals(DungeonPartyAuthorityTracker.Readiness.READY,
+                    DungeonPartyAuthorityTracker.snapshotFor(authoritySession, authorityTicket)
+                            .readiness(authoritySession, authorityTicket,
+                                    LOCAL_PLAYER, TARGET_PLAYER));
+
+            // This is the same manager hook registered for
+            // ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE in production.
+            DungeonQuickViewManager.onWorldChange();
+
+            assertNull(DungeonPartyFinderFloorTracker.currentListing());
+            assertNull(DungeonPartyAuthorityTracker.snapshotFor(
+                    authoritySession, authorityTicket));
+            assertTrue(DungeonPartyAuthorityTracker.snapshot().sessionEpoch()
+                    > authoritySession);
+            assertTrue(DungeonQuickViewManager.claimMembershipEpoch(
+                    "GhostsTM", 1_100_000_000L) > membership);
+        } finally {
+            DungeonQuickViewManager.reset();
+            DungeonPartyAuthorityTracker.restoreSenderAfterTesting();
+        }
+    }
+
+    @Test
     void admissionEvidenceUsesSeparateEpochAndMonotonicFreshnessGates() {
         long receivedAtEpoch = Instant.parse("2026-09-08T00:00:00Z").toEpochMilli();
         long receivedAtNanos = 1_000_000_000L;

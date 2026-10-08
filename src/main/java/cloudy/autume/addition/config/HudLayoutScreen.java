@@ -525,6 +525,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> HudRenderer.isMapLoaded();
             case MINING -> HudRenderer.isMiningLoaded();
             case HUNTING -> HudRenderer.isHuntingLoaded();
+            case WEATHER -> config.weather.hud && cloudy.autume.addition.hud.WeatherHudRenderer.loaded();
             case PET -> HudRenderer.isPetLoaded();
             case SPIRIT_MASK_COOLDOWN -> config.combat.spiritMaskCooldownHud;
             case BONZO_MASK_COOLDOWN -> config.combat.bonzoMaskCooldownHud;
@@ -538,6 +539,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> style.mapX;
             case MINING -> style.miningX;
             case HUNTING -> style.huntingX;
+            case WEATHER -> style.weatherX;
             case PET -> style.petX;
             case SPIRIT_MASK_COOLDOWN -> style.spiritMaskCooldownX;
             case BONZO_MASK_COOLDOWN -> style.bonzoMaskCooldownX;
@@ -552,6 +554,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> style.mapY;
             case MINING -> style.miningY;
             case HUNTING -> style.huntingY;
+            case WEATHER -> style.weatherY;
             case PET -> style.petY;
             case SPIRIT_MASK_COOLDOWN -> style.spiritMaskCooldownY;
             case BONZO_MASK_COOLDOWN -> style.bonzoMaskCooldownY;
@@ -566,6 +569,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> { style.mapX = x; style.mapY = y; }
             case MINING -> { style.miningX = x; style.miningY = y; }
             case HUNTING -> { style.huntingX = x; style.huntingY = y; }
+            case WEATHER -> { style.weatherX = x; style.weatherY = y; }
             case PET -> { style.petX = x; style.petY = y; }
             case SPIRIT_MASK_COOLDOWN -> {
                 style.spiritMaskCooldownX = x;
@@ -599,6 +603,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> HudRenderer.MAP_SIZE;
             case MINING -> HudRenderer.MINING_WIDTH;
             case HUNTING -> cloudy.autume.addition.hud.HuntingHudRenderer.WIDTH;
+            case WEATHER -> cloudy.autume.addition.hud.WeatherHudRenderer.WIDTH;
             case PET -> HudRenderer.currentPetWidth();
             case SPIRIT_MASK_COOLDOWN, BONZO_MASK_COOLDOWN, PHOENIX_COOLDOWN ->
                     HudRenderer.DEATH_SAVE_COOLDOWN_WIDTH;
@@ -610,6 +615,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> HudRenderer.MAP_PANEL_HEIGHT;
             case MINING -> HudRenderer.currentMiningHeight();
             case HUNTING -> cloudy.autume.addition.hud.HuntingHudRenderer.currentHeight();
+            case WEATHER -> cloudy.autume.addition.hud.WeatherHudRenderer.currentHeight();
             case PET -> HudRenderer.currentPetHeight();
             case SPIRIT_MASK_COOLDOWN, BONZO_MASK_COOLDOWN, PHOENIX_COOLDOWN ->
                     HudRenderer.DEATH_SAVE_COOLDOWN_HEIGHT;
@@ -626,6 +632,7 @@ public final class HudLayoutScreen extends Screen {
             case MAP -> { style.mapX = 8; style.mapY = 8; }
             case MINING -> { style.miningX = -196; style.miningY = 8; }
             case HUNTING -> { style.huntingX = -304; style.huntingY = 8; }
+            case WEATHER -> { style.weatherX = -244; style.weatherY = 316; }
             case PET -> { style.petX = 8; style.petY = 196; }
             case SPIRIT_MASK_COOLDOWN -> {
                 style.spiritMaskCooldownX = -196;
@@ -652,6 +659,7 @@ public final class HudLayoutScreen extends Screen {
         MAP(ModConfig.HudType.MAP, HudRenderer.PreviewPanel.MAP, "hud.map"),
         MINING(ModConfig.HudType.MINING, HudRenderer.PreviewPanel.MINING, "hud.mining"),
         HUNTING(ModConfig.HudType.HUNTING, HudRenderer.PreviewPanel.HUNTING, "hud.hunting"),
+        WEATHER(ModConfig.HudType.WEATHER, HudRenderer.PreviewPanel.WEATHER, "hud.weather"),
         PET(ModConfig.HudType.PET, HudRenderer.PreviewPanel.PET, "hud.pet"),
         SPIRIT_MASK_COOLDOWN(ModConfig.HudType.SPIRIT_MASK_COOLDOWN,
                 HudRenderer.PreviewPanel.SPIRIT_MASK_COOLDOWN, "hud.death_save.spirit_mask"),
@@ -687,6 +695,7 @@ public final class HudLayoutScreen extends Screen {
                         ? ConfigScreen.Feature.SAFARI_DASHBOARD
                         : LocationTracker.area() == IslandArea.GALATEA
                         ? ConfigScreen.Feature.GALATEA_TRACKER : ConfigScreen.Feature.TORRHUS_TRACKER;
+                case WEATHER -> ConfigScreen.Feature.WEATHER_HUD;
                 case PET -> ConfigScreen.Feature.PET_HUD;
                 case SPIRIT_MASK_COOLDOWN -> ConfigScreen.Feature.SPIRIT_MASK_COOLDOWN_HUD;
                 case BONZO_MASK_COOLDOWN -> ConfigScreen.Feature.BONZO_MASK_COOLDOWN_HUD;

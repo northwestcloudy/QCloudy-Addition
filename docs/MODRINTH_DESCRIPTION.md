@@ -14,11 +14,11 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the QCloudy-hosted market source described under Attribute Shard Lab and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha12` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+> **Source-preview boundary:** the 0.27.2 compatibility, QCloudy-hosted market source described under Attribute Shard Lab, and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha13` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
 
 ### Attribute Shard Lab
 
-- Offline catalog for all 320 Bazaar-listed Attribute Shards, with per-ID icons, rarity and semantic game colours.
+- Offline catalog for all 324 Bazaar-listed Attribute Shards, including Chocobun, Folf, Flora, and Packrat, with per-ID icons, rarity and semantic game colours.
 - Details include effect, family, skill, mob type, natural acquisition, capture/kill requirements, reviewed drop information, and Fusion-only status.
 - Ordered Recipes and Uses pages, reverse relationships, clickable navigation, Special Fusion yields, Chameleon behavior, and alternative routes.
 - Multi-step Fusion Tree, Materials Only totals, editable Shards/hour rates, Ironman planning, draggable Fusion Lines, and a per-profile Hunting Box warehouse.
@@ -26,7 +26,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha12` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
+> **Development preview:** this section describes the unpublished `0.3.10-alpha13` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
 
 - When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. At the exact `Group Builder` confirmation click, it captures the selected Catacombs type/floor as a 15-second candidate and commits it only after Hypixel's exact queue-success line. QCA immediately prints the detected `F/M/E` floor or `Missing` so capture can be diagnosed before a newcomer joins. The card shows Catacombs, selected-Profile Secrets/average, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. XP and native item details appear on hover; missing data is labelled.
 - F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum historical-highest Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.
@@ -37,7 +37,8 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### HUDs, pets, and timers
 
-- Equipped Pet HUD with received level, rarity-coloured name, verified pet/skin head, XP progress, remaining XP, skin, and held pet item.
+- Equipped Pet HUD with authoritative received `petInfo` tier/UUID, SPECIAL/VERY_SPECIAL-safe Phoenix display, per-instance Precursor Drone state, verified pet/skin head, XP progress, skin, and held pet item.
+- Separate Island Weather HUD for the 11 supported islands, using explicit current-island evidence only, plus bounded Safari Eagle status and Mango Dye Tree Gift support.
 - Mining tasks and powders, Torrhus and Galatea resources, Safari progress, Crimson Isle faction quests, and other panels render only when they have useful content.
 - Century Cake menu via `/cake` or `/centurycakeeffect`, real-world 48-hour timers, grouped expiry notifications, and a directly clicked renewal action.
 - Power Orb and Flare despawn alerts. Replacing a Flare resets its complete lifecycle; range, entity unloading, and failed uses are not treated as despawns.

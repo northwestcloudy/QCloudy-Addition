@@ -20,6 +20,7 @@ import cloudy.autume.addition.inventory.ShardFusionScreen;
 import cloudy.autume.addition.inventory.ShardWarehouseManager;
 import cloudy.autume.addition.hunting.HuntingTracker;
 import cloudy.autume.addition.hunting.HuntingWorldRenderer;
+import cloudy.autume.addition.hunting.SafariEagleTracker;
 import cloudy.autume.addition.inventory.SafariBeltTooltip;
 import cloudy.autume.addition.party.FriendRosterStore;
 import cloudy.autume.addition.party.GuildRosterStore;
@@ -33,6 +34,9 @@ import cloudy.autume.addition.tracker.PetTracker;
 import cloudy.autume.addition.tracker.PetSkinTracker;
 import cloudy.autume.addition.tracker.TabListTracker;
 import cloudy.autume.addition.update.ReleaseUpdateChecker;
+import cloudy.autume.addition.weather.IslandWeatherMenuObserver;
+import cloudy.autume.addition.weather.IslandWeatherTracker;
+import cloudy.autume.addition.weather.WeatherSnapshot;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -133,6 +137,12 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
                 LocationTracker.update(client);
                 DungeonQuickViewManager.updateContext(client, LocationTracker.scoreboardLines());
                 TabListTracker.update(client);
+                IslandWeatherTracker.onIslandChanged(LocationTracker.area());
+                IslandWeatherTracker.observe(LocationTracker.area(), WeatherSnapshot.EvidenceSource.TAB,
+                        TabListTracker.lines());
+                IslandWeatherTracker.observe(LocationTracker.area(), WeatherSnapshot.EvidenceSource.SCOREBOARD,
+                        LocationTracker.scoreboardLines());
+                IslandWeatherMenuObserver.observe(client, LocationTracker.area());
                 HuntingTracker.updateReceivedText(TabListTracker.lines(), LocationTracker.scoreboardLines());
                 HotmSlotTracker.update(client);
                 PetSkinTracker.update(client);
@@ -153,6 +163,9 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             onDeathSaveMessage(message, overlay);
             PetTracker.onChat(message.getString(), overlay);
             HuntingTracker.onMessage(message, overlay);
+            IslandWeatherTracker.observe(LocationTracker.area(), overlay
+                            ? WeatherSnapshot.EvidenceSource.ACTION_BAR : WeatherSnapshot.EvidenceSource.CHAT,
+                    List.of(message.getString()));
             DeployableExpiryAlert.onMessage(message, overlay);
             CenturyCakeManager.onMessage(message, overlay);
             if (!overlay) PetSkinTracker.onChat(message.getString());
@@ -164,6 +177,9 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
             onPartyMessage(message, overlay);
             onDeathSaveMessage(message, overlay);
             HuntingTracker.onMessage(message, overlay);
+            IslandWeatherTracker.observe(LocationTracker.area(), overlay
+                            ? WeatherSnapshot.EvidenceSource.ACTION_BAR : WeatherSnapshot.EvidenceSource.CHAT,
+                    List.of(message.getString()));
             DeployableExpiryAlert.onMessage(message, overlay);
             CenturyCakeManager.onMessage(message, overlay);
         });
@@ -178,8 +194,7 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         });
         ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((client, level) -> {
             HypixelSessionTracker.onWorldChange();
-            LocationTracker.clearWorldContext();
-            DungeonQuickViewManager.onWorldChange();
+            clearWorldRuntime();
         });
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.OVERLAY_MESSAGE,
@@ -607,6 +622,8 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         PetTracker.reset();
         PetSkinTracker.reset();
         HuntingTracker.reset();
+        SafariEagleTracker.reset();
+        IslandWeatherTracker.reset();
         FishingBiteAlert.reset();
         DeployableExpiryAlert.reset();
         DeathSaveAlertManager.resetRuntime();
@@ -615,6 +632,24 @@ public final class QCloudyAdditionClient implements ClientModInitializer {
         PARTY_COMMAND_ENGINE.resetSession();
         PRIVATE_PARTY_REQUESTS.resetSession();
         DungeonQuickViewManager.reset();
+    }
+
+    /**
+     * Clears evidence tied to one Minecraft level without discarding account
+     * preferences, persisted profile memories, or the current connection's
+     * explicit Hypixel confirmation.
+     */
+    private static void clearWorldRuntime() {
+        LocationTracker.clearWorldContext();
+        TabListTracker.clearReceivedState();
+        PetTracker.reset();
+        PetSkinTracker.reset();
+        HuntingTracker.reset();
+        SafariEagleTracker.reset();
+        IslandWeatherTracker.reset();
+        FishingBiteAlert.reset();
+        DeployableExpiryAlert.reset();
+        DungeonQuickViewManager.onWorldChange();
     }
 
     private static void onPartyMessage(Component message, boolean overlay) {

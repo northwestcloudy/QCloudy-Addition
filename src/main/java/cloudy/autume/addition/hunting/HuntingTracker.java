@@ -145,6 +145,7 @@ public final class HuntingTracker {
         applyResources(HuntingTextParser.resources(combined), false);
         if (LocationTracker.area() == IslandArea.CRITTER_SAFARI) {
             updateSafariText(combined);
+            SafariEagleTracker.observeSafariWidget(combined);
             updateCold(HuntingTextParser.cold(combined));
         }
     }
@@ -447,6 +448,7 @@ public final class HuntingTracker {
     }
 
     private static void resetSafariSession() {
+        SafariEagleTracker.reset();
         safariStartedAt = 0;
         safariShardCount = 0;
         capturedMobs = 0;
@@ -1327,6 +1329,8 @@ public final class HuntingTracker {
         boolean chapterMenu = lowerTitle.contains("chapter")
                 && (lowerTitle.contains("helia") || lowerTitle.contains("hina")
                 || lowerTitle.contains("torrhus") || lowerTitle.contains("galatea"));
+        boolean safariEssenceShop = lowerTitle.contains("safari")
+                && (lowerTitle.contains("essence") || lowerTitle.contains("shop"));
         for (var slot : client.player.containerMenu.slots) {
             ItemStack stack = slot.getItem();
             if (stack.isEmpty()) continue;
@@ -1349,6 +1353,7 @@ public final class HuntingTracker {
                 }
             }
             applyBenefactor(HuntingTextParser.benefactor(boundedItemLines));
+            if (safariEssenceShop) SafariEagleTracker.observeSafariEssenceShop(boundedItemLines);
         }
         applyResources(HuntingTextParser.resources(resourceLines), false);
         if (chapterMenu) {

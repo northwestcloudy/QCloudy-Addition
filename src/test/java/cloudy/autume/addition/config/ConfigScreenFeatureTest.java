@@ -85,6 +85,35 @@ final class ConfigScreenFeatureTest {
     }
 
     @Test
+    void mangoDyeIsAnIndependentTreeGiftLootOption() {
+        ModConfig config = new ModConfig();
+        HuntingOption option = HuntingOption.TREE_MANGO_DYE;
+
+        assertTrue(HuntingOption.forFeature(ConfigScreen.Feature.TREE_GIFT_ALERTS).contains(option));
+        assertEquals("config.hunting.tree_mango_dye", option.labelKey);
+        assertTrue(option.booleanValue(config.hunting));
+
+        option.toggle(config.hunting);
+        assertFalse(option.booleanValue(config.hunting));
+        assertFalse(config.hunting.treeGiftLoot.get("Mango Dye"));
+    }
+
+    @Test
+    void weatherHudIsAnIndependentEventsPanel() {
+        ModConfig config = new ModConfig();
+        ConfigScreen.Feature feature = ConfigScreen.Feature.WEATHER_HUD;
+
+        assertEquals(ConfigScreen.Category.EVENTS, feature.category);
+        assertEquals(ConfigScreen.FeatureGroup.WEATHER_EVENTS, feature.group);
+        assertEquals(ModConfig.HudType.WEATHER, feature.hudType());
+        assertTrue(feature.enabled(config));
+        assertTrue(feature.hasSettings());
+
+        feature.toggle(config);
+        assertFalse(config.weather.hud);
+    }
+
+    @Test
     void dungeonQuickViewKeepsItsOwnMasterAndOpensRequirementSettings() {
         ModConfig config = new ModConfig();
         ConfigScreen.Feature feature = ConfigScreen.Feature.DUNGEON_QUICK_VIEW;

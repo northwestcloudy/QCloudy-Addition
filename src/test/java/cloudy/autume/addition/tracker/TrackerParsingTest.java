@@ -49,6 +49,17 @@ final class TrackerParsingTest {
     }
 
     @Test
+    void classifiesEveryAdditionalWeatherIslandAndKeepsMineshaftSeparate() {
+        assertEquals(IslandArea.SPIDERS_DEN, LocationTracker.classifyEvidence("⏣ Spider's Den"));
+        assertEquals(IslandArea.MOONGLADE_MARSH, LocationTracker.classifyEvidence("⏣ Moonglade Marsh"));
+        assertEquals(IslandArea.BACKWATER_BAYOU, LocationTracker.classifyEvidence("⏣ Backwater Bayou"));
+        assertEquals(IslandArea.LOTUS_ATOLL, LocationTracker.classifyEvidence("⏣ Lotus Atoll"));
+        assertEquals(IslandArea.GARDEN, LocationTracker.classifyEvidence("⏣ The Garden"));
+        assertEquals(IslandArea.JERRYS_WORKSHOP, LocationTracker.classifyEvidence("⏣ Jerry's Workshop"));
+        assertEquals(IslandArea.MINESHAFT, LocationTracker.classifyEvidence("⏣ Glacite Mineshaft"));
+    }
+
+    @Test
     void extractsBoundedCommissionWidget() {
         List<String> result = TabListTracker.extractWidget(List.of(
                 "Profile: Apple", "Commissions:", " Mithril Miner: 55%", " Goblin Slayer: 2/13",

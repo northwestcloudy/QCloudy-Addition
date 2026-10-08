@@ -14,11 +14,11 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha12` 源码快照，不包含在公开 Beta 0.3.10 中。
+> **源码预览边界：**0.27.2 兼容、Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 源码快照，不包含在公开 Beta 0.3.10 中。
 
 ### Attribute Shard Lab
 
-- 离线收录 320 个 Bazaar Shard，并提供逐 ID 图标、品质色与语义游戏颜色。
+- 离线收录 324 个 Bazaar Shard，包含 Chocobun、Folf、Flora 与 Packrat，并提供逐 ID 图标、品质色与语义游戏颜色。
 - 详情包括效果、家族、Skill、生物种类、自然获取方法、捕捉/击杀要求、已审核的掉率信息，以及是否只能通过 Fusion 获得。
 - 有序 Recipes 与 Uses、反向关系、可点击跳转、Special Fusion 数量、Chameleon 机制与候选路线。
 - 多步 Fusion Tree、Materials Only 汇总、可编辑每小时获取速度、Ironman 规划、可拖动 Fusion Lines，以及按 Profile 保存的 Hunting Box 仓库。
@@ -26,7 +26,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha12` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
+> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
 
 - Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。玩家精确点击 `Group Builder` 的确认项时，它把所选 Catacombs 类型/楼层保存为 15 秒候选，只在 Hypixel 精确排队成功行到达后提交，并立即输出识别到的 `F/M/E` 或 `Missing`，因此新人加入前就能诊断捕获结果。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
 - F1–F7 与 M1–M7 共 14 层规则完全独立，Entrance 无规则。每层可分别开启最低完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；数值规则各自保留开关和值。全部规则与自动操作总开关默认关闭，开启总开关必须确认。
@@ -37,7 +37,8 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### HUD、宠物与计时
 
-- 装备宠物 HUD 显示收到的等级、品质色名称、已验证的宠物/皮肤头像、经验进度、距满级经验、皮肤与 Pet Item。
+- 装备宠物 HUD 使用收到的权威 `petInfo` tier/UUID，安全显示 SPECIAL/VERY_SPECIAL Phoenix，按实例隔离 Precursor Drone，并显示已验证宠物/皮肤头像、经验进度、皮肤与 Pet Item。
+- 独立 Island Weather HUD 只使用 11 个支持岛屿的明确当前岛证据；同时加入有限 Safari Eagle 状态与 Mango Dye Tree Gift 支持。
 - 挖矿任务与粉末、Torrhus/Galatea 资源、Safari 进度、Crimson Isle 阵营任务等 HUD 只有在存在有效内容时才显示。
 - `/cake` 或 `/centurycakeeffect` 打开 Century Cake 菜单；使用现实时间 48 小时计时，合并同时过期提醒，并提供必须由玩家点击的续效果操作。
 - Power Orb 与 Flare 消失提醒；重新放置 Flare 会完整重置生命周期，距离、实体卸载和使用失败不会被当作消失。

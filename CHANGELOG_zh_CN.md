@@ -1,5 +1,22 @@
 # 更新日志
 
+## [0.3.10-alpha13] - 2026-10-08
+
+仅面向 Minecraft 26.1.2 的未公开 Alpha 开发源码。当前公开测试版仍为 Beta 0.3.10，稳定 Release 与更新检查基线仍为 0.3.9。
+
+### SkyBlock 0.27.2 兼容
+
+- 为官方记录的 11 个天气岛屿加入独立 Island Weather HUD。它只接受聊天、Action Bar、Tab、计分板，或已打开的 Weather/Professor Wynd/Forecast 有界菜单中明确属于当前岛屿的证据；只有服务器提供时才显示剩余时间，可选显示打包的普通/极端天气效果。官方周期不被当作实时证据；换岛、换世界会清除快照，Glacite Mineshaft 明确排除。
+- Critter Safari HUD 加入可单独关闭的 Eagle 状态。只在 Safari Essence Shop 或有界 Safari Widget 中直接观察到时，才显示解锁、在场与品质；不会把附近任意 Eagle 归属给本地玩家。
+- 宠物元数据现在保留权威 `petInfo` 品质与具体宠物 UUID。SPECIAL/VERY_SPECIAL 不会猜测经验曲线，以兼容 Phoenix 品质迁移；Precursor Drone 的持有状态按收到的具体实例隔离，未知 UUID 时仅保留于当前会话。配件索引新增 Contraband、Grungle 与 Mining Off Camera 三种 Drone Mod。
+- Mango Dye 加入默认开启、可单独切换的稀有 Tree Gift 奖励。Hunting 文本解析器同时加入严格的行首 `[Lv N]` 生物等级解析，不接受任意 `Level` 文本。
+- 根据已确认的 0.27.2 Bazaar/目录变化刷新打包的 Attribute Shard 目录与默认获取速率。不虚构尚未确认的 ID，运行时仍不访问 Wiki/API。
+
+### 安全与回归覆盖
+
+- Dungeon 入队规则新增精确阈值边界、Group Builder 候选的精确 15 秒过期、排队确认失败，以及换世界后使发布、PartyInfo、名单与 membership epoch 全部失效的回归覆盖。
+- 天气、Safari Eagle、宠物品质/实例、Drone Mod、Mango Dye、生物等级与目录/速率行为都有确定性源码测试。本日志不声称已在登录 Hypixel 的实服验证、已公开发布或已完成构建；实际结果只记录在验证文档中。
+
 ## [0.3.10-alpha10] - 2026-09-09
 
 仅面向 Minecraft 26.1.2 的未公开 Alpha 开发源码。当前公开测试版仍为 Beta 0.3.10，稳定 Release 与更新检查基线仍为 0.3.9。

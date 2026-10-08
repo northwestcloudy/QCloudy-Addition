@@ -4,6 +4,8 @@ import cloudy.autume.addition.config.ConfigManager;
 import cloudy.autume.addition.config.ModConfig;
 import cloudy.autume.addition.hunting.HuntingTextParser;
 import cloudy.autume.addition.hunting.HuntingTracker;
+import cloudy.autume.addition.hunting.SafariEagleState;
+import cloudy.autume.addition.hunting.SafariEagleTracker;
 import cloudy.autume.addition.i18n.ModText;
 import cloudy.autume.addition.tracker.IslandArea;
 import cloudy.autume.addition.tracker.LocationTracker;
@@ -178,6 +180,7 @@ public final class HuntingHudRenderer {
             if (config.safariTicketTier) addValueIfPresent(dashboard, ModText.get("hud.hunting.ticket_tier"), HuntingTracker.safariTicketTier());
             appendSectionIfPresent(content, ModText.get("hud.hunting.run_dashboard"), 0xFFFFD45A, dashboard);
         }
+        if (config.safariEagleStatus) appendEagle(content);
         if (config.safariShards) appendShardStats(content);
         if (config.safariCritterdex) appendCritterdex(content, config);
         if (config.floorDropAssistant || config.questItemTracker) appendSafariItems(content, config);
@@ -192,6 +195,27 @@ public final class HuntingHudRenderer {
             appendSectionIfPresent(content, "Wumpa Encounter", 0xFF8FD8FF, wumpaLines);
         }
         return withTitle("Critter Safari", content);
+    }
+
+    private static void appendEagle(List<Line> lines) {
+        SafariEagleState eagle = SafariEagleTracker.current();
+        if (!eagle.observed()) return;
+        List<Line> values = new ArrayList<>();
+        if (eagle.unlockStatus() != SafariEagleState.UnlockStatus.UNKNOWN) {
+            values.add(Line.value(ModText.get("hud.hunting.eagle_unlock"),
+                    ModText.get(eagle.unlockStatus() == SafariEagleState.UnlockStatus.UNLOCKED
+                            ? "hud.hunting.unlocked" : "hud.hunting.locked")));
+        }
+        if (eagle.presence() != SafariEagleState.Presence.UNKNOWN) {
+            values.add(Line.value(ModText.get("hud.hunting.eagle_presence"),
+                    ModText.get(eagle.presence() == SafariEagleState.Presence.PRESENT
+                            ? "hud.hunting.present" : "hud.hunting.absent")));
+        }
+        if (eagle.tier() != cloudy.autume.addition.tracker.PetTier.UNKNOWN) {
+            values.add(Line.value(ModText.get("hud.hunting.eagle_tier"),
+                    eagle.tier().name().replace('_', ' ')));
+        }
+        appendSectionIfPresent(lines, ModText.get("hud.hunting.eagle"), 0xFFFFD45A, values);
     }
 
     private static void appendWumpaRequirements(List<Line> lines) {

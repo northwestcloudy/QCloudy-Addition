@@ -435,6 +435,9 @@ final class FeatureSettingsScreen extends Screen {
             rows.add(new Setting(Kind.CHAT_SCROLL_TARGET, "config.setting.chat_scroll_target"));
             return rows;
         }
+        if (feature == ConfigScreen.Feature.WEATHER_HUD) {
+            rows.add(new Setting(Kind.WEATHER_BONUSES, "config.weather.show_bonuses"));
+        }
         // Only real rendered HUD panels may expose the shared panel style.
         // Without this guard, any local feature that reached this fallback
         // (for example a settings-free chat toggle opened by right-click)
@@ -760,6 +763,7 @@ final class FeatureSettingsScreen extends Screen {
             case PET_SKIN_NAME -> config.pets.showSkinName = !config.pets.showSkinName;
             case PET_ACCESSORY -> config.pets.petAccessoryDisplay = next(config.pets.petAccessoryDisplay,
                     "ICON_AND_NAME", "ICON_ONLY", "NAME_ONLY");
+            case WEATHER_BONUSES -> config.weather.showBonuses = !config.weather.showBonuses;
             case EDIT_LAYOUT -> MinecraftClientCompat.setScreen(minecraft, new HudLayoutScreen(this));
         }
         ConfigManager.save();
@@ -927,7 +931,7 @@ final class FeatureSettingsScreen extends Screen {
         INTEGRATION_SCAN_EVENT_3, INTEGRATION_SCAN_REFRESH,
         DRAGON_COLOR, OPACITY, BACKGROUND_COLOR, BORDER, BORDER_SIZE, BORDER_COLOR,
         TITLE_COLOR, BOLD, SHADOW, SCALE, PET_ICON, PET_LEVEL_XP, PET_MAX_XP, PET_OVERFLOW_LEVEL,
-        PET_SKIN_NAME, PET_ACCESSORY, COMMISSION_PROGRESS, HOTM_SLOT, EDIT_LAYOUT,
+        PET_SKIN_NAME, PET_ACCESSORY, WEATHER_BONUSES, COMMISSION_PROGRESS, HOTM_SLOT, EDIT_LAYOUT,
         OPEN_SHARD_GUIDE, OPEN_SHARD_PLANNER, SHARD_GUIDE_KEY,
         OPEN_CONFIG_KEY, SHOW_CREATION, SHOW_COUNTDOWNS,
         TIMESTAMP_FORMAT, CURSOR_TOLERANCE,
@@ -959,7 +963,8 @@ final class FeatureSettingsScreen extends Screen {
                     DEPLOYABLE_POWER_ORB_ALERTS, DEPLOYABLE_FLARE_ALERTS,
                     DEPLOYABLE_EXPIRY_CENTER_TEXT, DEPLOYABLE_EXPIRY_SOUND,
                     CENTURY_CAKE_SOUND, BORDER, BOLD, SHADOW, HOTM_SLOT,
-                    PET_ICON, PET_LEVEL_XP, PET_MAX_XP, PET_OVERFLOW_LEVEL, PET_SKIN_NAME -> true;
+                    PET_ICON, PET_LEVEL_XP, PET_MAX_XP, PET_OVERFLOW_LEVEL, PET_SKIN_NAME,
+                    WEATHER_BONUSES -> true;
             default -> false;
         };
     }
@@ -1114,6 +1119,7 @@ final class FeatureSettingsScreen extends Screen {
                 case PET_OVERFLOW_LEVEL -> onOff(config.pets.showOverflowLevel);
                 case PET_SKIN_NAME -> onOff(config.pets.showSkinName);
                 case PET_ACCESSORY -> ModText.get("config.value." + config.pets.petAccessoryDisplay.toLowerCase());
+                case WEATHER_BONUSES -> onOff(config.weather.showBonuses);
                 case EDIT_LAYOUT -> ModText.get("config.open");
             };
         }
@@ -1223,6 +1229,7 @@ final class FeatureSettingsScreen extends Screen {
                 case PET_MAX_XP -> config.pets.showMaxProgress;
                 case PET_OVERFLOW_LEVEL -> config.pets.showOverflowLevel;
                 case PET_SKIN_NAME -> config.pets.showSkinName;
+                case WEATHER_BONUSES -> config.weather.showBonuses;
                 default -> false;
             };
         }

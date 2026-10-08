@@ -28,7 +28,8 @@ public final class PetTracker {
         Matcher autoPet = AUTOPET.matcher(message);
         if (autoPet.matches()) {
             String name = autoPet.group(2);
-            current = new PetSnapshot(name, autoPet.group(1), "", "", "", false, rememberedColor(name));
+            current = snapshot(name, autoPet.group(1), "", "", "", false, "",
+                    rememberedColor(name), rememberedTier(name), rememberedInstanceId(name));
             PetSkinTracker.noteSkinMarker(name, message.contains("✦"));
             return;
         }
@@ -36,7 +37,8 @@ public final class PetTracker {
         if (summon.matches()) {
             String name = summon.group(1);
             String level = current != null && current.name().equals(name) ? current.level() : "?";
-            current = new PetSnapshot(name, level, "", "", "", false, rememberedColor(name));
+            current = snapshot(name, level, "", "", "", false, "",
+                    rememberedColor(name), rememberedTier(name), rememberedInstanceId(name));
             PetSkinTracker.noteSkinMarker(name, message.contains("✦"));
             return;
         }
@@ -61,9 +63,15 @@ public final class PetTracker {
 
             String petName = name.group(2);
             PetSkinTracker.noteSkinMarker(petName, petLine.contains("✦"));
-            int rarityColor = index + 1 < components.size()
-                    ? findNameColor(components.get(index + 1), petName, rememberedColor(petName))
-                    : rememberedColor(petName);
+            int rememberedColor = rememberedColor(petName);
+            ColorEvidence colorEvidence = index + 1 < components.size()
+                    ? findNameColor(components.get(index + 1), petName, rememberedColor)
+                    : new ColorEvidence(rememberedColor, false);
+            PetTier tier = rememberedTier(petName);
+            if (tier == PetTier.UNKNOWN && colorEvidence.observed()) {
+                tier = PetTier.fromObservedColor(colorEvidence.color());
+            }
+            String instanceId = rememberedInstanceId(petName);
 
             String xpLine = index + 2 < lines.size() ? lines.get(index + 2).trim() : "";
             Matcher xp = TAB_XP.matcher(xpLine);
@@ -74,10 +82,12 @@ public final class PetTracker {
                     Matcher overflowMatcher = TAB_OVERFLOW_XP.matcher(lines.get(detail).trim());
                     if (overflowMatcher.matches()) overflow = overflowMatcher.group(1);
                 }
-                current = new PetSnapshot(petName, name.group(1),
-                        value(xp.group(2)), value(xp.group(3)), value(xp.group(4)), max, overflow, rarityColor);
+                current = snapshot(petName, name.group(1),
+                        value(xp.group(2)), value(xp.group(3)), value(xp.group(4)), max, overflow,
+                        colorEvidence.color(), tier, instanceId);
             } else {
-                current = new PetSnapshot(petName, name.group(1), "", "", "", false, rarityColor);
+                current = snapshot(petName, name.group(1), "", "", "", false, "",
+                        colorEvidence.color(), tier, instanceId);
             }
             return;
         }
@@ -91,30 +101,86 @@ public final class PetTracker {
         current = null;
     }
 
+    /** Applies metadata received from the active pet's petInfo payload. */
+    static void noteMetadata(String petName, PetTier tier, String instanceId) {
+        if (current == null || !normalize(current.name()).equals(normalize(petName))) return;
+        PetTier receivedTier = tier == null ? PetTier.UNKNOWN : tier;
+        String receivedInstance = instanceId == null ? "" : instanceId;
+        current = current.withMetadata(receivedTier, receivedInstance);
+    }
+
     private static String value(String string) {
         return string == null ? "" : string;
+    }
+
+    private static String normalize(String name) {
+        return name == null ? "" : name.trim().toLowerCase(java.util.Locale.ROOT)
+                .replace('-', '_').replace(' ', '_');
     }
 
     private static int rememberedColor(String name) {
         return current != null && current.name().equalsIgnoreCase(name) ? current.rarityColor() : 0xFFFFFF;
     }
 
-    private static int findNameColor(Component component, String petName, int fallback) {
-        int result = fallback;
+    private static PetTier rememberedTier(String name) {
+        if (current != null && current.name().equalsIgnoreCase(name)
+                && current.tier() != PetTier.UNKNOWN) return current.tier();
+        return PetSkinTracker.currentDetails(name).tier();
+    }
+
+    private static String rememberedInstanceId(String name) {
+        return current != null && current.name().equalsIgnoreCase(name) ? current.instanceId() : "";
+    }
+
+    private static ColorEvidence findNameColor(Component component, String petName, int fallback) {
+        ColorEvidence result = new ColorEvidence(fallback, false);
         if (component.getString().contains(petName) && component.getStyle().getColor() != null) {
-            result = component.getStyle().getColor().getValue();
+            result = new ColorEvidence(component.getStyle().getColor().getValue(), true);
         }
         for (Component sibling : component.getSiblings()) {
-            if (sibling.getString().contains(petName)) result = findNameColor(sibling, petName, result);
+            if (!sibling.getString().contains(petName)) continue;
+            ColorEvidence nested = findNameColor(sibling, petName, result.color());
+            if (nested.observed()) result = nested;
         }
-        return result & 0xFFFFFF;
+        return new ColorEvidence(result.color() & 0xFFFFFF, result.observed());
+    }
+
+    private static PetSnapshot snapshot(String name, String level, String currentXp, String nextXp,
+                                        String percentage, boolean maxLevel, String overflowXp,
+                                        int rarityColor, PetTier tier, String instanceId) {
+        return new PetSnapshot(name, level, currentXp, nextXp, percentage, maxLevel, overflowXp,
+                rarityColor, tier, instanceId);
     }
 
     public record PetSnapshot(String name, String level, String currentXp, String nextXp,
-                              String percentage, boolean maxLevel, String overflowXp, int rarityColor) {
+                              String percentage, boolean maxLevel, String overflowXp, int rarityColor,
+                              PetTier tier, String instanceId) {
+        public PetSnapshot {
+            tier = tier == null ? PetTier.UNKNOWN : tier;
+            instanceId = instanceId == null ? "" : instanceId;
+        }
+
+        public PetSnapshot(String name, String level, String currentXp, String nextXp,
+                           String percentage, boolean maxLevel, String overflowXp, int rarityColor) {
+            this(name, level, currentXp, nextXp, percentage, maxLevel, overflowXp, rarityColor,
+                    PetTier.fromObservedColor(rarityColor), "");
+        }
+
         public PetSnapshot(String name, String level, String currentXp, String nextXp,
                            String percentage, boolean maxLevel, int rarityColor) {
-            this(name, level, currentXp, nextXp, percentage, maxLevel, "", rarityColor);
+            this(name, level, currentXp, nextXp, percentage, maxLevel, "", rarityColor,
+                    PetTier.fromObservedColor(rarityColor), "");
         }
+
+        PetSnapshot withMetadata(PetTier receivedTier, String receivedInstanceId) {
+            PetTier nextTier = receivedTier == PetTier.UNKNOWN ? tier : receivedTier;
+            String nextInstance = receivedInstanceId == null || receivedInstanceId.isBlank()
+                    ? instanceId : receivedInstanceId;
+            return new PetSnapshot(name, level, currentXp, nextXp, percentage, maxLevel, overflowXp,
+                    rarityColor, nextTier, nextInstance);
+        }
+    }
+
+    private record ColorEvidence(int color, boolean observed) {
     }
 }

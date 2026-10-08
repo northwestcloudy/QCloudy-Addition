@@ -3,6 +3,7 @@ package cloudy.autume.addition.tracker;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PetLevelingTest {
@@ -39,5 +40,18 @@ final class PetLevelingTest {
         assertEquals(200, progress.maxLevel());
         assertTrue(progress.maximum() > 100_000_000);
         assertTrue(progress.current() < progress.maximum());
+    }
+
+    @Test
+    void specialTiersDoNotBorrowAColorBasedXpCurve() {
+        var special = new PetTracker.PetSnapshot("Phoenix", "100", "", "", "", true,
+                "", 0xFF5555, PetTier.SPECIAL, "phoenix-one");
+        var verySpecial = new PetTracker.PetSnapshot("Phoenix", "100", "", "", "", true,
+                "", 0xFF5555, PetTier.VERY_SPECIAL, "phoenix-two");
+
+        assertFalse(PetLeveling.progress(special).known());
+        assertFalse(PetLeveling.progress(verySpecial).known());
+        assertEquals(0.0, PetLeveling.maximumXp(special));
+        assertEquals(100, PetLeveling.cosmeticLevel(verySpecial, 999_999_999.0));
     }
 }

@@ -25,7 +25,8 @@ public final class PetLeveling {
     public static Progress progress(PetTracker.PetSnapshot pet) {
         int level = parseLevel(pet.level());
         int maxLevel = LEVEL_200.contains(normalize(pet.name())) ? 200 : 100;
-        int offset = rarityOffset(pet.rarityColor());
+        if (!pet.tier().hasKnownLevelingCurve()) return Progress.unknown(maxLevel);
+        int offset = pet.tier().levelingOffset();
         double maximum = maximumXp(pet);
 
         double current;
@@ -44,6 +45,7 @@ public final class PetLeveling {
     public static int cosmeticLevel(PetTracker.PetSnapshot pet, double exactTotalExperience) {
         Progress progress = progress(pet);
         int receivedLevel = parseLevel(pet.level());
+        if (!progress.known()) return receivedLevel;
         double overflow;
         if (exactTotalExperience > 0.0) {
             if (exactTotalExperience < progress.maximum()) return receivedLevel;
@@ -60,10 +62,15 @@ public final class PetLeveling {
     }
 
     public static double maximumXp(PetTracker.PetSnapshot pet) {
+        if (!pet.tier().hasKnownLevelingCurve()) return 0.0;
         int maxLevel = LEVEL_200.contains(normalize(pet.name())) ? 200 : 100;
-        double maximum = standardTotal(rarityOffset(pet.rarityColor()));
+        double maximum = standardTotal(pet.tier().levelingOffset());
         if (maxLevel == 200) maximum += dragonTotal();
         return maximum;
+    }
+
+    public static boolean canInferMaximumXp(PetTracker.PetSnapshot pet) {
+        return pet != null && pet.tier().hasKnownLevelingCurve();
     }
 
     static double completedXp(int level, int rarityOffset, int maxLevel) {
@@ -96,16 +103,6 @@ public final class PetLeveling {
         return 1_886_700;
     }
 
-    private static int rarityOffset(int color) {
-        return switch (color & 0xFFFFFF) {
-            case 0x55FF55 -> 6;  // Uncommon
-            case 0x5555FF -> 11; // Rare
-            case 0xAA00AA -> 16; // Epic
-            case 0xFFAA00, 0xFF55FF -> 20; // Legendary / Mythic
-            default -> 0;        // Common, unknown, or special
-        };
-    }
-
     private static int parseLevel(String raw) {
         try {
             return Integer.parseInt(raw.replace(",", ""));
@@ -118,6 +115,13 @@ public final class PetLeveling {
         return name.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
     }
 
-    public record Progress(double current, double maximum, double percentage, int maxLevel) {
+    public record Progress(double current, double maximum, double percentage, int maxLevel, boolean known) {
+        public Progress(double current, double maximum, double percentage, int maxLevel) {
+            this(current, maximum, percentage, maxLevel, true);
+        }
+
+        static Progress unknown(int maxLevel) {
+            return new Progress(0.0, 0.0, 0.0, maxLevel, false);
+        }
     }
 }

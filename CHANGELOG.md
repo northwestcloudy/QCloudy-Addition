@@ -2,6 +2,23 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.10-alpha13] - 2026-10-08
+
+Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.
+
+### SkyBlock 0.27.2 compatibility
+
+- Added a separate Island Weather HUD for the 11 documented weather islands. It accepts only explicit current-island evidence already received in chat, action bar, Tab, scoreboard, or a bounded Weather/Professor Wynd/Forecast menu, shows a remaining time only when the server supplied one, and can optionally show the bundled mild/extreme effects. The documented cadence is not treated as proof; cross-island and world changes clear the snapshot, and Glacite Mineshafts are deliberately excluded.
+- Added an optional Eagle section to the Critter Safari HUD. Unlock, presence, and tier appear only when directly observed in the Safari Essence Shop or bounded Safari widget; an arbitrary nearby Eagle is not attributed to the local player.
+- Pet metadata now preserves the authoritative `petInfo` tier and concrete pet UUID. SPECIAL and VERY_SPECIAL are represented without guessing an XP curve, covering the Phoenix rarity migration, while Precursor Drone held-state is isolated per received instance and remains session-only until a UUID is known. Contraband, Grungle, and Mining Off Camera are indexed as the three Drone Mods.
+- Added Mango Dye to the default-enabled, individually switchable rare Tree Gift rewards. The Hunting text parser also recognizes a strict leading `[Lv N]` mob tag without accepting free-form `Level` text.
+- Refreshed the bundled Attribute Shard catalog and default acquisition-rate data for the confirmed 0.27.2 Bazaar/catalog changes. Unconfirmed IDs are not invented, and runtime Wiki/API access remains absent.
+
+### Safety and regression coverage
+
+- Added exact threshold-boundary coverage for Dungeon admission rules, exact 15-second Group Builder candidate expiry, failed queue confirmation, and world-change invalidation of listing, PartyInfo, roster, and membership epochs.
+- Weather, Safari Eagle, pet tier/instance, Drone Mod, Mango Dye, mob-level, and catalog/rate behavior have deterministic source tests. This changelog does not claim an authenticated Hypixel gameplay check, a published release, or a completed build; those results belong in the validation record.
+
 ## [0.3.10-alpha12] - 2026-09-11
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

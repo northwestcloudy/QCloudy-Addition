@@ -17,6 +17,7 @@ public final class ModConfig {
     public Maps maps = new Maps();
     public Mining mining = new Mining();
     public Fishing fishing = new Fishing();
+    public Weather weather = new Weather();
     public Hunting hunting = new Hunting();
     public CrimsonIsle crimsonIsle = new CrimsonIsle();
     public Combat combat = new Combat();
@@ -34,6 +35,7 @@ public final class ModConfig {
         if (maps == null) maps = new Maps();
         if (mining == null) mining = new Mining();
         if (fishing == null) fishing = new Fishing();
+        if (weather == null) weather = new Weather();
         if (hunting == null) hunting = new Hunting();
         if (crimsonIsle == null) crimsonIsle = new CrimsonIsle();
         if (combat == null) combat = new Combat();
@@ -228,10 +230,17 @@ public final class ModConfig {
             // any explicit preview values already present in this config.
             configVersion = 31;
         }
+        if (configVersion < 32) {
+            // Weather is a separate, received-data-only HUD. Pet rarity now
+            // retains the authoritative petInfo tier instead of guessing from
+            // formatting colors (which cannot represent SPECIAL tiers).
+            configVersion = 32;
+        }
         hudStyle.map.normalize();
         hudStyle.mining.normalize();
         hudStyle.hunting.normalize();
         hudStyle.pet.normalize();
+        hudStyle.weather.normalize();
         hudStyle.spiritMaskCooldown.normalize();
         hudStyle.bonzoMaskCooldown.normalize();
         hudStyle.phoenixCooldown.normalize();
@@ -239,6 +248,7 @@ public final class ModConfig {
         centuryCakes.normalize();
         mining.normalize();
         fishing.normalize();
+        weather.normalize();
         hunting.normalize();
         pets.normalize();
         chat.normalize();
@@ -475,6 +485,16 @@ public final class ModConfig {
         public boolean taskTracker = true;
     }
 
+    public static final class Weather {
+        /** Shows only weather state explicitly received from Hypixel. */
+        public boolean hud = true;
+        public boolean showBonuses = true;
+
+        private void normalize() {
+            // Reserved for future bounded weather display preferences.
+        }
+    }
+
     public static final class Hunting {
         /** General master mute. Individual alert features own their volume. */
         public boolean alertSound = true;
@@ -536,6 +556,7 @@ public final class ModConfig {
         public boolean safariShards;
         public boolean safariRunTime = true;
         public boolean safariTicketTier = true;
+        public boolean safariEagleStatus = true;
 
         public boolean safariCritterdex = true;
         public boolean critterdexBiomeProgress = true;
@@ -667,6 +688,7 @@ public final class ModConfig {
             result.put("Hummingbird Shard", true);
             result.put("Dreadwing", true);
             result.put("Enchanted Book (Karma I)", true);
+            result.put("Mango Dye", true);
             return result;
         }
     }
@@ -792,14 +814,20 @@ public final class ModConfig {
     public static final class PetMemory {
         public String skinKey = "";
         public String heldItemId = "";
+        public String tier = "UNKNOWN";
         public double totalExperience;
 
         public PetMemory() {
         }
 
         public PetMemory(String skinKey, String heldItemId, double totalExperience) {
+            this(skinKey, heldItemId, "UNKNOWN", totalExperience);
+        }
+
+        public PetMemory(String skinKey, String heldItemId, String tier, double totalExperience) {
             this.skinKey = skinKey;
             this.heldItemId = heldItemId;
+            this.tier = tier;
             this.totalExperience = totalExperience;
             normalize();
         }
@@ -807,11 +835,18 @@ public final class ModConfig {
         private void normalize() {
             if (skinKey == null) skinKey = "";
             if (heldItemId == null) heldItemId = "";
+            if (tier == null || tier.isBlank()) tier = "UNKNOWN";
+            tier = tier.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+            if (!Set.of("COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC",
+                    "DIVINE", "SPECIAL", "VERY_SPECIAL", "UNKNOWN").contains(tier)) {
+                tier = "UNKNOWN";
+            }
             if (!Double.isFinite(totalExperience) || totalExperience < 0.0) totalExperience = 0.0;
         }
 
         public boolean isEmpty() {
-            return skinKey.isBlank() && heldItemId.isBlank() && totalExperience <= 0.0;
+            return skinKey.isBlank() && heldItemId.isBlank() && "UNKNOWN".equals(tier)
+                    && totalExperience <= 0.0;
         }
     }
 
@@ -1183,7 +1218,7 @@ public final class ModConfig {
             Map<String, Double> repairedRates = new LinkedHashMap<>();
             if (shardPlannerRates != null) {
                 for (var entry : shardPlannerRates.entrySet()) {
-                    if (entry.getKey() == null || entry.getValue() == null || repairedRates.size() >= 320) continue;
+                    if (entry.getKey() == null || entry.getValue() == null || repairedRates.size() >= 324) continue;
                     String id = entry.getKey().trim().toUpperCase(Locale.ROOT);
                     double rate = entry.getValue();
                     if (id.matches("[CUREL]\\d+") && Double.isFinite(rate) && rate >= 0.0) {
@@ -1195,7 +1230,7 @@ public final class ModConfig {
             Map<String, String> repairedPositions = new LinkedHashMap<>();
             if (shardFusionLinePositions != null) {
                 for (var entry : shardFusionLinePositions.entrySet()) {
-                    if (entry.getKey() == null || entry.getValue() == null || repairedPositions.size() >= 320) continue;
+                    if (entry.getKey() == null || entry.getValue() == null || repairedPositions.size() >= 324) continue;
                     String id = entry.getKey().trim().toUpperCase(Locale.ROOT);
                     if (id.matches("[CUREL]\\d+") && entry.getValue().matches("-?\\d+,-?\\d+")) {
                         repairedPositions.put(id, entry.getValue());
@@ -1256,6 +1291,7 @@ public final class ModConfig {
         MINING,
         HUNTING,
         PET,
+        WEATHER,
         SPIRIT_MASK_COOLDOWN,
         BONZO_MASK_COOLDOWN,
         PHOENIX_COOLDOWN
@@ -1267,6 +1303,7 @@ public final class ModConfig {
         public PanelStyle mining = new PanelStyle();
         public PanelStyle hunting = new PanelStyle();
         public PanelStyle pet = new PanelStyle();
+        public PanelStyle weather = new PanelStyle();
         public PanelStyle spiritMaskCooldown = new PanelStyle();
         public PanelStyle bonzoMaskCooldown = new PanelStyle();
         public PanelStyle phoenixCooldown = new PanelStyle();
@@ -1279,6 +1316,8 @@ public final class ModConfig {
         public int huntingY = 8;
         public int petX = 8;
         public int petY = 196;
+        public int weatherX = -244;
+        public int weatherY = 316;
         public int spiritMaskCooldownX = -196;
         public int spiritMaskCooldownY = 196;
         public int bonzoMaskCooldownX = -196;
@@ -1301,6 +1340,7 @@ public final class ModConfig {
                 case MINING -> mining;
                 case HUNTING -> hunting;
                 case PET -> pet;
+                case WEATHER -> weather;
                 case SPIRIT_MASK_COOLDOWN -> spiritMaskCooldown;
                 case BONZO_MASK_COOLDOWN -> bonzoMaskCooldown;
                 case PHOENIX_COOLDOWN -> phoenixCooldown;
@@ -1312,6 +1352,7 @@ public final class ModConfig {
             if (mining == null) mining = new PanelStyle();
             if (hunting == null) hunting = new PanelStyle();
             if (pet == null) pet = new PanelStyle();
+            if (weather == null) weather = new PanelStyle();
             if (spiritMaskCooldown == null) spiritMaskCooldown = new PanelStyle();
             if (bonzoMaskCooldown == null) bonzoMaskCooldown = new PanelStyle();
             if (phoenixCooldown == null) phoenixCooldown = new PanelStyle();
@@ -1319,7 +1360,7 @@ public final class ModConfig {
 
         private void copyLegacyAppearanceToPanels() {
             ensurePanels();
-            for (PanelStyle panel : new PanelStyle[]{map, mining, hunting, pet,
+            for (PanelStyle panel : new PanelStyle[]{map, mining, hunting, pet, weather,
                     spiritMaskCooldown, bonzoMaskCooldown, phoenixCooldown}) {
                 panel.backgroundOpacity = backgroundOpacity;
                 panel.border = border;

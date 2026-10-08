@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha10` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [更新日志（当前源码 0.3.10-alpha10；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
+- [更新日志（当前源码 0.3.10-alpha13；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -64,7 +64,7 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 - **Torrhus Chapter 与资源**：在同一个会自动换行且绝不省略的 HUD 中显示当前 Helia Chapter、完整任务名、进度、Forest Whispers、Desert Whispers、Forest Essence、Safari Essence、Sweep 与 Forest Fortune。Tab 与计分板按两个独立的有限来源解析，后面的 `SB Level` 分数不会再串成 Chapter 任务；同时支持真实的 `Helia's Chapters` 总览、章节详情物品栏和短时间内分行收到的聊天状态。已确认的绝对数值按 Minecraft 账号和客户端收到的 SkyBlock Profile 分开保存，重连后仍存在；旧配置中误存的非 Chapter 任务会在载入时修复，只有观察到更新数值时才改写。聊天中的明确获取提示才进行有限增量累加。Safari Essence 在 Critter Safari 内不重复显示。已完成数量、Chapter 总进度和下一项解锁默认关闭。
 - **Tree Critter 计时**：默认开启且可单独关闭。读取离玩家最近的 Tree Protection Order 可见名称牌 `Critter in: 26m 47s`，把服务器实际倒计时加入综合 Hunting HUD；不自行按物品猜测倒数，因此可准确兼容 Fun-Sized（60m）、Family-Sized（30m）、Jumbo（15m）、Behemoth（立即出现）、Honeycomb Artifact 加速、Honey Serendipity 立即触发及未来服务器修正。
 - **Miria Contest**：解析客户端收到的计分板/Tab 档位行（例如 `COMMON with 151` 与 `Uncommon requires +99`），只在综合 Hunting HUD 中显示下一档、准确差值与预计 Safari Ticket；不再向右侧计分板注入内容，也不重复显示计分板已有的竞赛倒计时。
-- **Benefactor 与 Tree Gift**：将有限范围的 Tab/计分板、已经打开的 Forest/Desert Temple 菜单和玩家本人收到的准确捐赠消息合并为 Benefactor 状态；支持多日捐赠、剩余时间、寺庙对应效果、到期处理和账号/Profile 持久保存，新捐赠也不会被仍未刷新的旧菜单立刻覆盖。十种稀有 Tree Gift 奖励可分别开关：读取玩家本人精确奖励汇总的 hover，也读取同一个经过个人贡献与汇总证明的有限 Gift 区块内精确 BONUS 行；兼容被聊天压缩模组取消显示但客户端已经收到的原始消息。附近玩家单独出现的公开掉落行不会触发。
+- **Benefactor 与 Tree Gift**：将有限范围的 Tab/计分板、已经打开的 Forest/Desert Temple 菜单和玩家本人收到的准确捐赠消息合并为 Benefactor 状态；支持多日捐赠、剩余时间、寺庙对应效果、到期处理和账号/Profile 持久保存，新捐赠也不会被仍未刷新的旧菜单立刻覆盖。包括 0.27.2 Mango Dye 在内的十一种稀有 Tree Gift 奖励可分别开关：读取玩家本人精确奖励汇总的 hover，也读取同一个经过个人贡献与汇总证明的有限 Gift 区块内精确 BONUS 行；兼容被聊天压缩模组取消显示但客户端已经收到的原始消息。附近玩家单独出现的公开掉落行不会触发。
 
 ### 钓鱼
 
@@ -78,12 +78,16 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 
 ### Safari
 
-- **Safari Run Dashboard 与 Critterdex**：统计本轮 Shards、时间、Ticket Tier，并按官方 37 种 Critter 显示四个 Biome 的进度和当前 Biome 完整的已捕捉/缺失名称。
+- **Safari Run Dashboard、Eagle 与 Critterdex**：统计本轮 Shards、时间、Ticket Tier，并按官方 37 种 Critter 显示四个 Biome 的进度和当前 Biome 完整的已捕捉/缺失名称。Eagle 的解锁、在场与品质只在 Safari Essence Shop 或限定 Safari Widget 中直接观察到后显示；不会把附近任意 Eagle 归给本地玩家。
 - **Cold、Doomspiral、Critter、Snoozle 与 Wumpa 辅助**：默认在 Cold 高于 80/90 时两次预警；超过第一档时立即扫描最近的已加载篝火并显示红色信标，Cold 开始下降时关闭；持有 4 个 Soothing Incense 时提示；按 Shard 品质色高亮真实 Critter 实体。Wumpa 的八项组队前置同时接受本人和队友 Loot Share 捕捉，生成后折叠为 `Wumpa：已生成`，路线改为跟踪真正的 Ravager 身体。独立 Snoozle 功能用默认绿色、可自定义 RGB 的半透明表面覆盖附近 `Cobbled Deepslate + Tuff` 可撞墙。Armor Stand 捕捉道具会被排除，避免再次描边支架身体。Wumpa 路线默认关闭，其余功能默认开启。
 - **Sparkling、Floor Drop 与 Quest Item**：只依据收到的聊天、可见名称/实体、已加载的附近 String 方块和本地背包显示中央预警与 HUD；Sparkling 轮廓颜色可自定义。
 - **Safari Belt 详情**：把本地观察到的 Cavern/Forest/Haunted/Icy 四项 Milestone 等级与物品实际说明中的属性增益嵌入 Safari Belt 提示；支持标题和 lore 分行的菜单格式，按账号/Profile 保存，只在收到更高的确认等级时更新。
 
 “砍树”和“狩猎”是独立一级设置分类，Safari 只作为“狩猎”内的可折叠下级功能组；Fairy Soul 点位只放在“地图”中。每张功能卡只有唯一归属，不会跨分类重复。相关预警都使用屏幕中央标题；每种预警分别拥有默认开启、64% 音量的独立音效与 0–100% 滑条，“通用”另有总静音。综合 HUD 拥有独立保存的外观、缩放与位置。
+
+### 活动
+
+- **Island Weather HUD**：只显示客户端从聊天、Action Bar、Tab、计分板或已打开的 Weather/Professor Wynd/Forecast 菜单中明确收到的当前岛屿天气；覆盖官方 11 个天气岛与 22 种普通/极端天气。只有服务器提供倒计时才显示剩余时间，可单独关闭效果列表。不会用公开周期猜测实时天气；换岛/换世界会立即清除，跨岛名称会拒绝，Glacite Mineshaft 明确排除。
 
 ### 战斗
 
@@ -93,11 +97,11 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 
 ### 宠物
 
-- **当前宠物 HUD**：用召唤、收回和 Autopet 提示立即更新，再以客户端收到的 `Pet:` Tab Widget 校正。HUD 只用 QCA 内置且已验证的 Profile 构造普通 player head，不再写入合成 `petInfo`，因此其他模组无法把 HUD 头像替换成无关物品模型。动态皮肤家族的每一帧都会归回正确皮肤，包括 Baby Spinosaurus 已发布的全部变体。头像由 Minecraft 原生物品渲染器按整数 2× 清晰绘制；宠物、皮肤、经验和配件文本完整测量，粗体也不会溢出或省略。“当前等级经验”和“到满级进度”默认开启；满级只隐藏后者，不会隐藏宠物配件。通过 Pets 菜单、Tab 或已收到聊天确认的配件会按宠物保存在本地，重登后继续显示。皮肤名称和 Ancient Golden Dragon 装饰溢出等级默认开启。内置当前 87 种宠物配件资源，可选“图标＋名称”（默认）、“仅图标”或“仅名称”。
+- **当前宠物 HUD**：用召唤、收回和 Autopet 提示立即更新，再以客户端收到的 `Pet:` Tab Widget 校正。HUD 只用 QCA 内置且已验证的 Profile 构造普通 player head，不会把完整 Pets-menu ItemStack 交给外部模型替换。Pets 菜单收到的 `petInfo` 提供权威品质与具体 UUID；SPECIAL/VERY_SPECIAL Phoenix 不会借用旧颜色经验曲线，Precursor Drone 的配件状态按实例隔离，UUID 未知时只保留于本次会话。动态皮肤家族的每一帧都会归回正确皮肤，包括 Baby Spinosaurus 已发布的全部变体。头像由 Minecraft 原生物品渲染器按整数 2× 清晰绘制；宠物、皮肤、经验和配件文本完整测量，粗体也不会溢出或省略。“当前等级经验”和“到满级进度”默认开启；满级只隐藏后者，不会隐藏宠物配件。通过 Pets 菜单、Tab 或已收到聊天确认的配件会保存在本地。内置 90 种宠物配件资源，其中包括 Contraband、Grungle 与 Mining Off Camera 三种 Drone Mod；可选“图标＋名称”（默认）、“仅图标”或“仅名称”。
 
 ### 物品与菜单
 
-- **Attribute Shard Fusion Guide**：受 JEI 信息结构启发、完全离线的 320 种当前 Bazaar Shard 浏览器。可按原始英文名称、Shard ID、属性/效果、品质、分类、家族、Skill、生物类型或获取文字搜索。**详细信息**显示 Wiki 已记录的完整效果和所有自然/Fusion 获取方式；**合成来源**显示能产出目标 Shard 的全部有序输入组合，其中也包括 Queen Bee 这类同时拥有自然来源的 Shard；**可合成内容**显示所选 Shard 能继续合成什么。配方卡保留输入顺序，显示数量、可选输出、普通/特殊产量和 Pure Reptile。Epic 使用 Minecraft 深紫色（`§5`），品质、属性、分类、生物类型与获取方式使用对应游戏语义颜色；鼠标悬停于可点击 Shard 文字时，文字会变深并添加下划线。目录与专属图标在发布前离线生成并随模组打包；客户端已经收到的原生 `ItemStack` 仍优先用于材质包显示。本地 `/qshard [英文查询]` 只打开本地界面，不发送聊天或服务器命令。QCA 运行时不访问 Wiki/API/图标服务，也不会自动执行 Fusion。
+- **Attribute Shard Fusion Guide**：受 JEI 信息结构启发、完全离线的 324 种当前 Bazaar Shard 浏览器，已加入 0.27.2 的 Chocobun、Folf、Flora 与 Packrat。可按原始英文名称、Shard ID、属性/效果、品质、分类、家族、Skill、生物类型或获取文字搜索。**详细信息**显示经审核的效果和自然/Fusion 获取方式；**合成来源**显示能产出目标 Shard 的全部有序输入组合；**可合成内容**显示所选 Shard 能继续合成什么。配方卡保留输入顺序，显示数量、可选输出、普通/特殊产量和 Pure Reptile。324 个专属图标与目录离线打包；Packrat 保留已验证 Bazaar ID，但不会虚构未公开客户端 internal ID。客户端已经收到的原生 `ItemStack` 仍优先用于材质包显示。本地 `/qshard [英文查询]` 只打开本地界面，不发送聊天或服务器命令。QCA 运行时不访问 Wiki/API/图标服务，也不会自动执行 Fusion。
 - **Shard Planner**：完整保留原 Guide，新增目标数量、完整多步 Fusion Tree、候选路线、Materials Only 汇总、输入/输出独立筛选、可编辑每小时获取速度、Shard 详情、可拖动 Fusion Lines，以及本地保存的 Hunting Box 仓库。Ironman 只使用狩猎速率；Normal 的“最快”可以比较狩猎与购买时间，“最便宜”读取 QCloudy 自己的有界市场快照。只有打开 Planner 并加载价格时才会进行一次有界异步 HTTPS 读取；获取成本使用 Bazaar 立即买入价，出售/净值使用立即卖出价。服务端大约每分钟更新 Bazaar，技术故障时最多提供十分钟且明确标注的旧快照。不需要安装价格模组；不可用价格保持未知，全部离线与按速率功能仍可使用。
 
 ### 聊天

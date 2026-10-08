@@ -75,7 +75,17 @@ public final class HudRenderer {
             renderScaled(graphics, x, y, scale, () -> HuntingHudRenderer.render(graphics));
         }
 
-        if (config.pets.equippedPetHud && PetTracker.current() != null) {
+        if (config.weather.hud && WeatherHudRenderer.loaded()) {
+            float scale = style(ModConfig.HudType.WEATHER).scale;
+            int height = WeatherHudRenderer.currentHeight();
+            int x = resolveX(config.hudStyle.weatherX, WeatherHudRenderer.WIDTH,
+                    graphics.guiWidth(), scale);
+            int y = resolveY(config.hudStyle.weatherY, height, graphics.guiHeight(), scale);
+            renderScaled(graphics, x, y, scale,
+                    () -> WeatherHudRenderer.render(graphics, style(ModConfig.HudType.WEATHER)));
+        }
+
+        if (isPetLoaded()) {
             float scale = style(ModConfig.HudType.PET).scale;
             int petWidth = currentPetWidth();
             int petHeight = currentPetHeight();
@@ -100,6 +110,11 @@ public final class HudRenderer {
             }
             case HUNTING -> {
                 if (isHuntingLoaded()) HuntingHudRenderer.render(graphics);
+            }
+            case WEATHER -> {
+                if (ConfigManager.get().weather.hud && WeatherHudRenderer.loaded()) {
+                    WeatherHudRenderer.render(graphics, style(ModConfig.HudType.WEATHER));
+                }
             }
             case PET -> {
                 if (isPetLoaded()) renderPet(graphics);
@@ -475,7 +490,7 @@ public final class HudRenderer {
     }
 
     static boolean shouldShowMaxProgress(boolean enabled, PetTracker.PetSnapshot pet) {
-        return enabled && !pet.maxLevel();
+        return enabled && !pet.maxLevel() && PetLeveling.canInferMaximumXp(pet);
     }
 
     private static void renderPetHead(GuiGraphicsExtractor graphics, ItemStack head) {
@@ -600,6 +615,7 @@ public final class HudRenderer {
         MAP,
         MINING,
         HUNTING,
+        WEATHER,
         PET,
         SPIRIT_MASK_COOLDOWN,
         BONZO_MASK_COOLDOWN,

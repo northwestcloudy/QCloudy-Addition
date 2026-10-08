@@ -27,8 +27,10 @@ public final class ShardAcquisitionRates {
         Set<String> expectedIds = ShardFusionCatalog.instance().shards().stream()
                 .map(ShardFusionCatalog.Shard::id)
                 .collect(Collectors.toUnmodifiableSet());
-        if (raw.rates.size() != 320 || !raw.rates.keySet().equals(expectedIds)) {
-            throw new IllegalStateException("Shard acquisition-rate IDs do not match the 320-Shard catalog");
+        if (raw.rates.size() != ShardFusionCatalog.EXPECTED_SHARD_COUNT
+                || !raw.rates.keySet().equals(expectedIds)) {
+            throw new IllegalStateException("Shard acquisition-rate IDs do not match the "
+                    + ShardFusionCatalog.EXPECTED_SHARD_COUNT + "-Shard catalog");
         }
         Map<String, Double> loaded = new LinkedHashMap<>();
         for (ShardFusionCatalog.Shard shard : ShardFusionCatalog.instance().shards()) {
@@ -39,8 +41,9 @@ public final class ShardAcquisitionRates {
             double rate = value;
             loaded.put(shard.id(), rate);
         }
-        if (loaded.size() != 320) {
-            throw new IllegalStateException("Expected 320 Shard rates, found " + loaded.size());
+        if (loaded.size() != ShardFusionCatalog.EXPECTED_SHARD_COUNT) {
+            throw new IllegalStateException("Expected " + ShardFusionCatalog.EXPECTED_SHARD_COUNT
+                    + " Shard rates, found " + loaded.size());
         }
         rates = Map.copyOf(loaded);
     }

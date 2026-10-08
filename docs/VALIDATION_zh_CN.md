@@ -1,3 +1,34 @@
+# QCloudy_Addition 0.3.10-alpha13 SkyBlock 0.27.2 验证状态
+
+日期：2026-10-08<br>
+交付目标：仅 Minecraft 26.1.2<br>
+Java：25
+
+## 范围
+
+`0.3.10-alpha13` 为 SkyBlock 0.27.2 增加有证据边界的兼容支持，不会把固定周期、附近实体、格式颜色或不完整的第三方仓库当成权威状态。新增内容包括：11 岛 Weather 目录与 HUD、Safari Eagle 观察、SPECIAL/VERY SPECIAL 宠物 tier、按实例隔离的 Precursor Drone 元数据与三种 Drone Mod、Mango Dye Tree Gift、有限范围的生物等级解析、4 个新 Shard 及经复核的速率/效果变化；同时补齐 Dungeon 数值边界、Group Builder 新鲜度和换世界失效回归。
+
+## 自动测试与构建状态
+
+- Minecraft 26.1.2/Java 25 的 `clean build prepareRelease` 成功完成：70 个测试套件、483 项测试，0 failure、0 error、0 skipped。
+- Weather 回归覆盖精确的 11 岛/22 种天气表、明确接收的倒计时、跨岛拒绝、Mineshaft 排除、明确结束消息和换世界/岛屿立即失效。Safari Eagle 与宠物回归覆盖限定范围的商店/Widget 证据、归属绑定、权威 `petInfo` tier/UUID、SPECIAL/VERY SPECIAL 不推断，以及按 UUID 隔离 Drone Mod。
+- Shard 目录、速率、物品定义、模型与贴图均为 324 项。已加入 C48 Chocobun、R28 Folf、L52 Flora、U73 Packrat；Packrat 保留已核验的 Bazaar ID，而尚未公开的客户端 internal ID 刻意留空。Rabbit 商店速率按公开库存除以 124 小时计算，并固定带来源的上游速率/效果变化。
+- 两个归档均无重复路径，并通过 JDK 25 `jar --validate` 与 `unzip -t`。可运行 JAR 的内部版本精确声明为 `0.3.10-alpha13+26.1.2`，并声明纯客户端、Minecraft 26.1.2、Java 25、匹配的 Fabric Loader/Fabric API 要求与必需 `hypixel-mod-api >=1.0`；`release/` 副本与对应 `build/libs/` 文件逐字节一致。
+- 本地目标组合启动共加载 94 个 Mod，其中包括 BZA 3.4.1、Firmament 44.3、SkyHanni 7.41、SkyBlocker 6.8.2、Mod Menu 18 与 QCA Alpha 13。QCA 到达客户端初始化日志和资源重载，未出现 QCA 异常或崩溃报告；随后主动停止本次运行。
+
+## 本地构建产物
+
+- `release/QCloudy_Addition-0.3.10-alpha13+26.1.2.jar` — 4,057,612 字节 — `e8701b4cda9b5c91af441aec9dfb844abf9effb9bf4e74e660393083ffa18a69`
+- `release/QCloudy_Addition-0.3.10-alpha13+26.1.2-sources.jar` — 3,238,294 字节 — `4ed75c3db2724879474a4d1f4f195dbe950d5546f28fc7e3acbf17942e12dff5`
+
+## 边界
+
+- 本次启动使用未认证的开发账号，因此不能证明 Hypixel 实服天气/菜单/Widget 文案、Eagle 归属、宠物 `petInfo` 形态、Party Finder 行为或服务端接受指令。未部署生产后端，也未发布 GitHub Release 或 Modrinth 版本。
+- 目标组合暴露出旧版第三方 Mod 自身的兼容错误：SkyBlocker 6.8.2 无法处理仓库中新出现的 `PHOENIX;7`/`PHOENIX;8` tier，SkyHanni 7.41 无法识别新的 `HUNTING_FORTUNE`/`FISHING_NET` 值，并报告仓库/网络计时错误。它们没有产生 QCA 调用栈，也没有终止客户端；QCA 不会补丁其他 Mod 的私有解析器。
+- `tools/generate_shard_fusion_data.py` 仍是旧的 320 项来源归一化流程，因为当前 SkyShards/NEU 数据仍缺少部分 0.27.2 字段。提交的 324 项运行时快照已测试并固定来源；本次发布验证不包含重新运行该旧生成器。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha12 多人重叠入队验证状态
 
 日期：2026-09-11<br>

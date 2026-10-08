@@ -20,8 +20,8 @@ from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "src/main/resources/assets/autumecloudyaddition/textures/gui/pets"
-SKIN_OUTPUT = ROOT / "src/main/resources/assets/autumecloudyaddition/textures/gui/pet_skins"
+OUTPUT = ROOT / "src/main/resources/assets/qcloudy_addition/textures/gui/pets"
+SKIN_OUTPUT = ROOT / "src/main/resources/assets/qcloudy_addition/textures/gui/pet_skins"
 REPO_CANDIDATES = (
     ROOT / "run/.firmament/repo-extracted/items",
     ROOT / "run/config/skyblocker/item-repo/items",

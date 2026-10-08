@@ -80,6 +80,18 @@ public final class LocationTracker {
         } else if (containsAny(evidence, "galatea", "agatha's contest", "agathas contest",
                 "hina chapter", "hina's chapter", "hinas chapter")) {
             return IslandArea.GALATEA;
+        } else if (containsAny(evidence, "moonglade marsh")) {
+            return IslandArea.MOONGLADE_MARSH;
+        } else if (containsAny(evidence, "backwater bayou")) {
+            return IslandArea.BACKWATER_BAYOU;
+        } else if (containsAny(evidence, "lotus atoll")) {
+            return IslandArea.LOTUS_ATOLL;
+        } else if (containsAny(evidence, "spider's den", "spiders den")) {
+            return IslandArea.SPIDERS_DEN;
+        } else if (containsAny(evidence, "jerry's workshop", "jerrys workshop", "jerry island")) {
+            return IslandArea.JERRYS_WORKSHOP;
+        } else if (isExactLocation(evidence, "the garden") || isExactLocation(evidence, "garden")) {
+            return IslandArea.GARDEN;
         } else if (containsAny(evidence, "torrhus canyon", "torrhus heights", "miria's hut",
                 "pangolin hideaway", "spring path", "torrhus springs", "spring shallows",
                 "spring depths", "ant's cave", "hotspot haven", "desert temple",

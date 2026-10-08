@@ -3,8 +3,8 @@
 
 The script performs no network access.  Its input is the MIT-licensed
 ``public/shardIcons`` directory from the reviewed SkyShards commit recorded in
-``shard_fusions.json``.  Only the catalog's 320 current IDs are emitted; the
-legacy L49 Rainbug icon is deliberately ignored.
+``shard_fusions.json``.  The reviewed SkyShards set is supplemented with the
+0.27.2 Folf, Flora, and Packrat images; legacy L49 Rainbug is ignored.
 """
 
 from __future__ import annotations
@@ -16,8 +16,9 @@ import subprocess
 from pathlib import Path
 
 
-EXPECTED_COUNT = 320
+EXPECTED_COUNT = 324
 EXPECTED_SOURCE_EXTRA = {"L49"}
+EXPECTED_SUPPLEMENT_IDS = {"R28", "L52", "U73"}
 NAMESPACE = "qcloudy_addition"
 
 
@@ -25,6 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--catalog", type=Path, required=True)
     parser.add_argument("--source-dir", type=Path, required=True)
+    parser.add_argument("--supplement-dir", type=Path, required=True)
     parser.add_argument("--assets-dir", type=Path, required=True)
     parser.add_argument(
         "--max-size",
@@ -49,15 +51,24 @@ def main() -> None:
 
     catalog_ids = {str(shard.get("id", "")) for shard in shards}
     if len(catalog_ids) != EXPECTED_COUNT or "L49" in catalog_ids or "" in catalog_ids:
-        raise ValueError("catalog IDs must be 320 unique current IDs without L49 Rainbug")
+        raise ValueError(
+            f"catalog IDs must be {EXPECTED_COUNT} unique current IDs without L49 Rainbug"
+        )
 
     source_by_id = {path.stem: path for path in args.source_dir.glob("*.png")}
     missing = catalog_ids - source_by_id.keys()
     extra = source_by_id.keys() - catalog_ids
-    if missing or set(extra) != EXPECTED_SOURCE_EXTRA:
+    if set(missing) != EXPECTED_SUPPLEMENT_IDS or set(extra) != EXPECTED_SOURCE_EXTRA:
         raise ValueError(
             f"reviewed icon set mismatch; missing={sorted(missing)}, extra={sorted(extra)}"
         )
+    supplement_by_id = {path.stem: path for path in args.supplement_dir.glob("*.png")}
+    if set(supplement_by_id) != EXPECTED_SUPPLEMENT_IDS:
+        raise ValueError(
+            "reviewed supplement mismatch; "
+            f"expected={sorted(EXPECTED_SUPPLEMENT_IDS)}, actual={sorted(supplement_by_id)}"
+        )
+    source_by_id.update(supplement_by_id)
 
     textures = args.assets_dir / NAMESPACE / "textures" / "item" / "shards"
     models = args.assets_dir / NAMESPACE / "models" / "item" / "shards"

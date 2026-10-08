@@ -497,6 +497,24 @@
     "name": "Snake Eyes",
     "texture": "ewogICJ0aW1lc3RhbXAiIDogMTc3MzMyOTEwMjEzOCwKICAicHJvZmlsZUlkIiA6ICIyMWUzNjdkNzI1Y2Y0ZTNiYjI2OTJjNGEzMDBhNGRlYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJHZXlzZXJNQyIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84N2Y2NTg1MGMzN2JkZmY3ODAyYTdkZDFjZDRkYzY3OTgzMDgzMThlNTNkMTU4OGRmMGZiYTEwOGM5ZTRkNmZlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0="
   },
+  "CONTRABAND": {
+    "base_item": "minecraft:paper",
+    "item_model": "hypixel_skyblock:item/uncategorized/contraband",
+    "name": "Drone Mod: Contraband",
+    "texture": ""
+  },
+  "GRUNGLE": {
+    "base_item": "minecraft:paper",
+    "item_model": "hypixel_skyblock:item/uncategorized/grungle",
+    "name": "Drone Mod: Grungle",
+    "texture": ""
+  },
+  "MINING_OFF_CAMERA": {
+    "base_item": "minecraft:paper",
+    "item_model": "hypixel_skyblock:item/uncategorized/mining_off_camera",
+    "name": "Drone Mod: Mining Off Camera",
+    "texture": ""
+  },
   "UNALLOYED_SPEED": {
     "base_item": "minecraft:player_head",
     "item_model": "minecraft:player_head",

@@ -35,11 +35,7 @@ public final class TabListTracker {
 
     public static void update(Minecraft client) {
         if (client.getConnection() == null || !LocationTracker.isSkyBlock()) {
-            lines = List.of();
-            commissions = List.of();
-            commissionProgress = List.of();
-            crimsonQuests = List.of();
-            petWidget = List.of();
+            clearReceivedState();
             return;
         }
 
@@ -101,7 +97,11 @@ public final class TabListTracker {
         return glacitePowder;
     }
 
-    public static void reset() {
+    /**
+     * Clears every value derived from a received Tab list. This is narrower
+     * than persisted profile memory and is safe to call at any world boundary.
+     */
+    public static void clearReceivedState() {
         lines = List.of();
         commissions = List.of();
         commissionProgress = List.of();
@@ -110,6 +110,10 @@ public final class TabListTracker {
         mithrilPowder = "—";
         gemstonePowder = "—";
         glacitePowder = "—";
+    }
+
+    public static void reset() {
+        clearReceivedState();
     }
 
     static void updatePowders(List<String> current) {

@@ -13,10 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 # so the released mod never needs NEU, Firmament, a network connection, or a
 # local repository at runtime.
 REPO = ROOT / "config/notenoughupdates/repo"
-OUTPUT = ROOT / "src/main/resources/assets/autumecloudyaddition/data"
+OUTPUT = ROOT / "src/main/resources/assets/qcloudy_addition/data"
 FORMATTING = re.compile(r"§.")
 MODEL = re.compile(r'ItemModel:"([^"]+)"')
 TEXTURE = re.compile(r'Value:"([A-Za-z0-9+/=]+)"')
+OFFICIAL_API_PET_ITEMS = {
+    # Hypixel 0.27.2 items resource. These Drone Mods are not yet present in
+    # every local NEU snapshot, so keep the committed offline renderer stable.
+    "CONTRABAND": ("Drone Mod: Contraband", "hypixel_skyblock:item/uncategorized/contraband"),
+    "GRUNGLE": ("Drone Mod: Grungle", "hypixel_skyblock:item/uncategorized/grungle"),
+    "MINING_OFF_CAMERA": (
+        "Drone Mod: Mining Off Camera",
+        "hypixel_skyblock:item/uncategorized/mining_off_camera",
+    ),
+}
 
 
 def clean(value: str) -> str:
@@ -123,6 +133,13 @@ def main() -> None:
             "item_model": model.group(1) if model else base_item,
             "texture": texture.group(1) if texture else "",
         }
+    for item_id, (name, model) in OFFICIAL_API_PET_ITEMS.items():
+        accessories.setdefault(item_id, {
+            "name": name,
+            "base_item": "minecraft:paper",
+            "item_model": model,
+            "texture": "",
+        })
 
     (OUTPUT / "pet_skin_names.json").write_text(
         json.dumps(skin_names, indent=2, sort_keys=True) + "\n"

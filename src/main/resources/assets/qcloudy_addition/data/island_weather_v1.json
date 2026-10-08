@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "hypixel-skyblock-0.27.2",
+  "source": "https://hypixel.net/threads/hypixel-skyblock-0-27-2-the-minister-update-greenhouse-qol-and-more.6159904/",
+  "islands": [
+    {
+      "island": "CRIMSON_ISLE",
+      "name": "Crimson Isle",
+      "mild": {
+        "id": "crimson_isle.ashfall",
+        "name": "Ashfall",
+        "effects": ["+25 Fishing Speed", "+5 Combat Wisdom", "+2.5 Trophy Fish Chance"]
+      },
+      "extreme": {
+        "id": "crimson_isle.hellstorm",
+        "name": "Hellstorm",
+        "effects": ["+50 Fishing Speed", "+10 Combat Wisdom", "+5 Trophy Fish Chance", "Trophy Fish are 5% more likely to be Gold or Diamond"]
+      }
+    },
+    {
+      "island": "SPIDERS_DEN",
+      "name": "Spider's Den",
+      "mild": {
+        "id": "spiders_den.rain",
+        "name": "Rain",
+        "effects": ["+25 Fishing Speed", "+5 Combat Wisdom", "+2.5% Sea Creature Chance", "Rain Slimes spawn around the island"]
+      },
+      "extreme": {
+        "id": "spiders_den.thunderstorm",
+        "name": "Thunderstorm",
+        "effects": ["+50 Fishing Speed", "+10 Combat Wisdom", "+5% Sea Creature Chance", "Toxic Rain Slimes spawn around the island"]
+      }
+    },
+    {
+      "island": "MOONGLADE_MARSH",
+      "name": "Moonglade Marsh",
+      "mild": {
+        "id": "moonglade_marsh.moonfall",
+        "name": "Moonfall",
+        "effects": ["+25 Fishing Speed", "+10 Foraging Fortune", "+2.5% Sea Creature Chance"]
+      },
+      "extreme": {
+        "id": "moonglade_marsh.fog",
+        "name": "Fog",
+        "effects": ["+50 Fishing Speed", "+25 Foraging Fortune", "+5% Sea Creature Chance", "Gain 10% more Forest Whispers"]
+      }
+    },
+    {
+      "island": "DWARVEN_MINES",
+      "name": "Dwarven Mines",
+      "mild": {
+        "id": "dwarven_mines.breeze",
+        "name": "Breeze",
+        "effects": ["+100 Mining Speed", "+25 Mining Fortune", "+25 Fishing Speed"]
+      },
+      "extreme": {
+        "id": "dwarven_mines.mist",
+        "name": "Mist",
+        "effects": ["+250 Mining Speed", "+50 Mining Fortune", "+50 Fishing Speed", "Gain 10% more Mithril Powder"]
+      }
+    },
+    {
+      "island": "CRYSTAL_HOLLOWS",
+      "name": "Crystal Hollows",
+      "mild": {
+        "id": "crystal_hollows.breeze",
+        "name": "Breeze",
+        "effects": ["+100 Mining Speed", "+25 Mining Fortune", "+25 Fishing Speed"]
+      },
+      "extreme": {
+        "id": "crystal_hollows.rockfall",
+        "name": "Rockfall",
+        "effects": ["+250 Mining Speed", "+50 Mining Fortune", "+50 Fishing Speed", "Gain 10% more Gemstone Powder"]
+      }
+    },
+    {
+      "island": "GLACITE_TUNNELS",
+      "name": "Glacite Tunnels",
+      "mild": {
+        "id": "glacite_tunnels.breeze",
+        "name": "Breeze",
+        "effects": ["+100 Mining Speed", "+25 Mining Fortune", "+25 Fishing Speed"]
+      },
+      "extreme": {
+        "id": "glacite_tunnels.snowstorm",
+        "name": "Snowstorm",
+        "effects": ["+250 Mining Speed", "+50 Mining Fortune", "+50 Fishing Speed", "Gain 10% more Glacite Powder"]
+      }
+    },
+    {
+      "island": "THE_END",
+      "name": "The End",
+      "mild": {
+        "id": "the_end.wispful",
+        "name": "Wispful",
+        "effects": ["+25 Mining Fortune", "+1 Tracking", "+5 Combat Wisdom"]
+      },
+      "extreme": {
+        "id": "the_end.void_storm",
+        "name": "Void Storm",
+        "effects": ["+50 Mining Fortune", "+2.5 Tracking", "+10 Combat Wisdom", "Superior Dragons are 1% more likely to spawn"]
+      }
+    },
+    {
+      "island": "BACKWATER_BAYOU",
+      "name": "Backwater Bayou",
+      "mild": {
+        "id": "backwater_bayou.smog",
+        "name": "Smog",
+        "effects": ["+25 Fishing Speed", "+2.5 Sea Creature Chance", "+1 Treasure Chance"]
+      },
+      "extreme": {
+        "id": "backwater_bayou.acid_rain",
+        "name": "Acid Rain",
+        "effects": ["+50 Fishing Speed", "+5 Sea Creature Chance", "+2.5 Treasure Chance", "+20% chance to catch two pieces of Junk at once"]
+      }
+    },
+    {
+      "island": "LOTUS_ATOLL",
+      "name": "Lotus Atoll",
+      "mild": {
+        "id": "lotus_atoll.tropical_rain",
+        "name": "Tropical Rain",
+        "effects": ["+25 Fishing Speed", "+2.5 Sea Creature Chance", "+2.5 Trophy Chance"]
+      },
+      "extreme": {
+        "id": "lotus_atoll.blossoming",
+        "name": "Blossoming",
+        "effects": ["+50 Fishing Speed", "+5 Sea Creature Chance", "+5 Trophy Chance", "Trophy Frogs are 5% more likely to be Gold or Diamond"]
+      }
+    },
+    {
+      "island": "GARDEN",
+      "name": "The Garden",
+      "mild": {
+        "id": "garden.rain",
+        "name": "Rain",
+        "effects": ["+5 Bonus Pest Chance", "+2.5 Overbloom", "+25 Farming Fortune"]
+      },
+      "extreme": {
+        "id": "garden.blooming",
+        "name": "Blooming",
+        "effects": ["+10 Bonus Pest Chance", "+5 Overbloom", "+50 Farming Fortune", "Gain 10% more Sowdust"]
+      }
+    },
+    {
+      "island": "JERRYS_WORKSHOP",
+      "name": "Jerry's Workshop",
+      "mild": {
+        "id": "jerrys_workshop.breeze",
+        "name": "Breeze",
+        "effects": ["+25 Fishing Speed", "+5 Sea Creature Chance", "+2.5 Treasure Chance"]
+      },
+      "extreme": {
+        "id": "jerrys_workshop.blizzard",
+        "name": "Blizzard",
+        "effects": ["+50 Fishing Speed", "+10 Sea Creature Chance", "+5 Treasure Chance", "Gain 10% more Ice Essence"]
+      }
+    }
+  ]
+}

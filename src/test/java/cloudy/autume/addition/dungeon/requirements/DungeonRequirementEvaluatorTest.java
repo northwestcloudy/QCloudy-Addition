@@ -100,6 +100,30 @@ final class DungeonRequirementEvaluatorTest {
     }
 
     @Test
+    void numericThresholdsAreInclusiveAndFailOnlyOnTheDisallowedSide() {
+        DungeonRequirementPolicy policy = new DungeonRequirementPolicy(DungeonFloorKey.F7,
+                LongRule.enabled(50), false,
+                LongRule.enabled(450_000), DecimalRule.enabled(8.0),
+                LongRule.enabled(1_400), false, false, false, false);
+
+        DungeonRequirementEvaluation below = DungeonRequirementEvaluator.evaluate(
+                policy, numericEvidence(49, 449_999, Math.nextDown(8.0), 1_399), ARCHER);
+        DungeonRequirementEvaluation equal = DungeonRequirementEvaluator.evaluate(
+                policy, numericEvidence(50, 450_000, 8.0, 1_400), ARCHER);
+        DungeonRequirementEvaluation above = DungeonRequirementEvaluator.evaluate(
+                policy, numericEvidence(51, 450_001, Math.nextUp(8.0), 1_401), ARCHER);
+
+        assertEquals(List.of(
+                        DungeonRequirement.MINIMUM_FLOOR_COMPLETIONS,
+                        DungeonRequirement.MINIMUM_AVERAGE_SECRETS,
+                        DungeonRequirement.MINIMUM_MAGICAL_POWER),
+                below.failures().stream().map(RequirementFinding::requirement).toList());
+        assertEquals(PASS, equal.status());
+        assertEquals(List.of(DungeonRequirement.MAXIMUM_FASTEST_COMPLETION),
+                above.failures().stream().map(RequirementFinding::requirement).toList());
+    }
+
+    @Test
     void unknownEvidenceNeverTurnsIntoZeroOrConfirmedAbsence() {
         DungeonRequirementEvidence unavailable = DungeonRequirementEvidence.unavailable(
                 DungeonFloorKey.F3, "Profile data is stale");
@@ -275,6 +299,17 @@ final class DungeonRequirementEvaluatorTest {
             PresenceEvidence enderDragon) {
         return new DungeonRequirementEvidence(floor, runs, dupe, fastest, secrets,
                 magicalPower, witherBlade, terminator, goldenDragon, enderDragon);
+    }
+
+    private static DungeonRequirementEvidence numericEvidence(
+            long runs, long fastest, double secrets, long magicalPower) {
+        DungeonRequirementEvidence unavailable = DungeonRequirementEvidence.unavailable(
+                DungeonFloorKey.F7, "Unused non-numeric evidence");
+        return new DungeonRequirementEvidence(DungeonFloorKey.F7,
+                LongValue.known(runs), unavailable.duplicateClass(), LongValue.known(fastest),
+                DecimalValue.known(secrets), LongValue.known(magicalPower),
+                unavailable.witherBlade(), unavailable.terminator(),
+                unavailable.goldenDragon(), unavailable.enderDragon());
     }
 
     private static DungeonRequirementEvidence dupeEvidence(

@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PetSkinTrackerTest {
     @BeforeEach
@@ -61,5 +64,53 @@ final class PetSkinTrackerTest {
         assertEquals(true, PetSkinTracker.skinBelongsToPet("golden_dragon_ancient", "Golden Dragon"));
         assertEquals(false, PetSkinTracker.skinBelongsToPet("slime_spring", "Golden Dragon"));
         assertEquals(false, PetSkinTracker.skinBelongsToPet("jade_dragon_default", "Golden Dragon"));
+    }
+
+    @Test
+    void parsesAuthoritativeSpecialTierAndInstanceFromPetInfo() {
+        var info = PetSkinTracker.parsePetInfoJson("""
+                {"type":"PHOENIX","active":true,"tier":"VERY SPECIAL",\
+                 "uuid":"A1-B2-C3","heldItem":"PET_ITEM_LUCKY_CLOVER","exp":123.5}
+                """);
+
+        assertNotNull(info);
+        assertEquals(PetTier.VERY_SPECIAL, info.tier());
+        assertEquals("a1b2c3", info.instanceId());
+
+        PetTracker.updateFromTab(java.util.List.of("Pet:", " [Lvl 100] Phoenix", " MAX LEVEL"));
+        PetSkinTracker.rememberReceivedPetInfo(info, "");
+        assertEquals(PetTier.VERY_SPECIAL, PetTracker.current().tier());
+        assertEquals("a1b2c3", PetTracker.current().instanceId());
+        assertEquals("PET_ITEM_LUCKY_CLOVER",
+                PetSkinTracker.currentDetails("Phoenix").heldItemId());
+    }
+
+    @Test
+    void isolatesReceivedDroneModsByConcretePetUuid() {
+        PetTracker.updateFromTab(java.util.List.of(
+                "Pet:", " [Lvl 1] Precursor Drone", " 0/100 XP (0%)"));
+        var first = PetSkinTracker.parsePetInfoJson("""
+                {"type":"PRECURSOR_DRONE","active":true,"tier":"LEGENDARY",\
+                 "uuid":"drone-one","heldItem":"GRUNGLE"}
+                """);
+        var second = PetSkinTracker.parsePetInfoJson("""
+                {"type":"PRECURSOR_DRONE","active":true,"tier":"LEGENDARY",\
+                 "uuid":"drone-two","heldItem":"CONTRABAND"}
+                """);
+        PetSkinTracker.rememberReceivedPetInfo(first, "");
+        assertEquals("GRUNGLE", PetSkinTracker.currentDetails("Precursor Drone").heldItemId());
+        PetSkinTracker.rememberReceivedPetInfo(second, "");
+        assertEquals("CONTRABAND", PetSkinTracker.currentDetails("Precursor Drone").heldItemId());
+
+        PetTracker.noteMetadata("PRECURSOR_DRONE", PetTier.LEGENDARY, "drone-one");
+        assertEquals("GRUNGLE", PetSkinTracker.currentDetails("Precursor Drone").heldItemId());
+        assertTrue(PetSkinTracker.isKnownDroneMod("MINING_OFF_CAMERA"));
+        assertEquals(false, PetSkinTracker.isKnownDroneMod("PET_ITEM_LUCKY_CLOVER"));
+    }
+
+    @Test
+    void rejectsMalformedPetInfoInsteadOfInventingMetadata() {
+        assertNull(PetSkinTracker.parsePetInfoJson("not-json"));
+        assertNull(PetSkinTracker.parsePetInfoJson("{\"tier\":\"SPECIAL\"}"));
     }
 }

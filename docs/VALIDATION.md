@@ -1,3 +1,34 @@
+# QCloudy_Addition 0.3.10-alpha13 SkyBlock 0.27.2 validation status
+
+Date: 2026-10-08<br>
+Deliverable target: Minecraft 26.1.2 only<br>
+Java: 25
+
+## Scope
+
+`0.3.10-alpha13` adds evidence-bounded support for SkyBlock 0.27.2 without treating a schedule, nearby entity, formatting color, or incomplete third-party repository as authoritative state. It adds the 11-island Weather catalog and HUD, Safari Eagle observations, SPECIAL/VERY SPECIAL pet-tier handling, per-instance Precursor Drone metadata with all three Drone Mods, Mango Dye Tree Gift handling, bounded mob-level parsing, the four new Shards and reviewed rate/effect changes, plus regression coverage for Dungeon requirement boundaries, Group Builder freshness, and world-change invalidation.
+
+## Automated/build status
+
+- Minecraft 26.1.2/Java 25 `clean build prepareRelease` completed successfully: 70 test suites, 483 tests, 0 failures, 0 errors, and 0 skipped.
+- Weather regressions cover the exact 11-island/22-weather table, explicit received timers, cross-island rejection, Mineshaft exclusion, explicit clear messages, and world/island invalidation. Safari Eagle and pet regressions cover bounded shop/widget evidence, owner binding, authoritative `petInfo` tier/UUID data, SPECIAL/VERY SPECIAL non-inference, and per-UUID Drone Mod isolation.
+- The Shard catalog, rates, item definitions, models, and textures each contain 324 entries. C48 Chocobun, R28 Folf, L52 Flora, and U73 Packrat are included; Packrat's verified Bazaar ID is retained while its unpublished client internal ID remains intentionally empty. Rabbit shop rates use the documented stock over 124 hours, and source-supported upstream rate/effect changes are pinned with provenance.
+- Both archives contain zero duplicate paths and pass JDK 25 `jar --validate` plus `unzip -t`. The playable JAR declares exact internal version `0.3.10-alpha13+26.1.2`, client-only environment, Minecraft 26.1.2, Java 25, matching Fabric Loader/Fabric API requirements, and required `hypixel-mod-api >=1.0`. The `release/` copies are byte-identical to their `build/libs/` counterparts.
+- A local target-stack startup loaded 94 mods, including BZA 3.4.1, Firmament 44.3, SkyHanni 7.41, SkyBlocker 6.8.2, Mod Menu 18, and QCA Alpha 13. QCA reached its client initialization log and resource reload with no QCA exception or crash report. The run was then stopped intentionally.
+
+## Local build artifacts
+
+- `release/QCloudy_Addition-0.3.10-alpha13+26.1.2.jar` — 4,057,612 bytes — `e8701b4cda9b5c91af441aec9dfb844abf9effb9bf4e74e660393083ffa18a69`
+- `release/QCloudy_Addition-0.3.10-alpha13+26.1.2-sources.jar` — 3,238,294 bytes — `4ed75c3db2724879474a4d1f4f195dbe950d5546f28fc7e3acbf17942e12dff5`
+
+## Boundary
+
+- The startup used an unauthenticated development account, so it does not prove live Hypixel weather/menu/widget wording, Eagle ownership, pet `petInfo` shapes, Party Finder behavior, or server-side command acceptance. No production backend, GitHub Release, or Modrinth version was deployed or published.
+- The target stack exposed compatibility errors owned by its older third-party builds: SkyBlocker 6.8.2 rejected new `PHOENIX;7`/`PHOENIX;8` repository tiers, while SkyHanni 7.41 rejected new `HUNTING_FORTUNE`/`FISHING_NET` values and reported repository/network timing errors. These did not produce a QCA stack trace or terminate the client, and QCA does not patch another mod's private parsers.
+- `tools/generate_shard_fusion_data.py` remains the older 320-source normalization pipeline because current SkyShards/NEU data still lacks some 0.27.2 fields. The committed 324-entry runtime snapshot is tested and source-pinned; rerunning that older generator is not part of this release validation.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha12 overlapping-admission validation status
 
 Date: 2026-09-11<br>

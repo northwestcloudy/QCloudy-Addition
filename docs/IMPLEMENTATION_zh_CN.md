@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha12` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha13` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -56,6 +56,12 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 网络失败、超时、格式错误、schema 不支持、通道为 Beta/Alpha、缺少或重复匹配资产、序号未增加、只有 Sources、重定向或链接不可信时，检查器只记日志并停止，不向玩家报错，本次进程内也不重试；下一次启动仍可重新检查。成功后会把不可变结果交回 Minecraft 客户端线程；若此时不存在玩家，则结果只保存在内存，等下次进入世界展示。整个进程最多通过各版本 `MinecraftClientCompat.toastManager` 展示一次原版 `SystemToast`，并发送一条本地可点击聊天消息；两个操作分别打开 `https://qcloudy.net/download/` 与 `https://qcloudy.net/changelog/`，都不是 JAR 直链。QCA 不会下载、安装、替换、启动任何文件，也不会重启游戏。
 
 请求不会添加用户名、UUID、服务器地址、SkyBlock Profile、模组列表、玩法数值、遥测标识、Cookie、Token 或认证头。普通 HTTPS 传输仍会让目标服务器看到连接 IP 和 `QCloudy_Addition/<版本>` User-Agent。manifest 结果不会写入账号/Profile持久化文件。`ReleaseBuildInfoTest`、`ReleaseManifestTest`、`ReleaseUpdateCheckerTest` 与 `ReleaseUpdateStateTest` 覆盖构建门控、内嵌元数据、直连端点与传输边界、严格稳定通道/序号校验、精确资产选择、不可信 URL、畸形输入、重复匹配、进程级请求门控、等待结果保留与提醒只消费一次。
+
+### 1.3 SkyBlock 0.27.2 证据生命周期
+
+`IslandWeatherTracker` 只接受属于当前 `IslandArea`、且已经从聊天、Action Bar、Tab、计分板或标题受限 Weather 菜单收到的天气名称。`island_weather_v1.json` 精确固定 11 个岛、22 种普通/极端天气；只有同一证据携带时间才显示倒计时，不会本地推进公开周期。换岛、换世界、明确结束或 Mineshaft 状态都会清除快照。Weather 面板拥有独立外观、位置、缩放与效果行开关。
+
+`SafariEagleTracker` 只保存本次会话证据，当前只接入单个 Safari Essence Shop 物品或本机 Safari Widget。纯实体辅助函数在调用方没有独立证明本机归属时会拒绝，因此 QCA 不扫描任意附近 Eagle。没有可接受证据时，解锁、在场与品质保持未知；离开 Safari 或换世界即重置。`PetSkinTracker` 另行读取 Pets 菜单收到的 `petInfo`：只有受支持 tier 才参与经验曲线，UUID 用于精确实例存储，未知 UUID 的 Precursor Drone 不会读取或写入类型级配件状态。三种 Drone Mod 离线打包。换世界还会同时清理 Tab、宠物、Hunting、天气、钓鱼、Deployable、Dungeon 发布、PartyInfo 与 membership epoch 的运行时状态，但不丢弃用户设置或 Profile 记忆。
 
 ## 2. 设置、语言与 HUD
 
@@ -183,7 +189,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 - **读取内容：**客户端收到的原始游戏聊天 `Component` 与其 `SHOW_TEXT`，包括被兼容聊天压缩模组取消显示的消息。
 - **实现：**`TreeGiftAlertSession` 接受普通或多行聊天 Component，打开的区块 15 秒后失效。只发给玩家本人的 `+N rewards gained!` 汇总是归属凭证，并可读取其 `SHOW_TEXT` hover；精确 Bonus/生物行会先缓冲，汇总无论先到还是后到都能完成确认。已经证明为本人的礼物在结束边框后保留 5 秒，且只接受精确 `-A wild <生物> appeared!`；没有本人汇总的公共生物行仍然无效。每项稀有物每个礼物只提示一次。
 - **效果：**屏幕中央 `RARE TREE GIFT`、物品副标题和该功能自己的提示音。
-- **默认/对外：**功能、10种稀有物品和音效全开，音量64%；不发聊天或命令。
+- **默认/对外：**功能、包含 Mango Dye 的 11 种稀有物品和音效全开，音量 64%；不发聊天或命令。
 
 ## 7. 狩猎
 
@@ -326,7 +332,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ### 实现
 
-`PetTracker`维护身份、品质、等级、经验；`PetSkinTracker`只确认匹配的Profile/皮肤/配件，不复用完整无关ItemStack。`PetHeadResources`构造普通player head且不添加合成 `petInfo`；精确和最长皮肤家族前缀匹配动态帧。`PetLeveling`处理品质偏移的100级曲线与Golden/Jade/Rose Dragon 200级曲线。确认的皮肤、配件和总经验按宠物本地保留。
+`PetTracker` 维护身份、等级、经验、权威品质与可选实例 UUID；`PetSkinTracker` 只从收到的 Pets 菜单 `petInfo` 解析 tier/UUID，并确认匹配的 Profile/皮肤/配件，不复用完整无关 ItemStack。`PetHeadResources` 构造普通 player head 且不添加合成 `petInfo`；精确和最长皮肤家族前缀匹配动态帧。`PetLeveling` 只对受支持 tier 使用经验曲线，SPECIAL/VERY_SPECIAL Phoenix 保持未知而不会把共同的红色误当 Common；Golden/Jade/Rose Dragon 继续使用 200 级曲线。存在 UUID 时按具体实例保存，未知 UUID 的 Precursor Drone 只保留本次会话。离线配件表共 90 项，包括 Contraband、Grungle、Mining Off Camera。
 
 ### 效果
 
@@ -383,8 +389,8 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 ### 12.4 Attribute Shard Fusion Guide
 
 - **用途：**完整提供反向配方查询与正向用途查询，避免玩家猜测存在输入顺序区别的 Attribute Fusion 组合。
-- **打包数据来源：**`assets/qcloudy_addition/data/shard_fusions.json` 在构建前从当前 [Hypixel SkyBlock Wiki Attributes](https://hypixelskyblock.minecraft.wiki/w/Attributes) 效果/获取表与 [Attribute Fusion](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion) 规则离线生成；Shard 身份用 [SkyShards](https://github.com/Campionnn/SkyShards)、[NotEnoughUpdates 物品仓库](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO) 和 [Hypixel 官方 Bazaar 产品列表](https://api.hypixel.net/v2/skyblock/bazaar) 交叉检查。320 张本地 Shard PNG 来自 SkyShards 审核 MIT commit `9688031dbc4e726168ffceb0f44884ff26e6e728` 的 `public/shardIcons`；源集合共 321 张，生成时按目录允许列表筛选并排除 Rainbug。
-- **数据校准：**运行时目录必须严格包含 320 个官方 Bazaar Shard。相对过时的 317 项快照，补入 Anteater、Zombuddy、Troodon 与 Ghost Crab；Goldolot 使用 `R92`；Rainbug 因不在官方 Bazaar Shard 允许列表中而排除。Wiki Attributes 列表页面明确标注不完整/可能过时，因此只作为规则和属性说明，不作为数量权威。
+- **打包数据来源：**`assets/qcloudy_addition/data/shard_fusions.json` 是随模组提交的离线快照，交叉核对 [Attributes](https://hypixelskyblock.minecraft.wiki/w/Attributes)、[Attribute Fusion](https://hypixelskyblock.minecraft.wiki/w/Attribute_Fusion)、[SkyShards](https://github.com/Campionnn/SkyShards) commit `7adf1a88b90b9ad1aeb45fa49087cdfc6694cb9f`、[NEU 仓库](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO)、0.27.2 公告与 [官方 Bazaar](https://api.hypixel.net/v2/skyblock/bazaar)。324 套 item/model/PNG 资源全部打包。旧批量生成器在上游补齐全部 0.27.2 字段前仍是 320 项流程，不是本快照的权威来源。
+- **数据校准：**运行时目录严格包含 324 个官方 Bazaar Shard，新增 C48 Chocobun、R28 Folf、L52 Flora 与 U73 Packrat，并修正 Quartzfang、King Minos 的 0.27.2 效果。Packrat 的 Bazaar 产品确认为 `SHARD_PACKRAT_SKULL`，尚未公开的客户端 internal ID 留空而不是猜测；Rainbug 继续排除。
 - **实现：**`ShardFusionCatalog` 一次载入并校验随模组提交的 JSON，包括规范化富文本效果片段、获取方式、生物类型和语义颜色；搜索覆盖名称/ID/属性/效果/品质/分类/家族/Skill/生物类型/获取文字。有序输入索引同时服务 Recipes 与 Uses，因此拥有自然来源的 Shard（例如 Queen Bee）仍会显示全部 Fusion 配方。特殊规则对两种输入顺序对称检查；其余 ID 输出保留第一/第二输入顺序。Chameleon 按数字 ID 递增并在需要时滚入下一品质。`ShardItemResolver` 使用整次会话共享的原生 ItemStack 缓存：已经在打开菜单/物品栏收到的匹配物品会覆盖内置模型；未观察到的每个目录条目都解析到自身离线 Shard 纹理，不再回退成紫水晶。QCA 不发起 HTTP 或纹理请求；已经收到的玩家头继续交由 Minecraft 正常物品渲染管线处理。
 - **数量逻辑：**Chameleon 消耗 `1`；Reptile、Amphibian、Elemental 消耗 `2`；其他 Shard 消耗 `5`。ID/Chameleon 结果产出 `1`，特殊规则结果产出 `2`；Pure Reptile 显示按收到等级计算的 2–20% 双倍产出概率。最多三个可选输出按真实顺序显示，且不会等于任一输入。
 - **界面：**`ShardFusionScreen` 提供详细信息/合成来源/可合成内容标签、搜索结果、前进/后退历史、分页、物品图标、输入数量、候选输出、产量及明确顺序提示。详情显示完整效果与获取行，单独标注 Fusion-only，并在存在配方时显示已验证 Fusion 配方数量。Epic 使用 Minecraft `§5`；其他品质/属性/分类/生物类型/获取文字使用已审核语义颜色。鼠标悬停可点击 Shard 文字时只让可见文字变深并添加下划线。点击搜索框外、按 `Esc` 或 `Tab` 释放文字焦点，点击搜索框重新获得焦点。输入组合与候选输出按实际内容宽度紧凑居中，点击区域由相同可见边界生成。文字换行或缩放，不使用省略号。
@@ -394,7 +400,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 - **用途：**在保留原 Guide 作为精确直接配方参考的前提下，为目标 Shard/数量生成有深度限制、能阻止循环的多步路线。
 - **路线引擎：**`ShardFusionPlanner` 对目录全部 Shard 与有序产物配方进行有限深度动态松弛。路线可以终止于直接狩猎速率、可选 Bazaar 购买、已观察仓库数量，或继续 Fusion。选中路线会展开为不可变 Tree，并提供候选方案、Fusion 次数、预计成本/时间及狩猎/购买/仓库材料表。展开过程有循环、深度、算术和节点数保护。Materials Only 只改变显示，不改变计算。
-- **速率与 Kraken：**`shard_rates.json` 是从已审核 SkyShards 速率数据转换的版本化离线基线，并被强制要求与 320 个目录 ID 一一对应；玩家保存的本地单 Shard 速率优先覆盖。Hunter Fortune 只缩放正狩猎速率。Kraken 可用 Kuudra Tier、通关秒数、coins/hour 机会成本、钥匙成本、对应 Tier 倍率及 25 秒停顿推导速率。本地 Crocodile 等级控制 2–20% Pure Reptile 期望倍率，但整数材料仍按保守需求显示。
+- **速率与 Kraken：**`shard_rates.json` 是从已审核 SkyShards 数据转换的版本化离线基线，并被强制要求与 324 个目录 ID 一一对应。Rabbit Mafioso/Cat/Neighbor/Godmother 按 24/18/12/6 年度库存除以 124 小时，Packrat 为 64/124；只能 Fusion 的 Chocobun/Folf 与只有每 Copper 概率但没有可信小时吞吐量的 Flora 保持 `0`。玩家保存的单 Shard 速率优先覆盖。Hunter Fortune 只缩放正狩猎速率；Kraken 与 Pure Reptile 逻辑保持不变。
 - **价格：**`ShardPriceService` 异步委托给 `ShardBazaarService`，后者只接受固定 `QcaApiClient` 来源的 schema-v1 Shard 响应。`instant_buy` 对应 Hypixel Bazaar `quick_status.buyPrice`，`instant_sell` 对应 `quick_status.sellPrice`。价格必须为有限正数，产品 ID 必须是长度受限的 `SHARD_*`；本地结果最多缓存十分钟且不能越过服务端元数据。此路径不再反射 SkyHanni/Skyblocker/Firmament，也没有硬依赖。缺失、过期、畸形或不可用价格会安全关闭；Ironman 和只按速率的规划保持独立。
 - **仓库：**`ShardWarehouseManager` 每秒最多检查一次当前显示、客户端已经收到的容器。标题必须精确为 `Hunting Box` 或 `(当前页/总页数) Hunting Box`；每个 Shard 必须能解析到目录 ID/名称与精确 `Owned: N Shards` lore。只更新当前可见页面；零个识别条目的过渡帧会被忽略。页面按当前本地 Profile 与 Shard ID 合并，并通过临时文件替换保存到 `config/qcloudy_addition_shard_warehouse.json`。QCA 不发送 `/hb`、不请求另一页、不点击槽位、不读取隐藏背包。
 - **界面与保存：**`ShardPlanningScreen` 提供 Plan、Recipes、Shards、Fusion Lines、Warehouse 与 Settings。直接配方可分别输入输入/输出筛选；Fusion 图节点位置可本地拖动；模式、目标、数量、自定义速率、图节点、价格侧选择、Kuudra 参数与 Materials Only 通过 QCA 配置持久化。Planner 只能显示资料，无法执行任何路线步骤。

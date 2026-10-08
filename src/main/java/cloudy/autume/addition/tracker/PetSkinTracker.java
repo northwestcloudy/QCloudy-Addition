@@ -21,6 +21,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +32,8 @@ public final class PetSkinTracker {
     private static final Map<String, String> LAST_SKIN_BY_PET = new HashMap<>();
     private static final Map<String, ResolvableProfile> LAST_PROFILE_BY_PET = new HashMap<>();
     private static final Map<String, PetDetails> DETAILS_BY_PET = new HashMap<>();
+    private static final Set<String> DRONE_MOD_IDS = Set.of(
+            "GRUNGLE", "CONTRABAND", "MINING_OFF_CAMERA");
     private static boolean memorySavesEnabled = true;
     private static final Pattern HELD_ITEM_MESSAGE = Pattern.compile("^Your pet is now holding (.+?)\\.$");
     private static final Pattern REMOVED_ITEM_MESSAGE = Pattern.compile("^You removed .+? from your pet!$");
@@ -64,7 +67,7 @@ public final class PetSkinTracker {
         LAST_PROFILE_BY_PET.remove(key);
         PetDetails details = currentDetails(key);
         if (details != null && !details.skinKey().isBlank()) {
-            remember(key, new PetDetails("", details.heldItemId(), details.totalExperience()));
+            remember(key, new PetDetails("", details.heldItemId(), details.totalExperience(), details.tier()));
         }
     }
 
@@ -78,12 +81,18 @@ public final class PetSkinTracker {
     }
 
     public static PetDetails currentDetails(String petName) {
-        String key = normalize(petName);
+        String petKey = normalize(petName);
+        String instanceId = activeInstanceId(petName);
+        String key = detailsKey(petKey, instanceId);
         PetDetails live = DETAILS_BY_PET.get(key);
         if (live != null) return live;
+        // A Drone without an observed instance UUID is session-only. Loading a
+        // legacy type-wide memory here could apply one Drone's mods to another.
+        if (isPrecursorDrone(petKey) && instanceId.isBlank()) return PetDetails.EMPTY;
         ModConfig.PetMemory memory = ConfigManager.get().pets.rememberedDetails.get(key);
         return memory == null ? PetDetails.EMPTY
-                : new PetDetails(memory.skinKey, memory.heldItemId, memory.totalExperience);
+                : new PetDetails(memory.skinKey, memory.heldItemId, memory.totalExperience,
+                PetTier.fromWire(memory.tier));
     }
 
     /** Retains an accessory name that was explicitly present in the received Tab widget. */
@@ -112,9 +121,18 @@ public final class PetSkinTracker {
             if (profile == null) LAST_PROFILE_BY_PET.remove(pet);
             else LAST_PROFILE_BY_PET.put(pet, profile);
             String heldItem = info.heldItem == null || info.heldItem.isBlank() ? heldItemFromLore(stack) : info.heldItem;
-            remember(pet, new PetDetails(normalizeSkin(info.skin), heldItem, info.experience));
+            rememberReceivedPetInfo(info, heldItem);
             return;
         }
+    }
+
+    static void rememberReceivedPetInfo(PetInfo info, String fallbackHeldItem) {
+        if (info == null) return;
+        PetTracker.noteMetadata(info.type, info.tier, info.instanceId);
+        String heldItem = info.heldItem == null || info.heldItem.isBlank()
+                ? java.util.Objects.requireNonNullElse(fallbackHeldItem, "") : info.heldItem;
+        remember(info.type, info.instanceId,
+                new PetDetails(normalizeSkin(info.skin), heldItem, info.experience, info.tier));
     }
 
     private static boolean isActivePet(ItemStack stack) {
@@ -134,7 +152,7 @@ public final class PetSkinTracker {
     private static void updateHeldItem(String petName, String heldItem) {
         String key = normalize(petName);
         PetDetails details = currentDetails(key);
-        remember(key, new PetDetails(details.skinKey(), heldItem, details.totalExperience()));
+        remember(key, new PetDetails(details.skinKey(), heldItem, details.totalExperience(), details.tier()));
     }
 
     private static void updateFromRenderedEntities(Minecraft client, PetTracker.PetSnapshot pet) {
@@ -173,31 +191,43 @@ public final class PetSkinTracker {
             if (bestProfile != null) LAST_PROFILE_BY_PET.put(key, bestProfile);
             PetDetails details = currentDetails(key);
             if (!bestSkin.equals(details.skinKey())) {
-                remember(key, new PetDetails(bestSkin, details.heldItemId(), details.totalExperience()));
+                remember(key, new PetDetails(bestSkin, details.heldItemId(), details.totalExperience(), details.tier()));
             }
         }
     }
 
     private static void remember(String petName, PetDetails details) {
-        String key = normalize(petName);
+        remember(petName, activeInstanceId(petName), details);
+    }
+
+    private static void remember(String petName, String instanceId, PetDetails details) {
+        String petKey = normalize(petName);
+        String key = detailsKey(petKey, instanceId);
         PetDetails clean = new PetDetails(normalizeSkin(details.skinKey()),
                 details.heldItemId() == null ? "" : details.heldItemId().trim(),
                 Double.isFinite(details.totalExperience()) && details.totalExperience() > 0.0
-                        ? details.totalExperience() : 0.0);
+                        ? details.totalExperience() : 0.0,
+                details.tier() == null ? PetTier.UNKNOWN : details.tier());
         DETAILS_BY_PET.put(key, clean);
+
+        // The official API identifies Drone Mods as pet items, but it does not
+        // document their per-instance petInfo representation. Until an actual
+        // UUID is received, keep any observed Drone state in this session only.
+        if (isPrecursorDrone(petKey) && normalizeInstanceId(instanceId).isBlank()) return;
 
         var memories = ConfigManager.get().pets.rememberedDetails;
         ModConfig.PetMemory previous = memories.get(key);
         boolean empty = clean.skinKey().isBlank() && clean.heldItemId().isBlank()
-                && clean.totalExperience() <= 0.0;
+                && clean.totalExperience() <= 0.0 && clean.tier() == PetTier.UNKNOWN;
         boolean unchanged = previous != null
                 && java.util.Objects.equals(previous.skinKey, clean.skinKey())
                 && java.util.Objects.equals(previous.heldItemId, clean.heldItemId())
-                && Double.compare(previous.totalExperience, clean.totalExperience()) == 0;
+                && Double.compare(previous.totalExperience, clean.totalExperience()) == 0
+                && java.util.Objects.equals(previous.tier, clean.tier().wireValue());
         if (unchanged || empty && previous == null) return;
         if (empty) memories.remove(key);
         else memories.put(key, new ModConfig.PetMemory(
-                clean.skinKey(), clean.heldItemId(), clean.totalExperience()));
+                clean.skinKey(), clean.heldItemId(), clean.tier().wireValue(), clean.totalExperience()));
         while (memories.size() > 128) {
             String oldest = memories.keySet().iterator().next();
             memories.remove(oldest);
@@ -215,6 +245,10 @@ public final class PetSkinTracker {
         return skin.equals(pet) || skin.startsWith(pet + "_");
     }
 
+    public static boolean isKnownDroneMod(String itemId) {
+        return itemId != null && DRONE_MOD_IDS.contains(itemId.trim().toUpperCase(Locale.ROOT));
+    }
+
     private static PetInfo petInfo(ItemStack stack) {
         if (stack.isEmpty()) return null;
         var data = stack.get(DataComponents.CUSTOM_DATA);
@@ -222,7 +256,11 @@ public final class PetSkinTracker {
         var root = data.copyTag();
         var attributes = root.getCompoundOrEmpty("ExtraAttributes");
         String raw = attributes.getStringOr("petInfo", root.getStringOr("petInfo", ""));
-        if (raw.isBlank()) return null;
+        return parsePetInfoJson(raw);
+    }
+
+    static PetInfo parsePetInfoJson(String raw) {
+        if (raw == null || raw.isBlank()) return null;
         try {
             JsonObject json = JsonParser.parseString(raw).getAsJsonObject();
             if (!json.has("type")) return null;
@@ -232,7 +270,11 @@ public final class PetSkinTracker {
             String heldItem = json.has("heldItem") && !json.get("heldItem").isJsonNull()
                     ? json.get("heldItem").getAsString() : null;
             double experience = json.has("exp") ? json.get("exp").getAsDouble() : 0.0;
-            return new PetInfo(type, active, skin, heldItem, experience);
+            PetTier tier = json.has("tier") && !json.get("tier").isJsonNull()
+                    ? PetTier.fromWire(json.get("tier").getAsString()) : PetTier.UNKNOWN;
+            String instanceId = json.has("uuid") && !json.get("uuid").isJsonNull()
+                    ? normalizeInstanceId(json.get("uuid").getAsString()) : "";
+            return new PetInfo(type, active, skin, heldItem, experience, tier, instanceId);
         } catch (RuntimeException ignored) {
             return null;
         }
@@ -287,10 +329,39 @@ public final class PetSkinTracker {
         return normalize(value).replace("pet_skin_", "");
     }
 
-    public record PetDetails(String skinKey, String heldItemId, double totalExperience) {
-        private static final PetDetails EMPTY = new PetDetails("", "", 0.0);
+    private static String activeInstanceId(String petName) {
+        PetTracker.PetSnapshot pet = PetTracker.current();
+        return pet != null && normalize(pet.name()).equals(normalize(petName))
+                ? normalizeInstanceId(pet.instanceId()) : "";
     }
 
-    private record PetInfo(String type, boolean active, String skin, String heldItem, double experience) {
+    private static String detailsKey(String normalizedPetName, String instanceId) {
+        String normalizedInstance = normalizeInstanceId(instanceId);
+        return normalizedInstance.isBlank() ? normalizedPetName : normalizedPetName + "#" + normalizedInstance;
+    }
+
+    private static String normalizeInstanceId(String value) {
+        if (value == null || value.isBlank()) return "";
+        return value.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private static boolean isPrecursorDrone(String normalizedPetName) {
+        return "precursor_drone".equals(normalizedPetName);
+    }
+
+    public record PetDetails(String skinKey, String heldItemId, double totalExperience, PetTier tier) {
+        private static final PetDetails EMPTY = new PetDetails("", "", 0.0, PetTier.UNKNOWN);
+
+        public PetDetails(String skinKey, String heldItemId, double totalExperience) {
+            this(skinKey, heldItemId, totalExperience, PetTier.UNKNOWN);
+        }
+
+        public PetDetails {
+            tier = tier == null ? PetTier.UNKNOWN : tier;
+        }
+    }
+
+    record PetInfo(String type, boolean active, String skin, String heldItem, double experience,
+                   PetTier tier, String instanceId) {
     }
 }

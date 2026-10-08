@@ -33,14 +33,15 @@ final class ShardFusionCatalogTest {
     }
 
     @Test
-    void loadsTheOfficial320ShardSetWithoutLegacyRainbug() {
-        assertEquals(320, catalog.shards().size());
-        assertEquals(320, catalog.shards().stream().map(ShardFusionCatalog.Shard::id).distinct().count());
-        assertEquals(320, catalog.shards().stream().map(ShardFusionCatalog.Shard::name).distinct().count());
-        assertEquals(320, catalog.shards().stream().map(ShardFusionCatalog.Shard::bazaarId).distinct().count());
-        assertEquals(320, catalog.shards().stream().map(ShardFusionCatalog.Shard::internalId).distinct().count());
+    void loadsTheOfficial324ShardSetWithoutLegacyRainbug() {
+        assertEquals(324, catalog.shards().size());
+        assertEquals(324, catalog.shards().stream().map(ShardFusionCatalog.Shard::id).distinct().count());
+        assertEquals(324, catalog.shards().stream().map(ShardFusionCatalog.Shard::name).distinct().count());
+        assertEquals(324, catalog.shards().stream().map(ShardFusionCatalog.Shard::bazaarId).distinct().count());
+        assertEquals(323, catalog.shards().stream().map(ShardFusionCatalog.Shard::internalId)
+                .filter(value -> !value.isBlank()).distinct().count());
         assertEquals(293, catalog.shards().stream().filter(shard -> !shard.idResult().isBlank()).count());
-        assertEquals(98, catalog.shards().stream().filter(shard ->
+        assertEquals(100, catalog.shards().stream().filter(shard ->
                 !shard.specialLeft().isBlank() || !shard.specialRight().isBlank()).count());
 
         assertEquals("Anteater", catalog.byId("R70").orElseThrow().name());
@@ -48,6 +49,15 @@ final class ShardFusionCatalogTest {
         assertEquals("Troodon", catalog.byId("R86").orElseThrow().name());
         assertEquals("Goldolot", catalog.byId("R92").orElseThrow().name());
         assertEquals("Ghost Crab", catalog.byId("L38").orElseThrow().name());
+        assertEquals("Chocobun", catalog.byId("C48").orElseThrow().name());
+        assertEquals("Folf", catalog.byId("R28").orElseThrow().name());
+        assertEquals("Flora", catalog.byId("L52").orElseThrow().name());
+        var packrat = catalog.byId("U73").orElseThrow();
+        assertEquals("Packrat", packrat.name());
+        assertEquals("SHARD_PACKRAT_SKULL", packrat.bazaarId());
+        assertTrue(packrat.internalId().isBlank());
+        assertSame(packrat, catalog.byItemId("SHARD_PACKRAT_SKULL").orElseThrow());
+        assertEquals(List.of("SHARD_PACKRAT_SKULL"), catalog.sources().unresolvedInternalIds());
         assertTrue(catalog.byName("Rainbug").isEmpty());
     }
 
@@ -160,7 +170,7 @@ final class ShardFusionCatalogTest {
             }
         }
 
-        assertEquals(320, resourceIds.size());
+        assertEquals(324, resourceIds.size());
         assertNull(ShardFusionCatalogTest.class.getResource(
                 "/assets/qcloudy_addition/textures/item/shards/l49.png"));
         assertNull(ShardFusionCatalogTest.class.getResource(
@@ -208,6 +218,22 @@ final class ShardFusionCatalogTest {
     }
 
     @Test
+    void supportsBothChocobunRoutesAndTheFolfRoute() {
+        var bunbun = catalog.byName("Bunbun").orElseThrow();
+        var cocoaleech = catalog.byName("Cocoaleech").orElseThrow();
+        var rabbitMafioso = catalog.byName("Rabbit Mafioso").orElseThrow();
+        var soulOfTheAlpha = catalog.byName("Soul of the Alpha").orElseThrow();
+        var kingMinos = catalog.byName("King Minos").orElseThrow();
+
+        assertTrue(catalog.fuse(bunbun.id(), cocoaleech.id()).orElseThrow()
+                .output("C48").isPresent());
+        assertTrue(catalog.fuse(bunbun.id(), rabbitMafioso.id()).orElseThrow()
+                .output("C48").isPresent());
+        assertTrue(catalog.fuse(soulOfTheAlpha.id(), kingMinos.id()).orElseThrow()
+                .output("R28").isPresent());
+    }
+
+    @Test
     void preservesSeparateIdAndSpecialSlotsWhenTheyYieldTheSameShard() {
         var recipe = catalog.fuse("C4", "R31").orElseThrow();
         var dreadwing = recipe.outputs().stream()
@@ -237,7 +263,7 @@ final class ShardFusionCatalogTest {
         var input = catalog.byId("C47").orElseThrow();
         var outputs = catalog.fuse(chameleon.id(), input.id()).orElseThrow().outputs();
 
-        assertEquals(List.of("U1", "C49", "U2"),
+        assertEquals(List.of("C48", "C49", "U1"),
                 outputs.stream().map(output -> output.shard().id()).toList());
         assertTrue(outputs.stream().allMatch(output -> output.count() == 1
                 && output.kind() == ShardFusionCatalog.FusionKind.CHAMELEON));

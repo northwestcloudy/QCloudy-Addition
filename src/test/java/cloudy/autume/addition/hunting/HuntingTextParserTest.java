@@ -227,6 +227,25 @@ final class HuntingTextParserTest {
     }
 
     @Test
+    void treeGiftMangoDyeRespectsItsConfiguredToggle() {
+        Map<String, Boolean> loot = new LinkedHashMap<>();
+        loot.put("Mango Dye", true);
+
+        Component ownRewards = Component.literal("+1 rewards gained! ").append(
+                Component.literal("(hover)").withStyle(style -> style.withHoverEvent(
+                        new HoverEvent.ShowText(Component.literal("Mango Dye (0.0001%)")))));
+        assertEquals(List.of("Mango Dye"),
+                HuntingTextParser.personalTreeGiftLoot(ownRewards, loot));
+        assertEquals("Mango Dye",
+                HuntingTextParser.treeGiftChatLoot("Mango Dye (0.0001%)", loot, true));
+
+        loot.put("Mango Dye", false);
+        assertEquals(List.of(), HuntingTextParser.personalTreeGiftLoot(ownRewards, loot));
+        assertEquals("",
+                HuntingTextParser.treeGiftChatLoot("Mango Dye (0.0001%)", loot, true));
+    }
+
+    @Test
     void readsTreeGiftLootFromReceivedHoverText() {
         Component message = Component.literal("+5 rewards gained! ").append(
                 Component.literal("(hover)").withStyle(style -> style.withHoverEvent(
@@ -264,6 +283,21 @@ final class HuntingTextParserTest {
                 HuntingTextParser.critterRarity("[Lv 10] Gemzie"));
         assertEquals(HuntingTextParser.ShardRarity.LEGENDARY,
                 HuntingTextParser.critterRarity("SPARKLING Wumpa"));
+    }
+
+    @Test
+    void parsesReceivedMobLevelFormatsWithoutGuessingFromUntaggedNames() {
+        assertEquals(1, HuntingTextParser.mobLevel("[Lv 1] Eagle 100/100❤"));
+        assertEquals(120, HuntingTextParser.mobLevel(
+                "[Lv 120] Mob Name 1.2M/1.2M❤"));
+        assertEquals(42, HuntingTextParser.mobLevel(
+                "§8[§7Lv 42§8] §cGemzie §a12k§c❤ ✯"));
+        assertEquals(1_000, HuntingTextParser.mobLevel(
+                "[Lv 1,000] Glyph Mob 2B/2B❤ ✦ ⚔"));
+
+        assertEquals(null, HuntingTextParser.mobLevel("Eagle 100/100❤"));
+        assertEquals(null, HuntingTextParser.mobLevel("Level 120 Mob Name 1.2M/1.2M❤"));
+        assertEquals(null, HuntingTextParser.mobLevel("[Lv x] Mob Name 1.2M/1.2M❤"));
     }
 
     @Test
