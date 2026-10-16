@@ -60,6 +60,29 @@ curl --fail https://api.qcloudy.net/ready
 
 ## 3. 更新与回滚
 
+### 2026-10-16 库存完整性补丁（宝塔文件面板）
+
+修复 `wardrobe_equipped_slot`、`sacks_counts` 普通元数据被误当成 NBT 容器，导致 `weapons.complete=false` 的问题。只跳过形状符合预期的这两个元数据字段；真实容器缺失、坏 NBT、未知字段解析失败和截断仍会阻止 `ABSENT`。证据版本保持 2，Mod 无需重新构建。
+
+本次唯一需要替换的生产文件是 `/opt/qcloudy-api/app/dungeon_service.py`。补丁 `release/qcloudy-api-inventory-coverage-fix-20261016.zip` 内只有 `app/dungeon_service.py`：
+
+1. 在宝塔打开 `/opt/qcloudy-api/app`，复制现有 `dungeon_service.py` 为 `dungeon_service.py.before-inventory-fix-20261016.bak`；已有同名备份时另取名称，不覆盖旧备份。
+2. 回到 `/opt/qcloudy-api`，上传补丁 ZIP 并解压到当前目录，仅覆盖 `app/dungeon_service.py`。确认没有生成 `app/app`，不选择清空目录。
+3. 保留 `/etc/qcloudy-api.env` 中现有 Production Key 与限流设置、`.venv`、数据库和其他应用文件。本补丁没有依赖变化，也不需要修改 Nginx 或执行 `daemon-reload`。
+4. 在宝塔终端依次执行下面的语法检查、重启和验证；语法检查失败时先恢复备份，不继续重启。
+
+```bash
+/opt/qcloudy-api/.venv/bin/python -m py_compile /opt/qcloudy-api/app/dungeon_service.py
+sudo systemctl restart qcloudy-api
+sudo systemctl is-active qcloudy-api
+curl -sS -i https://api.qcloudy.net/ready
+curl -sS -i 'https://api.qcloudy.net/v1/dungeons/quick-view/NorthwestCloudy?floor=F7'
+```
+
+进程应为 `active`，业务响应仍应为 evidence v2。四个必需容器都存在且成功解码、也没有其他容器失败或截断时，`weapons.complete` 应为 `true`，`containersFailed` 不再包含这两个普通元数据字段。若有真实容器问题，`complete=false` 仍是正确的保护结果；找到的武器仍为 `PRESENT`，未找到且覆盖完整才为 `ABSENT`。原始 player/profile 数据可能命中默认两分钟缓存，但新的完整性判定会立即应用于这些缓存数据。只有验证新的上游抓取及其时间时，才需要等待缓存刷新；Redis 原始缓存不会随重启清空。`/ready` 不验证 Hypixel Key。
+
+若服务启动失败，查看 `sudo journalctl -u qcloudy-api -n 100 --no-pager` 的错误，恢复刚才的 `dungeon_service.py` 备份并重启。无需回退或重新生成 API Key。
+
 ### Alpha 9 平均 Secrets 补丁（宝塔文件面板）
 
 本次后端改动只有一个生产文件：

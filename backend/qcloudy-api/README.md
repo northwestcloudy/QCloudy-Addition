@@ -85,7 +85,7 @@ Redis 是可选的共享缓存层；Redis 不可用时退回有条目数和字�
 - `ABSENT`：没有找到目标，并且相应数据源已被确认完整。
 - `UNAVAILABLE`：stale、Profile 选择不确定、数据缺失、partial 或解析失败。它不能当作 `ABSENT`。
 
-`weapons` 会分别返回 `witherBlade` 和 `terminator` 的状态，并附带 `complete`、`containersExpected`、`containersPresent`、`containersDecoded`、`containersFailed`、`containersMissing` 与 `truncated`。只有 `inv_contents`、`ender_chest_contents`、`backpack_contents`、`personal_vault_contents` 全部存在，所有返回容器均成功解析且没有截断时，未找到的武器才能成为 `ABSENT`。在 partial inventory 中已找到的武器仍可为 `PRESENT`，但未找到的另一把必须为 `UNAVAILABLE`。
+`weapons` 会分别返回 `witherBlade` 和 `terminator` 的状态，并附带 `complete`、`containersExpected`、`containersPresent`、`containersDecoded`、`containersFailed`、`containersMissing` 与 `truncated`。只有 `inv_contents`、`ender_chest_contents`、`backpack_contents`、`personal_vault_contents` 全部存在，所有返回的物品容器均成功解析且没有截断时，未找到的武器才能成为 `ABSENT`。普通元数据 `wardrobe_equipped_slot`（非布尔整数）和 `sacks_counts`（物品 ID 到非负、非布尔整数数量的映射）不计入容器覆盖，也不列入 `containersPresent/Decoded/Failed`；同名字段若形状异常、或出现未知字段，仍按物品容器保守解析。原始 inventory 的 64 项扫描上限保持不变。在 partial inventory 中已找到的武器仍可为 `PRESENT`，但未找到的另一把必须为 `UNAVAILABLE`。
 
 `pets` 会分别返回 `goldenDragon` 和 `enderDragon` 的状态，并附带有效 `complete` 与原始列表完整性 `sourceComplete`。只有 fresh、明确选择的 Profile 返回了完整 pets list 时，未找到的宠物才能成为 `ABSENT`。
 

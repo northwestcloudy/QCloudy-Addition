@@ -103,6 +103,22 @@ def _container_payloads(
     return payloads, complete
 
 
+def _is_inventory_metadata(key: str, value: Any) -> bool:
+    # These fields describe a slot selection and item counts, not NBT storage.
+    # Unexpected shapes still take the conservative container-decoding path.
+    if key == "wardrobe_equipped_slot":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if key == "sacks_counts" and isinstance(value, dict):
+        return all(
+            isinstance(item_id, str)
+            and isinstance(count, int)
+            and not isinstance(count, bool)
+            and count >= 0
+            for item_id, count in value.items()
+        )
+    return False
+
+
 def _items(
     inventory: dict[str, Any],
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
@@ -113,6 +129,8 @@ def _items(
     truncated = len(inventory) > 64
     for raw_key, value in list(inventory.items())[:64]:
         key = str(raw_key)
+        if _is_inventory_metadata(key, value):
+            continue
         present.append(key)
         payloads, structurally_complete = _container_payloads(key, value)
         container_complete = structurally_complete

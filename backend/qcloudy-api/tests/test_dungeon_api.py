@@ -255,6 +255,178 @@ async def test_dungeon_quick_view_rejects_invalid_floor_and_removed_pv_routes(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("item_id", "wither_blade_state", "terminator_state"),
+    [
+        ("STONE", "ABSENT", "ABSENT"),
+        ("HYPERION", "PRESENT", "ABSENT"),
+        ("TERMINATOR", "ABSENT", "PRESENT"),
+    ],
+)
+async def test_inventory_metadata_does_not_prevent_complete_weapon_evidence(
+    app_client, upstream, item_id, wither_blade_state, terminator_state
+) -> None:
+    _, client = app_client
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    ordinary_item = {"data": _inventory_blob("STONE", 0, "Stone")}
+    member["inventory"] = {
+        "inv_contents": {"data": _inventory_blob(item_id, 0, item_id)},
+        "ender_chest_contents": ordinary_item,
+        "backpack_contents": {"0": ordinary_item},
+        "personal_vault_contents": ordinary_item,
+        "wardrobe_equipped_slot": 2,
+        "sacks_counts": {"ENCHANTED_DIAMOND": 12, "COBBLESTONE": 128},
+    }
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weapons"]["complete"] is True
+    evidence = body["requirementsEvidence"]["weapons"]
+    assert evidence["complete"] is True
+    assert evidence["containersFailed"] == []
+    assert evidence["containersMissing"] == []
+    assert "wardrobe_equipped_slot" not in evidence["containersPresent"]
+    assert "sacks_counts" not in evidence["containersPresent"]
+    assert evidence["witherBlade"] == {"state": wither_blade_state}
+    assert evidence["terminator"] == {"state": terminator_state}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "unknown_container",
+    [
+        {"data": "not-valid-nbt"},
+        {"0": {"unexpected": 1}},
+    ],
+)
+async def test_unknown_invalid_inventory_container_still_blocks_weapon_absence(
+    app_client, upstream, unknown_container
+) -> None:
+    _, client = app_client
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    member["inventory"] = {
+        "inv_contents": {"data": _inventory_blob("HYPERION", 0, "Hyperion")},
+        "ender_chest_contents": {},
+        "backpack_contents": {},
+        "personal_vault_contents": {},
+        "wardrobe_equipped_slot": 2,
+        "sacks_counts": {"ENCHANTED_DIAMOND": 12},
+        "future_storage_contents": unknown_container,
+    }
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weapons"]["complete"] is False
+    evidence = body["requirementsEvidence"]["weapons"]
+    assert evidence["complete"] is False
+    assert evidence["containersFailed"] == ["future_storage_contents"]
+    assert evidence["containersMissing"] == []
+    assert evidence["witherBlade"] == {"state": "PRESENT"}
+    assert evidence["terminator"] == {
+        "state": "UNAVAILABLE",
+        "reason": "INVENTORY_INCOMPLETE",
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field", ["wardrobe_equipped_slot", "sacks_counts"])
+async def test_inventory_metadata_name_with_nbt_is_still_scanned(
+    app_client, upstream, field
+) -> None:
+    _, client = app_client
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    member["inventory"] = {
+        "inv_contents": {"data": _inventory_blob("HYPERION", 0, "Hyperion")},
+        "ender_chest_contents": {},
+        "backpack_contents": {},
+        "personal_vault_contents": {},
+        field: {"data": _inventory_blob("TERMINATOR", 0, "Terminator")},
+    }
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    evidence = response.json()["requirementsEvidence"]["weapons"]
+    assert evidence["complete"] is True
+    assert field in evidence["containersDecoded"]
+    assert evidence["witherBlade"] == {"state": "PRESENT"}
+    assert evidence["terminator"] == {"state": "PRESENT"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("wardrobe_equipped_slot", True),
+        ("wardrobe_equipped_slot", {"data": "not-valid-nbt"}),
+        ("sacks_counts", {"ENCHANTED_DIAMOND": True}),
+        ("sacks_counts", {"ENCHANTED_DIAMOND": -1}),
+        ("sacks_counts", {"data": "not-valid-nbt"}),
+    ],
+)
+async def test_malformed_inventory_metadata_still_blocks_weapon_absence(
+    app_client, upstream, field, value
+) -> None:
+    _, client = app_client
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    member["inventory"] = {
+        "inv_contents": {"data": _inventory_blob("HYPERION", 0, "Hyperion")},
+        "ender_chest_contents": {},
+        "backpack_contents": {},
+        "personal_vault_contents": {},
+        field: value,
+    }
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    evidence = response.json()["requirementsEvidence"]["weapons"]
+    assert evidence["complete"] is False
+    assert evidence["containersFailed"] == [field]
+    assert evidence["containersMissing"] == []
+    assert evidence["witherBlade"] == {"state": "PRESENT"}
+    assert evidence["terminator"] == {
+        "state": "UNAVAILABLE",
+        "reason": "INVENTORY_INCOMPLETE",
+    }
+
+
+@pytest.mark.asyncio
+async def test_inventory_metadata_does_not_bypass_container_scan_limit(
+    app_client, upstream
+) -> None:
+    _, client = app_client
+    member = upstream.profiles_payload["profiles"][0]["members"][PLAYER_UUID]
+    inventory = {
+        "inv_contents": {"data": _inventory_blob("HYPERION", 0, "Hyperion")},
+        "ender_chest_contents": {},
+        "backpack_contents": {},
+        "personal_vault_contents": {},
+        "wardrobe_equipped_slot": 2,
+        "sacks_counts": {"ENCHANTED_DIAMOND": 12},
+    }
+    inventory.update({f"extra_storage_{index}": {} for index in range(58)})
+    inventory["future_storage_contents"] = {
+        "data": _inventory_blob("TERMINATOR", 0, "Terminator")
+    }
+    member["inventory"] = inventory
+
+    response = await client.get("/v1/dungeons/quick-view/NorthwestCloudy?floor=F7")
+    assert response.status_code == 200
+    evidence = response.json()["requirementsEvidence"]["weapons"]
+    assert evidence["truncated"] is True
+    assert evidence["complete"] is False
+    assert evidence["containersFailed"] == []
+    assert evidence["containersMissing"] == []
+    assert "future_storage_contents" not in evidence["containersPresent"]
+    assert evidence["witherBlade"] == {"state": "PRESENT"}
+    assert evidence["terminator"] == {
+        "state": "UNAVAILABLE",
+        "reason": "INVENTORY_INCOMPLETE",
+    }
+
+
+@pytest.mark.asyncio
 async def test_partial_or_failed_inventory_never_proves_weapon_absence(
     app_client, upstream
 ) -> None:
@@ -265,6 +437,8 @@ async def test_partial_or_failed_inventory_never_proves_weapon_absence(
         "ender_chest_contents": {"data": "not-valid-nbt"},
         "backpack_contents": {},
         # personal_vault_contents is deliberately missing.
+        "wardrobe_equipped_slot": 2,
+        "sacks_counts": {"ENCHANTED_DIAMOND": 12},
     }
     member["pets_data"] = {}
 
