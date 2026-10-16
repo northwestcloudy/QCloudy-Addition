@@ -1,5 +1,47 @@
 # 更新日志
 
+## [0.3.11-beta] - 2026-10-16
+
+适用于 Minecraft 26.1.2 与 26.2 的 Beta，准备交付用户发布。本条目汇总公开 Beta 0.3.10 之后最终保留的玩家可见变化；下方 Alpha 条目继续作为开发历史保留。
+
+### Dungeon 新成员卡片与可选入队规则
+
+- 新增仅响应精确 Dungeon Finder 新成员事件的 Quick View：显示 Catacombs、所选 Profile 的 Secrets 与一位小数平均值、五职业等级与 Class Average、当前发布楼层的完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power。XP 和物品详情放在悬停中；真实缺失值明确标注，服务故障改为有冷却的简短警告。
+- F1–F7 与 M1–M7 共 14 层分别保存九条独立规则：完成次数、禁止重复职业、最快时间、平均 Secrets、历史最高 MP，以及 Wither Blade、Terminator、Golden Dragon、Ender Dragon 要求。Entrance 只显示 Profile。全部规则和自动操作总开关默认关闭，开启总开关必须确认。
+- 在 Group Builder 确认时捕获所选楼层，只在 Hypixel 精确排队成功消息后生效，并立即输出识别结果；自己的发布条目可确认楼层。已有队员和普通/手动加入者保持可信，不查询档案也不踢出。
+- 严格区分 UNKNOWN 与 FAIL：只有 UNKNOWN 时不踢人；某条规则未知可以与另一条规则的确认失败并存。自动移除还必须通过新鲜官方 PartyInfo 的队长/目标成员证明，以及发布条目、楼层、规则、会话和单次动作保护。职业证据不确定只停止 DUPE；修复多人同时加入时请求仍在排队却提前超时的问题。
+- 平均 Secrets 完全使用所选 Profile 自己的 Dungeon Secrets 和明确 F1–F7/M1–M7 完成次数；确认 Mage 新人跳过该规则，不支持或不完整的证据保持 UNKNOWN。独立后端修复会忽略普通库存元数据，不会把真实容器缺失或损坏误当成扫描完整。
+
+### SkyBlock 0.27.2
+
+- 新增覆盖 11 个支持岛屿的独立 Island Weather HUD，只接受服务器明确给出的当前岛屿天气；只有收到剩余时间才显示该剩余时间，换岛/换世界清除，不按周期猜测。
+- 新增可选 Safari Eagle 解锁、在场和品质显示，只使用直接观察到的商店或 Safari Widget 证据。
+- 保留收到的宠物品质和 UUID，包括 SPECIAL/VERY_SPECIAL Phoenix；Precursor Drone 配件状态按实例隔离，加入 Contraband、Grungle、Mining Off Camera 三种 Drone Mod。
+- 新增可单独开关的 Mango Dye Tree Gift 提醒，以及严格的行首 `[Lv N]` 狩猎文字识别。
+- 刷新全部 324 个 Bazaar Shard 的离线目录、图标、效果、配方与获取速度，包含 Chocobun、Folf、Flora 和 Packrat。
+
+### 聊天、兼容与日常修复
+
+- 新增可选 All、Party、Guild、Co-op 聊天频道切换，Officer 另有高级开关。切换保留草稿，收到 Hypixel 回执才确认当前频道；超时保持未知。
+- Fast Party Commands 为 `!warp` 与其他指令分别提供受众、独立本人开关及不区分大小写的成员白名单。好友/公会权限依赖完整的客户端已收列表，QCA 不自动刷新。
+- 离散选项改为可展开下拉框，入队规则总开关旁增加右键编辑提示。
+- 打包官方 Hypixel Mod API，以 Hello/Location 作为会话权威，改善能正常转发插件消息的加速器/代理兼容性；仅展示回退不能授权指令。
+- 钓鱼提示音即时观察短暂的最终 `!!!` 元数据状态，并保留逐鱼钩去重与 tick 兜底；仍由玩家手动抛竿、收杆。
+- Shard Planner 价格改为读取 QCloudy 有界 Bazaar 快照，不再依赖其他模组私有缓存。缺失价格保持未知，离线与 Ironman 规划仍可使用；开发中曾出现的通用 `//pv`、`/qpv` 浏览器不包含在本 Beta。
+
+### 兼容与验证边界
+
+- 需要 Java 25、Fabric Loader 0.19.3+，以及对应 Minecraft 26.1.2 或 26.2 的 Fabric API。只安装匹配版本的可运行 JAR，Sources JAR 供浏览源码。
+- 后端独立部署，不会由 Mod 安装更新。2026-10-16 的线上业务查询已确认新鲜版本 2 证据及后端修复后的武器容器完整覆盖；这不等于完整的已登录 Hypixel 游戏内 Party Finder、PartyInfo 与自动指令流程验收。本地测试和构建证据记录于 `docs/VALIDATION_zh_CN.md`。
+- 统一设置编辑和统一 HUD 编辑仍为默认关闭的实验性概念测试。稳定更新基线保持 Release 0.3.9、序号 1；本 Beta 不修改稳定 manifest，也不会成为更新目标。
+
+### Beta 文件
+
+- `QCloudy_Addition-0.3.11+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.11+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.11+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.11+26.2-Beta-sources.jar`
+
 ## [0.3.10-alpha13] - 2026-10-08
 
 仅面向 Minecraft 26.1.2 的未公开 Alpha 开发源码。当前公开测试版仍为 Beta 0.3.10，稳定 Release 与更新检查基线仍为 0.3.9。

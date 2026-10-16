@@ -10,6 +10,8 @@ QCloudy_Addition 将模组核心版本、Minecraft 目标版本、发布通道�
 - 每一次新的 Alpha 产物交付都必须在构建前把 `alpha_iteration` 精确递增一次。即使只是纠正后重新构建，也不得复用上一份交付的 Alpha 编号。
 - Beta 是公开测试通道，但不是稳定更新候选；Release 是游戏内更新检查追踪的稳定通道。
 
+当前产出是适用于 Minecraft 26.1.2 与 26.2、准备交付用户发布的 Beta 0.3.11。稳定更新检查基线保持 Release 0.3.9、序号 1；构建或发布本 Beta 不会修改稳定 manifest。
+
 ## Alpha 序号重置
 
 Alpha 序号只属于当前核心版本周期，不是跨版本永久累加的数字。当前面的核心版本因下一次 Beta 或 Release 周期而迭代时，Alpha 必须从 `alpha1` 重新开始；同一周期内再依次增加为 `alpha2`、`alpha3`，直到下一次核心版本迭代。
@@ -21,8 +23,8 @@ Alpha 序号只属于当前核心版本周期，不是跨版本永久累加的�
 
 ## 产物格式
 
-- Alpha：`QCloudy_Addition-0.3.10-alpha1+26.1.2.jar`。
-- Beta：`QCloudy_Addition-0.3.10+26.1.2-Beta.jar`。
+- Alpha：`QCloudy_Addition-0.3.11-alpha1+26.1.2.jar`。
+- Beta：`QCloudy_Addition-0.3.11+26.1.2-Beta.jar` 或 `QCloudy_Addition-0.3.11+26.2-Beta.jar`。
 - Release：`QCloudy_Addition-0.3.9+26.1.2-Release.jar`。
 - Sources 使用相同版本，并在 `.jar` 前增加 `-sources`。
 
@@ -32,8 +34,8 @@ Alpha 序号只属于当前核心版本周期，不是跨版本永久累加的�
 
 ```properties
 minecraft_version=26.1.2
-release_channel=Alpha
-mod_version=0.3.10
+release_channel=Beta
+mod_version=0.3.11
 alpha_iteration=1
 ```
 
@@ -41,8 +43,8 @@ alpha_iteration=1
 
 Fabric 内部元数据使用便于版本比较的格式：
 
-- Alpha：`0.3.10-alpha1+26.1.2`
-- Beta：`0.3.10-beta+26.1.2`
+- Alpha：`0.3.11-alpha1+26.1.2`
+- Beta：`0.3.11-beta+26.1.2` 或 `0.3.11-beta+26.2`
 - Release：`0.3.9+26.1.2`
 
 Gradle 会根据这些属性同时生成产物名称和内部元数据版本。不要再手动重命名已经构建的 JAR。

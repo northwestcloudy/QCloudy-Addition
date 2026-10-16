@@ -1,13 +1,13 @@
 # QCloudy_Addition
 
-QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息和背包质量优化。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码是仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 开发快照；当前公开测试版本仍为适配 Minecraft 26.1.2 与 26.2 的 Beta 0.3.10，最新稳定版仍为 Release 0.3.9。
+QCloudy_Addition 是纯客户端 Fabric 模组，专注于更清晰的 SkyBlock 地图、简洁的目标 HUD、被动视觉辅助、宠物信息、背包质量优化和可选组队/聊天工具。模组以英文为默认界面，并保留 Hypixel 发来的原始名称。当前源码准备交付 **Beta 0.3.11，支持 Minecraft 26.1.2 与 26.2**，汇总公开 Beta 0.3.10 之后完成的变化，等待用户发布；最新稳定版与更新检查基线仍为 Release 0.3.9。
 
 ## 快速入口
 
 - [功能总览](docs/FEATURES_zh_CN.md)
 - [实现与数据流](docs/IMPLEMENTATION_zh_CN.md)
 - [Modrinth 中文简介](docs/MODRINTH_DESCRIPTION_zh_CN.md)
-- [更新日志（当前源码 0.3.10-alpha13；下方保留公开 Beta 0.3.10）](CHANGELOG_zh_CN.md)
+- [更新日志（Beta 0.3.11；下方保留开发历史）](CHANGELOG_zh_CN.md)
 - [版本与产物命名规则](docs/VERSIONING_zh_CN.md)
 - [验收与验证](docs/VALIDATION_zh_CN.md)
 - [合规说明](docs/COMPLIANCE_zh_CN.md)
@@ -42,9 +42,9 @@ QCA 可以作为统一的功能与 HUD 编辑入口，直接控制自己的功�
 ### 通用
 
 - **手动重连**：在连接失败和断线界面加入一个原版尺寸的“重新连接”按钮。正常连接尝试开始时就记录目标，所以首次加入失败后也能使用。只有玩家点击按钮才会重新连接；没有倒计时、循环、重试计数、命令或自动加入。
-- **Dungeon Player Quick View 与入队规则**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员并输出彩色 Profile 卡。卡片显示 Catacombs 等级、总 Secrets/每 Run 平均 Secrets、五职业等级与 Class Average、当前发布楼层的完成次数/最快时间、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与 Magical Power。QCA 只接受由取消发布控件证明属于本机的 Party Finder 条目；计分板楼层仅作展示回退，不能授权自动操作。F1–F7 与 M1–M7 共 14 层分别保存、互不继承，Entrance 没有规则。每层可独立开启最低本层完成次数、禁止重复职业、最快完成时间上限、平均 Secrets 下限、Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon、Ender Dragon；数值规则各有开关和值。规则与自动操作总开关均默认关闭，开启总开关必须再次确认。关闭 Dungeon Quick View 会同时停止 Profile 与入队流程；自动操作关闭或本层全部规则关闭时仍照常输出 Profile，Entrance 也始终只显示 Profile。全部通过时只输出 Profile，不显示 PASS；证据未知、私密、过旧或不完整时输出 Profile 与原因，绝不踢人；确认有不满足项时先完整列出所有失败原因，然后仅在官方 PartyInfo 新鲜快照仍证明本机是队长、目标 UUID 仍在队内，并且同一自己的发布条目、楼层、规则、会话、世界与单次动作仍有效时，才在同一个客户端判定回合发送 `party kick <已校验玩家>`。Profile 卡原有红色下划线手动踢人操作继续保留。
+- **Dungeon Player Quick View 与入队规则**：当 Dungeon Finder 的精确消息报告新玩家加入 dungeon group 时，只分析这名新成员并输出彩色 Profile 卡。卡片显示 Catacombs 等级、所选 Profile 的 Secrets/一位小数平均 Secrets、五职业等级与 Class Average、当前发布楼层的完成次数/最快时间、四件护甲、Wither Blade/Terminator、Golden Dragon/Ender Dragon 与历史最高 Magical Power。精确左键点击 `Group Builder` 的绿宝石块 `Confirm Group` 时，QCA 捕获同一菜单里的 Catacombs 类型与楼层，最多保留为 15 秒候选；只有收到 Hypixel 精确排队成功消息才生效，并立即在聊天显示识别到的 `F/M/E` 或 `Missing`。之后由取消发布控件证明属于本机的 Party Finder 条目可确认或更新楼层；计分板楼层只作展示回退，不能授权自动操作。创建发布时已在队伍里的玩家与普通/手动加入者不会被检查或踢出，只将职业用于 DUPE；精确 Party Finder 新成员在通过前保持待判定。F1–F7 与 M1–M7 共 14 层分别保存、互不继承，Entrance 没有规则。每层可独立开启最低本层完成次数、禁止重复职业、最快完成时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon、Ender Dragon；数值规则各有开关和值。规则与自动操作总开关均默认关闭，开启总开关必须再次确认。关闭 Dungeon Quick View 会同时停止 Profile 与入队流程；自动操作关闭或本层全部规则关闭时仍照常输出 Profile，Entrance 也始终只显示 Profile。全部通过时只输出 Profile，不显示 PASS；只有 UNKNOWN 而无确认失败时，输出 Profile 与具体原因且不踢人。UNKNOWN 规则本身不能授权失败，但可与其他规则的确认失败并存。确认有失败时先完整列出所有失败项与同时存在的证据错误，然后仅在官方 PartyInfo 新鲜快照仍证明本机是队长、目标 UUID 仍在队内，并且同一自己的发布条目、楼层、规则、会话、世界与单次动作仍有效时，才发送一次 `party kick <已校验玩家>`。多人同时加入时，PartyInfo 回包窗口从各请求实际发送时开始；取消且未发出的请求会移除。总开关旁有“右键打开编辑”提示，Profile 卡保留红色下划线手动踢人操作。
 
-Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不会收到私有 Hypixel API Key，并且不直接访问需要认证的 Hypixel 档案端点。服务端用一次有限响应提供整张卡片。客户端会合并相同的并发请求，并把成功结果用于 Profile 展示、缓存 60 秒；已开启的自动判定会绕过这份完成缓存，另用十秒本地证据窗口。服务端对 player/Profile 来源保鲜 2 分钟，技术故障时最多使用 10 分钟旧缓存，使重复加入能够快速显示，同时不会把缺失数据静默当成零。Alpha 8 规则证据后端尚未部署，也没有在已登录 Hypixel 的实服验证；生产环境返回受支持证据前，规则只能 UNKNOWN/展示。平均 Secrets 证据目前也会返回 `SCOPE_MISMATCH`，因为账号 Secrets 与所选 Profile 完成次数范围并不一致。MP 规则使用所选 Profile 报告的历史最高 MP，因为当前来源没有可信的实时当前总值。
+Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不会收到私有 Hypixel API Key，并且不直接访问需要认证的 Hypixel 档案端点。服务端用一次有限响应提供整张卡片。客户端会合并相同的并发请求，并把成功结果用于 Profile 展示、缓存 60 秒；已开启的自动判定会绕过这份完成缓存，另用十秒本地证据窗口。服务端对 player/Profile 来源保鲜 2 分钟，技术故障时最多使用 10 分钟旧缓存，使重复加入能够快速显示，同时不会把缺失数据静默当成零。版本 2 证据只用所选 Profile 的 `dungeons.secrets` 除以同一 Profile 明确的 F1–F7/M1–M7 完成次数，排除 Entrance 与聚合数；确认 Mage 新人会跳过该规则。兼容版本 1 响应时，平均 Secrets 规则强制 UNKNOWN。后端独立部署，不会由 Mod 安装自动更新；2026-10-16 的线上业务查询已确认新鲜版本 2 证据及库存覆盖修复，完整的已登录 Hypixel 游戏内 Party Finder、PartyInfo 与自动指令流程仍需单独验收。MP 规则使用所选 Profile 报告的历史最高 MP，因为当前来源没有可信的实时当前总值。
 
 ### 地图
 
@@ -107,6 +107,8 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 ### 聊天
 
 - **聊天偷窥**：按住用户设置的按键或组合键，在不打开聊天界面的情况下临时显示完整高度的聊天历史。偷窥时鼠标滚轮默认翻聊天记录；二级设置可改为继续切换快捷栏。为避免按键冲突，偷窥键默认未绑定。
+- **聊天频道切换**：可选在原版聊天输入框上方显示 All、Party、Guild 与 SkyBlock Co-op，Officer 另有高级开关。点击保留完整草稿，并等待 Hypixel 精确回执后才标记当前频道；等待期间阻止再次切换和提交普通聊天，仍允许斜杠命令。超时会把频道标为未知，连接之间不保存旧状态。
+- **Fast Party Commands 权限**：`!warp` 与其他 `!` 指令分别选择允许的 Party 成员、好友、公会成员或两者；另有独立本人开关及不区分大小写的成员白名单。只处理 Party Chat；好友/公会权限来自完整的客户端已收列表，不自动发送刷新命令。离散选项使用可展开下拉框。
 
 ### HUD 外观
 
@@ -127,8 +129,8 @@ Quick View 只连接固定的 `https://api.qcloudy.net`；模组不包含也不�
 
 ## 安装
 
-1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2，或 Minecraft 26.2 与 Fabric API 0.154.2+26.2；Beta 0.3.10 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
-2. 将文件名末尾与当前 Minecraft 版本完全一致的 `QCloudy_Addition-*.jar` 放入实例 `mods` 文件夹；Mod Menu 为可选依赖。
+1. 安装 Minecraft 26.1.2 与 Fabric API 0.155.2+26.1.2，或 Minecraft 26.2 与 Fabric API 0.154.2+26.2；Beta 0.3.11 还需要 Fabric Loader 0.19.3 或更新版本及 Java 25。
+2. 按当前 Minecraft 版本选择 `QCloudy_Addition-0.3.11+26.1.2-Beta.jar` 或 `QCloudy_Addition-0.3.11+26.2-Beta.jar`，放入实例 `mods` 文件夹。只安装一份可运行 JAR，`-sources.jar` 供浏览源码；Mod Menu 为可选依赖。
 3. 启动游戏后按 `O` 或输入任一本地设置命令进行配置。
 
 ## 从源码构建
@@ -147,7 +149,7 @@ Hypixel 明确说明所有模组均由玩家自行承担使用风险，未明确
 
 Modrinth 中文发布描述：[docs/MODRINTH_DESCRIPTION_zh_CN.md](docs/MODRINTH_DESCRIPTION_zh_CN.md)
 
-当前 0.3.10 Beta 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
+当前 Beta 0.3.11 变化：[CHANGELOG_zh_CN.md](CHANGELOG_zh_CN.md)
 
 发布检查清单：[docs/PUBLISHING_CHECKLIST_zh_CN.md](docs/PUBLISHING_CHECKLIST_zh_CN.md)
 

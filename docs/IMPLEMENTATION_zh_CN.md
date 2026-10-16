@@ -1,6 +1,6 @@
 # QCloudy_Addition 功能实现与数据流细致说明
 
-本文跟踪仅适配 Minecraft 26.1.2 的未公开 `0.3.10-alpha13` 源码快照，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。当前公开测试版仍为 Beta `0.3.10`，最新稳定版仍为 Release `0.3.9`。
+本文跟踪适用于 Minecraft 26.1.2 与 26.2、准备交付用户发布的 Beta `0.3.11`，逐项说明每个功能的用途、读取的客户端信息、实现方式、应呈现的效果、默认状态，以及是否会产生对外操作。最新稳定版与更新检查基线仍为 Release `0.3.9`。
 
 ## 1. 总体架构
 
@@ -49,7 +49,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ### 1.2 永久开启的 Release 更新提醒
 
-这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Beta 0.3.10 内嵌当前已发布稳定版基线 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
+这是客户端生命周期基础设施，不是可配置玩法功能，因此没有 `ModConfig` 数值，也不显示功能卡片。`ReleaseBuildInfo` 会读取构建资源中内嵌的 QCA 通道、版本、Minecraft 目标与大于零的 Release 基线序号；Beta 0.3.11 内嵌当前已发布稳定版基线 `1`。客户端入口会为所有通道注册进入世界监听器，但 Alpha 会在本地门控处直接返回，不会安排任务或构造 HTTP 请求。对 Beta 与 Release，`ReleaseUpdateChecker` 的原子进程门控保证整个客户端进程最多安排一次检查。第一次进入世界后延迟五秒执行，网络工作不占用渲染/客户端线程。
 
 `ReleaseUpdateChecker` 最多尝试向 `https://www.qcloudy.net/assets/data/release-manifest.json` 发送一次 HTTPS `GET`：连接超时五秒、请求超时十秒、重定向策略为 `NEVER`、只接受 HTTP 200、User-Agent 为 `QCloudy_Addition/<版本>`，响应上限为 128 KiB。`ReleaseManifest` 解析 schema 版本 1，并要求 `channel` 精确为 `Release`、`releaseSequence` 为大于零且高于内嵌基线的整数、版本为三段纯数字且 Tag 精确为 `v<版本>`，同时资产列表中必须只有一项与当前 Minecraft 完全匹配的可运行文件 `QCloudy_Addition-<版本>+<minecraft>-Release.jar`。该资产还必须包含小写 `sha256:<64 位十六进制>`，而且 HTTPS URL 的主机、仓库、精确 `v<版本>` Release Tag 与文件名都必须符合官方 `northwestcloudy/QCloudy-Addition` GitHub 资产路径；重复匹配直接判为无效。它不会选择第一个模糊匹配的 Release，也不会把 Alpha/Beta 后缀当成稳定版本比较。
 
@@ -59,7 +59,7 @@ Feesh 使用 Kotlin 委托设置，而不是可直接修改的公开字段。适
 
 ### 1.3 SkyBlock 0.27.2 证据生命周期
 
-`IslandWeatherTracker` 只接受属于当前 `IslandArea`、且已经从聊天、Action Bar、Tab、计分板或标题受限 Weather 菜单收到的天气名称。`island_weather_v1.json` 精确固定 11 个岛、22 种普通/极端天气；只有同一证据携带时间才显示倒计时，不会本地推进公开周期。换岛、换世界、明确结束或 Mineshaft 状态都会清除快照。Weather 面板拥有独立外观、位置、缩放与效果行开关。
+`IslandWeatherTracker` 只接受属于当前 `IslandArea`、且已经从聊天、Action Bar、Tab、计分板或标题受限 Weather 菜单收到的天气名称。`island_weather_v1.json` 精确固定 11 个岛、22 种普通/极端天气；只有同一证据携带剩余时间才显示该时间，不在本地递减，也不会本地推进公开周期。换岛、换世界、明确结束或 Mineshaft 状态都会清除快照。Weather 面板拥有独立外观、位置、缩放与效果行开关。
 
 `SafariEagleTracker` 只保存本次会话证据，当前只接入单个 Safari Essence Shop 物品或本机 Safari Widget。纯实体辅助函数在调用方没有独立证明本机归属时会拒绝，因此 QCA 不扫描任意附近 Eagle。没有可接受证据时，解锁、在场与品质保持未知；离开 Safari 或换世界即重置。`PetSkinTracker` 另行读取 Pets 菜单收到的 `petInfo`：只有受支持 tier 才参与经验曲线，UUID 用于精确实例存储，未知 UUID 的 Precursor Drone 不会读取或写入类型级配件状态。三种 Drone Mod 离线打包。换世界还会同时清理 Tab、宠物、Hunting、天气、钓鱼、Deployable、Dungeon 发布、PartyInfo 与 membership epoch 的运行时状态，但不丢弃用户设置或 Profile 记忆。
 
@@ -431,7 +431,7 @@ QCA 通用玩家档案浏览已完整删除：不再有 `ProfileCommands`、`/qp
 
 计分板入队状态还会单独区分已确认 Hub/排队，与空白/残缺、已离开和正在地牢内；强地牢内证据优先于残留排队行。QCA 会在最终 PartyInfo 请求前及最终保护内部再次读取 Vanilla 实时计分板，不能只靠周期缓存授权操作。聊天缓存的职业绝不能授权 DUPE。DUPE 从冻结的 QCA 有效职业名单与新鲜 PartyInfo 中同时排除当前新人，再通过实时 Tab UUID 映射每一个冻结名字。人数不一致、身份集合不一致、名字无法映射、职业缺失/格式异常/冲突/过期，或新人职业未知时，会返回具体 DUPE UNKNOWN；只终止 DUPE，其他规则继续。若任何规则确认失败，Manager 会请求第二次最终 PartyInfo，先输出全部仍确认失败项与具体错误，紧邻下一步、在同一个客户端判定回合内最多执行一次 `sendCommand("party kick <已校验新成员>")`。最终保护会再次检查：权威 SkyBlock、同一会话/世界、排队与缓存中自己的发布 generation/楼层、policy revision 与数值均未改变、精确第二张 PartyInfo 票据、本机角色为 `LEADER`、目标 UUID/Tab 成员身份，以及动作键唯一。发布条目被清除/替换、Entrance 或仅计分板楼层、残缺/已离开/地牢内状态、PartyInfo 超时或过旧、不在队伍、失去队长、目标离队、配置改变、会话/世界改变、重复交付或连接缺失，都会阻止自动指令。客户端不会显示 PASS、“未发送踢人指令”或“已发送踢人指令”，不会倒计时或先发 Party Chat，也不会声称服务器真的移除了玩家。
 
-源码中的 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles；只有恰好一个 Profile 被标记为 selected 时才把选择视为确定。零个 selected 时显示最近保存的可见 Profile，多个 selected 时只在这些 selected 中显示最近保存的一份，但两种情况的全部入队证据都保持 UNKNOWN。随后只投影 Catacombs/职业 XP、指定层完成次数/最快时间、该 selected Profile 的 Dungeon Secrets 与明确 F1–F7/M1–M7 完成次数之和、历史最高 Magical Power、四个护甲槽、指定武器和两个龙宠。Entrance `0`、聚合 `total`、账号 Achievement 与 blood-mob 补偿不参与平均值。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；私密、缺失、异常数据与 0 次完成保持不可用。版本 2 规则证据返回分子、分母、`SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS` 范围和完整性。服务器 Key 只存在环境中，接口不是通用代理。Alpha 9 后端源码仍需单独更新并重启生产服务器，版本 2 响应与自动操作也都没有在已登录 Hypixel 的实服验证。版本 1 线上响应会让平均 Secrets 保持 UNKNOWN；没有受支持证据时只能展示/UNKNOWN。
+源码中的 FastAPI 服务只提供一个有界 Dungeon 响应：解析名称，并发读取 player 与 SkyBlock Profiles；只有恰好一个 Profile 被标记为 selected 时才把选择视为确定。零个 selected 时显示最近保存的可见 Profile，多个 selected 时只在这些 selected 中显示最近保存的一份，但两种情况的全部入队证据都保持 UNKNOWN。随后只投影 Catacombs/职业 XP、指定层完成次数/最快时间、该 selected Profile 的 Dungeon Secrets 与明确 F1–F7/M1–M7 完成次数之和、历史最高 Magical Power、四个护甲槽、指定武器和两个龙宠。Entrance `0`、聚合 `total`、账号 Achievement 与 blood-mob 补偿不参与平均值。有限 NBT 解码保留格式化名称与最多 80 行 lore，供客户端构造原生悬停。player/Profile 新鲜期两分钟，旧值上限十分钟且只在技术故障时使用；私密、缺失、异常数据与 0 次完成保持不可用。版本 2 规则证据返回分子、分母、`SELECTED_PROFILE_SECRETS_F1_F7_M1_M7_RUNS` 范围和完整性。服务器 Key 只存在环境中，接口不是通用代理。后端独立部署并重启，安装 Mod JAR 不会更新服务。2026-10-16 的生产 HTTP 业务查询已确认新鲜版本 2 证据与库存覆盖修复；完整的已登录 Hypixel 游戏内 Party Finder、PartyInfo 与自动指令流程仍需实服验收。版本 1 线上响应会让平均 Secrets 保持 UNKNOWN；没有受支持证据时只能展示/UNKNOWN。
 
 `MarketManager` 继续供 Shard Planner 与固定市场 API 使用。Bazaar 每 60 秒、active AH 每 120 秒、ended auctions 每 30 秒、静态资源每六小时刷新；Dungeon 查询不会启动或加速采集器。
 Release 检查状态和已经确认的远端结果只保存在本次进程内；不会持久化更新响应、提醒历史、用户名、UUID 或服务器地址。
@@ -464,4 +464,4 @@ Release 检查状态和已经确认的远端结果只保存在本次进程内；
 
 ## 15. 应如何验收
 
-自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与已审核参考模组组合。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境、提供方更新或规则解释。Alpha 9 的生产证据版本 2 部署，以及登录 Hypixel 后真实 Party Finder/PartyInfo/指令流程，仍是尚未完成的验证边界。因此 Release `0.3.9` 仍明确把统一设置和统一 HUD 编辑器标为实验性；登录 Hypixel 与真实整合包回归仍是独立的验证边界。
+自动测试覆盖解析器、默认值、设置路由、持久化修复、边界计算和归档结构；本地启动覆盖 Fabric 独立运行与已审核参考模组组合。但它们不能证明未来所有 Hypixel 文字、实服实体排列、玩家材质包、GUI Scale、延迟环境、提供方更新或规则解释。2026-10-16 的生产 HTTP 业务查询已确认新鲜版本 2 后端证据与库存覆盖修复；完整的已登录 Hypixel 游戏内 Party Finder、PartyInfo 与自动指令流程仍是尚未完成的独立验证边界。因此 Release `0.3.9` 仍明确把统一设置和统一 HUD 编辑器标为实验性；登录 Hypixel 与真实整合包回归仍是独立的验证边界。

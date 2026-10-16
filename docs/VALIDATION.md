@@ -1,3 +1,36 @@
+# QCloudy_Addition 0.3.11 Beta validation status
+
+Date: 2026-10-16<br>
+Deliverable targets: Minecraft 26.1.2 and 26.2<br>
+Java: 25.0.4; Gradle: 9.6.1; Fabric Loom: 1.17.17
+
+## Scope
+
+This output promotes the completed 0.3.10 Alpha development line to the next public-test core version, 0.3.11 Beta. It retains the existing client functionality and packaged data, updates current documentation, and makes the build-metadata test compare the actual Gradle channel/core/Minecraft/baseline values rather than a hard-coded Alpha version. The new core cycle resets `alpha_iteration` to 1; Beta filenames do not use that counter. Stable Release 0.3.9 and baseline sequence 1 remain unchanged.
+
+## Automated and artifact verification
+
+- Both targets completed Java 25 `clean test build prepareRelease`. Each target passed 70 suites / 483 tests, with 0 failures, errors, or skips: 966 passing client tests in total.
+- Both playable JARs and both Sources JARs pass ZIP CRC integrity, duplicate-path checks, JDK 25 `jar --validate`, and `unzip -t`; each `release/` file is byte-identical to its corresponding `build/<minecraft>/libs/` file.
+- Playable metadata declares `0.3.11-beta+<minecraft>`, exact target Minecraft, client-only environment, Java 25+, Fabric Loader 0.19.3+, matching Fabric API (0.155.2+26.1.2 or 0.154.2+26.2), and Hypixel Mod API. Homepage/source/issue metadata and Beta/core/baseline properties match. Each playable archive has 454 outer classes, all Java major version 69; the embedded Hypixel Mod API archive is present and passes CRC validation.
+- The unchanged offline snapshot retains 324 Shards, rates, item definitions, models and textures, 11 weather islands, and 90 pet accessories. Packaged JSON parses successfully. Environment files, backend code, website files and Git internals are not present in the mod archives. The old 320-entry generator was not run.
+- The build emitted the existing nonfatal Loom semantic-version warning for the nested Hypixel Mod API dependency's Maven version spelling; both builds and archive checks completed successfully.
+
+## Local artifacts
+
+- `release/QCloudy_Addition-0.3.11+26.1.2-Beta.jar` — 4,057,609 bytes — SHA-256 `7f8052a6f4529a7302fc57c5b90e49b0292b3043f49adbaf20bc24960e7fcf3a`
+- `release/QCloudy_Addition-0.3.11+26.1.2-Beta-sources.jar` — 3,238,290 bytes — SHA-256 `ec3cb080ce3d5cabb636dafe0d07923d6b110753ad71e60fcc17d6d6f344f809`
+- `release/QCloudy_Addition-0.3.11+26.2-Beta.jar` — 4,057,603 bytes — SHA-256 `6b1894553963e9e487e449863d0f0d49aa662fcf127164eb27a921b1c4d2bd41`
+- `release/QCloudy_Addition-0.3.11+26.2-Beta-sources.jar` — 3,238,275 bytes — SHA-256 `b37b47b879d045839668d83b95a73416560e31ef74bc6fc9da9aa8df71090e4d`
+
+## Backend, website and publication boundary
+
+- The separate backend repair was validated earlier on 2026-10-16: 63 backend tests passed, and the production Quick View at 08:53:48 Asia/Shanghai returned HTTP 200, fresh player/Profile sources, evidence version 2, complete weapon coverage and no failed/missing containers. Those checks do not prove the authenticated in-game Party Finder/PartyInfo/automatic-command flow. Installing this JAR does not deploy the backend.
+- This Beta task did not install a mod, launch a client, perform authenticated Hypixel gameplay, or validate every GUI scale or optional mod combination. Prior unauthenticated Alpha startup evidence is not Beta live-game validation.
+- GitHub/Modrinth release files and bilingual upload copy are prepared for the user; this task does not create a tag or publish a public version. Matching local Beta website HTML is prepared separately, while the stable manifest and download script remain unchanged; no website deployment occurred.
+
+---
+
 # QCloudy_Addition 0.3.10-alpha13 SkyBlock 0.27.2 validation status
 
 Date: 2026-10-08<br>

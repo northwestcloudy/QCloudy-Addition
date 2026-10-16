@@ -4,7 +4,7 @@
 
 QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、宠物信息、Century Cake 计时、Deployable 消失提醒，以及完整离线 Attribute Shard 指南与规划器整合进一个按功能分类的界面。
 
-> **当前公开测试版：Beta 0.3.10，支持 Minecraft 26.1.2 与 26.2；最新稳定版仍为 Release 0.3.9。** 必须下载与 Minecraft 版本完全一致的 JAR；需要 Java 25 与 Fabric API。
+> **Beta 0.3.11 已准备交付，支持 Minecraft 26.1.2 与 26.2，等待用户发布；最新稳定版仍为 Release 0.3.9。** 必须下载与 Minecraft 版本完全一致的 JAR；需要 Java 25、Fabric Loader 0.19.3+ 与 Fabric API。
 
 ## 实验性统一编辑器
 
@@ -14,7 +14,7 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ## 主要功能
 
-> **源码预览边界：**0.27.2 兼容、Attribute Shard Lab 中由 QCloudy 托管的市场价格来源与 Dungeon 玩家快速查看，属于仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 源码快照，不包含在公开 Beta 0.3.10 中。
+Beta 0.3.11 汇总 Beta 0.3.10 之后完成的变化，包括 SkyBlock 0.27.2 兼容、Dungeon 新成员卡片与可选入队规则、QCloudy 托管的 Shard 价格和聊天频道切换。
 
 ### Attribute Shard Lab
 
@@ -26,14 +26,20 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 ### Dungeon 玩家快速查看
 
-> **开发预览：**本节描述仅面向 Minecraft 26.1.2、尚未公开的 `0.3.10-alpha13` 源码快照；不包含在公开 Beta 0.3.10 中。版本 2 规则证据后端不会随 Mod 构建自动部署，自动操作路径也没有在已登录 Hypixel 的实服验证。
+> **验证边界：**后端独立部署，不会随 Mod 安装自动更新。2026-10-16 的线上业务查询已确认新鲜版本 2 证据与库存覆盖修复；完整的已登录 Hypixel 游戏内 Party Finder、PartyInfo 和自动指令流程仍需单独验收。自动操作与全部规则默认关闭。
 
-- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不浏览 Party Finder 列表。玩家精确点击 `Group Builder` 的确认项时，它把所选 Catacombs 类型/楼层保存为 15 秒候选，只在 Hypixel 精确排队成功行到达后提交，并立即输出识别到的 `F/M/E` 或 `Missing`，因此新人加入前就能诊断捕获结果。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
+- Dungeon Finder 有新玩家加入时，QCA 只分析刚加入者并输出彩色 Profile 卡，不扫描其他队伍，也不查询已有队员档案。玩家精确点击 `Group Builder` 的确认项时，它把所选 Catacombs 类型/楼层保存为 15 秒候选，只在 Hypixel 精确排队成功行到达后提交，并立即输出识别到的 `F/M/E` 或 `Missing`，因此新人加入前就能诊断捕获结果。卡片显示 Catacombs、selected Profile 的 Secrets/平均值、五职业等级与 Class Average、当前发布楼层完成次数/最快时间、护甲、指定武器/宠物与历史最高 Magical Power；XP 与原生物品详情放在悬停中，缺失值明确标注。
 - F1–F7 与 M1–M7 共 14 层规则完全独立，Entrance 无规则。每层可分别开启最低完成次数、禁止重复职业、最快时间上限、平均 Secrets 下限、历史最高 Magical Power 下限，以及必须拥有 Wither Blade、Terminator、Golden Dragon 或 Ender Dragon；数值规则各自保留开关和值。全部规则与自动操作总开关默认关闭，开启总开关必须确认。
 - 创建发布时已在队伍里的玩家与普通/手动加入者均可信，绝不检查或踢出；其职业只供 DUPE 使用。人数、身份或职业不确定时只停止 DUPE 并显示具体错误，其他规则继续。离队或判定失败的玩家会从跟踪名单移除。
-- PASS 只输出 Profile；UNKNOWN 输出 Profile 与原因并绝不踢人；FAIL 先完整列出全部确认失败与同时存在的具体错误，再仅在新鲜官方 PartyInfo 证明本机仍是队长、目标 UUID 仍在队内，并且自己的发布条目、楼层、规则、会话与单次动作均未变化时，才在同一客户端判定回合发送 `party kick <已校验玩家>`。多个入队判定重叠时，PartyInfo 回包窗口从各票据实际发送后开始，取消且未发送的票据会移除，不再在队列中提前超时或堵塞后续玩家。只靠计分板识别楼层、Entrance、资料缺失/私密/过旧/不匹配/不完整、PartyInfo 不确定或网络失败，都不能授权踢人。Profile 卡仍保留红色下划线手动操作。
-- 证据版本 2 只用 selected Profile 的 Dungeon Secrets 与明确 F1–F7/M1–M7 完成次数计算平均值；Entrance、聚合数、账号 Achievement 与 blood-mob 补偿都排除，确认 Mage 新人会跳过此规则。在 Alpha 9 后端单独部署并重启前，版本 1 线上响应会让此规则保持 UNKNOWN。
-- 此源码快照已删除通用 `//pv`、`/qpv` 玩家档案浏览及其源码与后端路由。
+- PASS 只输出 Profile；只有 UNKNOWN 而无确认失败时，输出 Profile 与原因且不踢人。资料不可用的规则本身不能授权失败，但可以与其他规则的确认 FAIL 并存。FAIL 先完整列出全部确认失败与同时存在的具体错误，再仅在新鲜官方 PartyInfo 证明本机仍是队长、目标 UUID 仍在队内，并且自己的发布条目、楼层、规则、会话与单次动作均未变化时，才发送一次 `party kick <已校验玩家>`。多个入队判定重叠时，回包窗口从请求实际发送后开始，取消且未发送的请求会移除。只靠计分板识别楼层、Entrance、PartyInfo 不确定或网络失败均不能授权踢人。Profile 卡仍保留红色下划线手动操作。
+- 证据版本 2 只用 selected Profile 的 Dungeon Secrets 与明确 F1–F7/M1–M7 完成次数计算平均值；Entrance、聚合数、账号 Achievement 与 blood-mob 补偿都排除，确认 Mage 新人会跳过此规则。兼容旧版本 1 响应时，平均 Secrets 规则保持 UNKNOWN。后端库存覆盖修复会忽略普通库存元数据，避免误报武器扫描不完整；真正容器缺失或损坏时，仍不能确认武器不存在。
+- 模组不提供通用 `//pv`、`/qpv` 玩家档案浏览器。
+
+### 聊天与组队控制
+
+- 可选 All/Party/Guild/Co-op 频道按钮保留完整草稿，等待 Hypixel 确认后才标记当前频道；Officer 有独立高级开关，超时则频道保持未知。
+- Fast Party Commands 为 `!warp` 与其他指令分别提供受众、独立本人开关和不区分大小写的成员白名单。好友/公会权限需要完整的客户端已收列表，QCA 不会自动刷新这些列表。
+- 多值设置使用可展开下拉框，替代反复点击轮换。
 
 ### HUD、宠物与计时
 
@@ -54,8 +60,8 @@ QCloudy_Addition 将地图、按内容显示的 HUD、钓鱼与狩猎提示、�
 
 | Minecraft | 必需 Fabric API | 可运行文件 |
 |---|---|---|
-| 26.1.2 | 0.155.2+26.1.2 或更高兼容版本 | `QCloudy_Addition-0.3.10+26.1.2-Beta.jar` |
-| 26.2 | 对应 26.2 的 Fabric API | `QCloudy_Addition-0.3.10+26.2-Beta.jar` |
+| 26.1.2 | 0.155.2+26.1.2 或更高兼容版本 | `QCloudy_Addition-0.3.11+26.1.2-Beta.jar` |
+| 26.2 | 对应 26.2 的 Fabric API | `QCloudy_Addition-0.3.11+26.2-Beta.jar` |
 
 还需要 Fabric Loader 0.19.3 或更新版本、Java 25。Mod Menu 可选。实例 `mods` 文件夹中只放一个可运行 JAR；不要把 `-sources.jar` 当成模组安装。
 

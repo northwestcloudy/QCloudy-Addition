@@ -24,9 +24,10 @@ final class ReleaseBuildInfoTest {
     @Test
     void processedBuildResourceContainsConcreteMetadata() throws Exception {
         ReleaseBuildInfo build = ReleaseBuildInfo.load();
-        assertEquals("Alpha", build.channel());
-        assertEquals("0.3.10", build.version());
+        assertEquals(System.getProperty("qca.test.releaseChannel"), build.channel());
+        assertEquals(System.getProperty("qca.test.versionCore"), build.version());
         assertEquals(System.getProperty("qca.test.minecraftVersion"), build.minecraftVersion());
-        assertEquals(1, build.releaseBaselineSequence());
+        assertEquals(Long.parseLong(System.getProperty("qca.test.releaseBaselineSequence")),
+                build.releaseBaselineSequence());
     }
 }

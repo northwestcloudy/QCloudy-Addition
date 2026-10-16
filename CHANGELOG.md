@@ -2,6 +2,48 @@
 
 All notable public changes to QCloudy_Addition are documented here.
 
+## [0.3.11-beta] - 2026-10-16
+
+Beta prepared for user publication for Minecraft 26.1.2 and 26.2. This entry consolidates the final player-facing changes since public Beta 0.3.10; the earlier Alpha entries remain as development history.
+
+### Dungeon newcomer cards and optional admission rules
+
+- Added Dungeon Player Quick View for exact Dungeon Finder newcomers: Catacombs, selected-Profile Secrets and one-decimal average, all five class levels and Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. Item and XP details appear on hover; legitimate missing fields stay explicit, while service failures produce a compact warning with a bounded cooldown.
+- Added 14 independent policies for F1–F7 and M1–M7, each with nine separately switchable requirements: completions, duplicate class, fastest time, average Secrets, historical-highest MP, Wither Blade, Terminator, Golden Dragon, and Ender Dragon. Entrance remains Profile-only. Every rule and the automatic-action master default off, and enabling the master requires confirmation.
+- Capture the selected floor from Group Builder's confirmation and activate it only after Hypixel's exact queue-success message; print the detected floor immediately. An ownership-proven own listing can confirm the floor. Existing party members and ordinary/manual joins remain trusted and are not profiled or removed.
+- Keep UNKNOWN separate from FAIL. An UNKNOWN-only result cannot kick; an independent confirmed failure may still qualify while another rule is UNKNOWN. Automatic removal additionally requires fresh official PartyInfo proof of local leadership and target membership, unchanged listing/floor/rules/session, and a one-shot action. Duplicate-class uncertainty stops only that rule, and overlapping admissions no longer lose response time while queued.
+- Compute average Secrets entirely within the selected Profile using its Dungeon Secrets and explicit F1–F7/M1–M7 completions. Confirmed Mage newcomers skip this rule; unsupported or incomplete evidence remains UNKNOWN. The server-side inventory-coverage fix ignores ordinary metadata without treating missing or damaged real item containers as complete.
+
+### SkyBlock 0.27.2
+
+- Added a separate Island Weather HUD for 11 supported islands. It uses explicit current-island server text, displays remaining time only when received, and clears on island/world changes rather than guessing from a schedule.
+- Added optional Safari Eagle unlock/presence/tier display from directly observed shop or Safari-widget evidence.
+- Preserve received pet tier and UUID, including SPECIAL/VERY_SPECIAL Phoenix; isolate Precursor Drone held-state per instance and include Contraband, Grungle, and Mining Off Camera Drone Mods.
+- Added individually switchable Mango Dye Tree Gift alerts and strict leading `[Lv N]` Hunting text support.
+- Refreshed the offline catalog, icons, effects, recipes, and acquisition rates for all 324 Bazaar-listed Shards, including Chocobun, Folf, Flora, and Packrat.
+
+### Chat, compatibility, and everyday fixes
+
+- Added an optional chat-channel switcher for All, Party, Guild, Co-op, and separately enabled Officer. Switching preserves the draft and waits for Hypixel's acknowledgement; timeout leaves the channel unknown.
+- Added separate Fast Party Command audiences for `!warp` and other commands, an independent self-trigger switch, and a case-insensitive member whitelist. Complete received friend/guild lists prove the corresponding permissions; QCA does not refresh them automatically.
+- Replaced click-cycling discrete settings with expandable dropdowns and added an inline admission-rule editor hint.
+- Use the official bundled Hypixel Mod API Hello/Location messages for session authority, improving compatibility with accelerators and proxies that forward those messages. Display-only fallback cannot authorize commands.
+- Fishing Bite Sound now observes the short final `!!!` metadata state immediately, keeping the per-hook duplicate guard and tick fallback; fishing remains manual.
+- Shard Planner prices now use a bounded QCloudy-hosted Bazaar snapshot, independent of another mod's private cache. Unavailable prices remain unknown; offline and Ironman planning remain usable. The temporary generic `//pv`/`/qpv` viewer from development is not part of this Beta.
+
+### Compatibility and validation boundary
+
+- Requires Java 25, Fabric Loader 0.19.3+, and the Fabric API matching Minecraft 26.1.2 or 26.2. Install the matching playable JAR only; Sources JARs are for source browsing.
+- The backend is deployed separately from the mod. A production query on 2026-10-16 verified fresh version-2 evidence and complete weapon-container coverage after the backend fix. This does not claim acceptance of the complete authenticated in-game Party Finder/PartyInfo/automatic-command flow. Local test/build evidence belongs in `docs/VALIDATION.md`.
+- Unified Settings Editor and Unified HUD Editor remain experimental, default-off concept tests. The stable update baseline stays Release 0.3.9, sequence 1; this Beta does not change the stable manifest or become an update target.
+
+### Beta artifacts
+
+- `QCloudy_Addition-0.3.11+26.1.2-Beta.jar`
+- `QCloudy_Addition-0.3.11+26.1.2-Beta-sources.jar`
+- `QCloudy_Addition-0.3.11+26.2-Beta.jar`
+- `QCloudy_Addition-0.3.11+26.2-Beta-sources.jar`
+
 ## [0.3.10-alpha13] - 2026-10-08
 
 Unpublished Alpha development source for Minecraft 26.1.2 only. Public Beta 0.3.10 remains the current testing release and stable Release 0.3.9 remains the update-check baseline.

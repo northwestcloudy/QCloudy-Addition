@@ -1,3 +1,36 @@
+# QCloudy_Addition 0.3.11 Beta 验证状态
+
+日期：2026-10-16<br>
+交付目标：Minecraft 26.1.2 与 26.2<br>
+Java：25.0.4；Gradle：9.6.1；Fabric Loom：1.17.17
+
+## 范围
+
+本次把已完成的 0.3.10 Alpha 开发内容晋级为下一个公开测试核心版本 0.3.11 Beta，保留现有客户端功能和打包数据，同步当前文档，并让构建元数据测试精确比较 Gradle 实际传入的通道、核心版本、Minecraft 与稳定基线，而非写死 Alpha 版本。新核心周期将 `alpha_iteration` 重置为 1；Beta 文件名不使用该计数。稳定 Release 0.3.9 与基线序号 1 保持不变。
+
+## 自动化与产物核验
+
+- 两个目标均以 Java 25 完成 `clean test build prepareRelease`。每个目标均为 70 个套件、483 项测试，0 failure、0 error、0 skipped，共 966 项客户端测试通过。
+- 两份可运行 JAR 与两份 Sources JAR 均通过 ZIP CRC、重复路径、JDK 25 `jar --validate` 和 `unzip -t` 检查；`release/` 副本与对应 `build/<minecraft>/libs/` 文件逐字节一致。
+- 可运行元数据为 `0.3.11-beta+<minecraft>`，声明精确 Minecraft 版本、client-only、Java 25+、Fabric Loader 0.19.3+、对应 Fabric API（0.155.2+26.1.2 或 0.154.2+26.2）和 Hypixel Mod API。官网/源码/问题链接及 Beta、核心版本、基线字段均一致。每份可运行包含 454 个外层 class，全部 major version 69；内嵌 Hypixel Mod API 存在且 CRC 正常。
+- 保留现有离线快照：324 项 Shard、速率、物品定义、模型及纹理，11 个天气岛屿、90 项宠物配件。打包 JSON 均可解析；未打包环境配置、后端、网站或 Git 内部文件，未运行旧 320 项生成器。
+- Loom 对内嵌 Hypixel Mod API 的 Maven 版本拼写仍给出既有的非致命语义版本警告；两套构建与归档检查均成功。
+
+## 本地产物
+
+- `release/QCloudy_Addition-0.3.11+26.1.2-Beta.jar` — 4,057,609 bytes — SHA-256 `7f8052a6f4529a7302fc57c5b90e49b0292b3043f49adbaf20bc24960e7fcf3a`
+- `release/QCloudy_Addition-0.3.11+26.1.2-Beta-sources.jar` — 3,238,290 bytes — SHA-256 `ec3cb080ce3d5cabb636dafe0d07923d6b110753ad71e60fcc17d6d6f344f809`
+- `release/QCloudy_Addition-0.3.11+26.2-Beta.jar` — 4,057,603 bytes — SHA-256 `6b1894553963e9e487e449863d0f0d49aa662fcf127164eb27a921b1c4d2bd41`
+- `release/QCloudy_Addition-0.3.11+26.2-Beta-sources.jar` — 3,238,275 bytes — SHA-256 `b37b47b879d045839668d83b95a73416560e31ef74bc6fc9da9aa8df71090e4d`
+
+## 后端、网站与公开发布边界
+
+- 同日稍早的独立后端修复已通过 63 项后端测试；北京时间 08:53:48 的生产 Quick View 返回 HTTP 200、新鲜玩家/Profile 来源、版本 2 证据、完整武器覆盖及空失败/缺失容器列表。这不等于完整已登录 Hypixel 的 Party Finder、PartyInfo 与自动指令流程验收；安装 JAR 不部署后端。
+- 本次 Beta 任务未安装 Mod、启动客户端、执行已登录 Hypixel 实战或逐一验收所有 GUI Scale/可选 Mod 组合。既有未认证 Alpha 启动证据不作为 Beta 实服验证。
+- 已为用户准备 GitHub/Modrinth 产物及双语上传材料；本任务不创建标签或公开发布版本。对应的本地 Beta 网站 HTML 单独准备，稳定 manifest 与下载脚本保持原样，未部署网站。
+
+---
+
 # QCloudy_Addition 0.3.10-alpha13 SkyBlock 0.27.2 验证状态
 
 日期：2026-10-08<br>

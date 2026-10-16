@@ -99,6 +99,9 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'qca.test.minecraftVersion', targetMinecraftVersion
+    systemProperty 'qca.test.releaseChannel', releaseChannel
+    systemProperty 'qca.test.versionCore', versionCore
+    systemProperty 'qca.test.releaseBaselineSequence', releaseBaselineSequence.toString()
 }
 
 processResources {

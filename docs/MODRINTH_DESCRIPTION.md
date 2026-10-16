@@ -4,7 +4,7 @@
 
 QCloudy_Addition combines readable maps, content-aware HUDs, fishing and hunting alerts, pet information, Century Cake timers, deployable expiry warnings, and a complete offline Attribute Shard guide and planner in one function-first interface.
 
-> **Current public test: Beta 0.3.10 for Minecraft 26.1.2 and 26.2. Latest stable: Release 0.3.9.** Download the JAR that exactly matches your Minecraft version. Java 25 and Fabric API are required.
+> **Beta 0.3.11 is prepared for publication for Minecraft 26.1.2 and 26.2. Latest stable: Release 0.3.9.** Download the JAR that exactly matches your Minecraft version. Java 25, Fabric Loader 0.19.3+, and Fabric API are required.
 
 ## Experimental unified editors
 
@@ -14,7 +14,7 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ## Highlights
 
-> **Source-preview boundary:** the 0.27.2 compatibility, QCloudy-hosted market source described under Attribute Shard Lab, and Dungeon Player Quick View belong to the unpublished `0.3.10-alpha13` Minecraft 26.1.2 source snapshot. They are not included in public Beta 0.3.10.
+Beta 0.3.11 consolidates the completed changes since Beta 0.3.10, including SkyBlock 0.27.2 support, Dungeon newcomer cards and optional admission rules, QCloudy-hosted Shard prices, and chat-channel switching.
 
 ### Attribute Shard Lab
 
@@ -26,14 +26,20 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 ### Dungeon Player Quick View
 
-> **Development preview:** this section describes the unpublished `0.3.10-alpha13` Minecraft 26.1.2 source snapshot. It is not included in public Beta 0.3.10. Its version-2 requirements backend is not deployed by the mod build and the automatic-action path has not been authenticated-live tested on Hypixel.
+> **Validation boundary:** the backend is deployed separately from the mod. Fresh version-2 responses and the inventory-coverage fix were verified through a production query on 2026-10-16. The complete authenticated in-game Party Finder, PartyInfo, and automatic-command flow remains a separate validation step. Admission actions and every rule default off.
 
-- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not browse Party Finder listings. At the exact `Group Builder` confirmation click, it captures the selected Catacombs type/floor as a 15-second candidate and commits it only after Hypixel's exact queue-success line. QCA immediately prints the detected `F/M/E` floor or `Missing` so capture can be diagnosed before a newcomer joins. The card shows Catacombs, selected-Profile Secrets/average, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. XP and native item details appear on hover; missing data is labelled.
+- When a new player joins the Dungeon Finder group, QCA analyzes that newcomer only and prints a colored Profile card; it does not scan other groups or profile existing party members. At the exact `Group Builder` confirmation click, it captures the selected Catacombs type/floor as a 15-second candidate and commits it only after Hypixel's exact queue-success line. QCA immediately prints the detected `F/M/E` floor or `Missing` so capture can be diagnosed before a newcomer joins. The card shows Catacombs, selected-Profile Secrets/average, five class levels plus Class Average, advertised-floor completions/fastest time, armor, selected weapons/pets, and historical-highest Magical Power. XP and native item details appear on hover; missing data is labelled.
 - F1–F7 and M1–M7 have 14 fully independent policies; Entrance has none. Each floor can separately enable minimum completions, no duplicate class, maximum fastest time, minimum average Secrets, minimum historical-highest Magical Power, and required Wither Blade, Terminator, Golden Dragon, or Ender Dragon. Numeric rules keep an independent toggle and value. Every rule and the automatic-action master default off; enabling the master requires confirmation.
 - Players already present at queue creation and ordinary/manual joins are trusted and never checked or kicked; their classes are used only for DUPE. Count, identity, or class uncertainty stops only DUPE with a concrete error while other rules continue. Departed/rejected players are removed from the tracked roster.
-- PASS prints only Profile. UNKNOWN prints Profile plus reasons and never kicks. FAIL lists every confirmed failure and concurrent concrete errors first, then may send `party kick <validated player>` in the same client-thread decision turn only while a fresh official PartyInfo snapshot proves local-leader role and target UUID membership and the own listing, floor, rules, session, and one-shot action are unchanged. Overlapping admissions use dispatch-based response deadlines and discard cancelled unsent tickets instead of timing out while queued. A scoreboard-only floor, Entrance, missing/private/stale/mismatched/incomplete evidence, PartyInfo uncertainty, or network failure cannot authorize a kick. The red underlined manual action remains on Profile cards.
-- Evidence version 2 computes average Secrets from only the selected Profile's Dungeon Secrets and explicit F1–F7/M1–M7 completions. Entrance, totals, account achievements, and blood-mob compensation are excluded; confirmed Mage newcomers skip this rule. Until the Alpha 9 backend is separately deployed and restarted, version-1 production responses keep this rule UNKNOWN.
-- The generic `//pv` and `/qpv` Profile Viewer, its source, and its backend routes are removed from this snapshot.
+- PASS prints only Profile. An UNKNOWN-only outcome prints Profile plus reasons without a kick. An unavailable rule cannot authorize failure; a separate confirmed FAIL can still qualify while other rules are UNKNOWN. FAIL lists every confirmed failure and concurrent concrete error first, then may send `party kick <validated player>` only while fresh official PartyInfo proves local-leader role and target UUID membership and the own listing, floor, rules, session, and one-shot action are unchanged. Overlapping admissions use dispatch-based response deadlines and discard cancelled unsent requests. A scoreboard-only floor, Entrance, uncertain PartyInfo, or network failure cannot authorize a kick. The red underlined manual action remains on Profile cards.
+- Evidence version 2 computes average Secrets from only the selected Profile's Dungeon Secrets and explicit F1–F7/M1–M7 completions. Entrance, totals, account achievements, and blood-mob compensation are excluded; confirmed Mage newcomers skip this rule. Older version-1 responses remain readable but keep this rule UNKNOWN. The service's inventory-coverage fix prevents ordinary inventory metadata from falsely marking weapon coverage incomplete; a missing or damaged real container still leaves absence unknown.
+- The mod provides no generic `//pv` or `/qpv` Profile Viewer.
+
+### Chat and party controls
+
+- Optional All/Party/Guild/Co-op channel buttons preserve the full draft and wait for Hypixel's acknowledgement before marking the channel active. Officer has a separate advanced switch; timeout leaves the channel unknown.
+- Fast Party Commands give `!warp` and other commands separate audiences, an independent self-trigger switch, and a case-insensitive party-member whitelist. Friend/guild permissions require complete received lists; QCA does not refresh those lists automatically.
+- Multi-value settings use expandable dropdowns instead of repeated click-cycling.
 
 ### HUDs, pets, and timers
 
@@ -54,8 +60,8 @@ When explicitly enabled and confirmed, QCA can discover recognised capabilities 
 
 | Minecraft | Required Fabric API | Playable file |
 |---|---|---|
-| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-0.3.10+26.1.2-Beta.jar` |
-| 26.2 | matching 26.2 Fabric API build | `QCloudy_Addition-0.3.10+26.2-Beta.jar` |
+| 26.1.2 | 0.155.2+26.1.2 or newer compatible build | `QCloudy_Addition-0.3.11+26.1.2-Beta.jar` |
+| 26.2 | matching 26.2 Fabric API build | `QCloudy_Addition-0.3.11+26.2-Beta.jar` |
 
 Also required: Fabric Loader 0.19.3 or newer and Java 25. Mod Menu is optional. Put exactly one playable JAR in the instance's `mods` folder; do not install a `-sources.jar` as the mod.
 

@@ -10,6 +10,8 @@ QCloudy_Addition separates the core mod version, Minecraft target, release chann
 - Every new Alpha artifact handoff increments `alpha_iteration` exactly once before building. Never reuse the previous handoff's Alpha number, even when the new output is only a corrected rebuild.
 - Beta is a public test channel but is not a stable-update candidate. Release is the stable channel tracked by the in-game updater.
 
+The current output is Beta 0.3.11 for Minecraft 26.1.2 and 26.2, prepared for user publication. Its stable update baseline remains Release 0.3.9, sequence 1; building or publishing this Beta does not change that manifest.
+
 ## Alpha iteration reset
 
 The Alpha counter belongs to the current core-version cycle; it is not a lifetime counter. Whenever the leading/core version iterates for the next Beta or Release cycle, Alpha restarts at `alpha1`, then advances to `alpha2`, `alpha3`, and so on until the next core-version iteration.
@@ -21,8 +23,8 @@ Project numbering examples supplied by the project owner:
 
 ## Artifact format
 
-- Alpha: `QCloudy_Addition-0.3.10-alpha1+26.1.2.jar`.
-- Beta: `QCloudy_Addition-0.3.10+26.1.2-Beta.jar`.
+- Alpha: `QCloudy_Addition-0.3.11-alpha1+26.1.2.jar`.
+- Beta: `QCloudy_Addition-0.3.11+26.1.2-Beta.jar` or `QCloudy_Addition-0.3.11+26.2-Beta.jar`.
 - Release: `QCloudy_Addition-0.3.9+26.1.2-Release.jar`.
 - Sources use the same version with `-sources` immediately before `.jar`.
 
@@ -32,8 +34,8 @@ Project numbering examples supplied by the project owner:
 
 ```properties
 minecraft_version=26.1.2
-release_channel=Alpha
-mod_version=0.3.10
+release_channel=Beta
+mod_version=0.3.11
 alpha_iteration=1
 ```
 
@@ -41,8 +43,8 @@ alpha_iteration=1
 
 Fabric metadata uses version-comparison-friendly forms:
 
-- Alpha: `0.3.10-alpha1+26.1.2`
-- Beta: `0.3.10-beta+26.1.2`
+- Alpha: `0.3.11-alpha1+26.1.2`
+- Beta: `0.3.11-beta+26.1.2` or `0.3.11-beta+26.2`
 - Release: `0.3.9+26.1.2`
 
 The Gradle build constructs both the artifact name and metadata version from these properties. Do not rename a built JAR manually.
